@@ -1,0 +1,196 @@
+# FitPilot 交付环境 Compose（全容器）
+
+# 阶段后期使用：后端/前端与基础设施一起交付；开发期优先 docker-compose.dev.yml
+
+
+
+services:
+
+  postgres:
+
+    image: postgres:16-alpine
+
+    environment:
+
+      POSTGRES_USER: fitpilot
+
+      POSTGRES_PASSWORD: fitpilot
+
+      POSTGRES_DB: fitpilot
+
+    volumes:
+
+      - fitpilot_pg_data:/var/lib/postgresql/data
+
+    healthcheck:
+
+      test: ["CMD-SHELL", "pg_isready -U fitpilot -d fitpilot"]
+
+      interval: 5s
+
+      timeout: 5s
+
+      retries: 10
+
+
+
+  redis:
+
+    image: redis:7-alpine
+
+    volumes:
+
+      - fitpilot_redis_data:/data
+
+
+
+  qdrant:
+
+    image: qdrant/qdrant:latest
+
+    ports:
+
+      - "6333:6333"
+
+      - "6334:6334"
+
+    volumes:
+
+      - fitpilot_qdrant_data:/qdrant/storage
+
+
+
+  backend:
+
+    build:
+
+      context: ./backend
+
+      dockerfile: Dockerfile
+
+    env_file:
+
+      - .env
+
+    environment:
+
+      POSTGRES_HOST: postgres
+
+      REDIS_URL: redis://redis:6379/0
+
+      QDRANT_URL: http://qdrant:6333
+
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+
+      AGENT_USE_WORKER: "true"
+
+    ports:
+
+      - "8000:8000"
+
+    depends_on:
+
+      postgres:
+
+        condition: service_healthy
+
+      redis:
+
+        condition: service_started
+
+      qdrant:
+
+        condition: service_started
+
+    extra_hosts:
+
+      - "host.docker.internal:host-gateway"
+
+
+
+  worker:
+
+    build:
+
+      context: ./backend
+
+      dockerfile: Dockerfile
+
+    command: ["python", "-m", "app.worker.agent_runner"]
+
+    env_file:
+
+      - .env
+
+    environment:
+
+      REDIS_URL: redis://redis:6379/0
+
+      DATABASE_URL: postgresql+asyncpg://fitpilot:fitpilot@postgres:5432/fitpilot
+
+      QDRANT_URL: http://qdrant:6333
+
+      OLLAMA_BASE_URL: http://host.docker.internal:11434
+
+      AGENT_USE_WORKER: "true"
+
+    depends_on:
+
+      postgres:
+
+        condition: service_healthy
+
+      redis:
+
+        condition: service_started
+
+    extra_hosts:
+
+      - "host.docker.internal:host-gateway"
+
+
+
+  prometheus:
+
+    image: prom/prometheus:v2.54.0
+
+    volumes:
+
+      - ./deploy/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+
+    ports:
+
+      - "9090:9090"
+
+    depends_on:
+
+      - backend
+
+
+
+  grafana:
+
+    image: grafana/grafana:11.2.0
+
+    ports:
+
+      - "3000:3000"
+
+    environment:
+
+      GF_SECURITY_ADMIN_PASSWORD: fitpilot
+
+    depends_on:
+
+      - prometheus
+
+
+
+volumes:
+
+  fitpilot_pg_data:
+
+  fitpilot_redis_data:
+
+  fitpilot_qdrant_data:
+

@@ -1,0 +1,228 @@
+﻿营养素编号,英文名称,中文名称,单位,中文单位,出现次数
+436,10-Formyl folic acid (10HCOFA),10-甲酰叶酸（10HCOFA）,µg,微克,1
+327,25-hydroxycholecalciferol,25-羟基胆钙化醇,µg,微克,15
+437,5-Formyltetrahydrofolic acid (5-HCOH4,5-甲酰四氢叶酸（5-HCOH4）,µg,微克,1
+433,5-methyl tetrahydrofolate (5-MTHF),5-甲基四氢叶酸（5-MTHF）,µg,微克,11
+513,Alanine,丙氨酸,g,克,42
+511,Arginine,精氨酸,g,克,42
+207,Ash,灰分,g,克,336
+514,Aspartic acid,天冬氨酸,g,克,42
+,Beta-glucan,β-葡聚糖,g,克,23
+647,Beta-sitostanol,β-谷甾烷醇,mg,毫克,19
+641,Beta-sitosterol,β-谷甾醇,mg,毫克,19
+454,Betaine,甜菜碱,mg,毫克,27
+416,Biotin,生物素,µg,微克,110
+354,"Boron, B",硼（B）,µg,微克,17
+640,Brassicasterol,菜油甾醇,mg,毫克,8
+301,"Calcium, Ca",钙（Ca）,mg,毫克,351
+642,Campestanol,菜油甾烷醇,mg,毫克,8
+639,Campesterol,菜油甾醇,mg,毫克,19
+205,"Carbohydrate, by difference",碳水化合物（差减法）,g,克,321
+205.2,"Carbohydrate, by summation",碳水化合物（组分求和法）,g,克,30
+322,"Carotene, alpha",α-胡萝卜素,µg,微克,38
+321,"Carotene, beta",β-胡萝卜素,µg,微克,37
+332,"Carotene, gamma",γ-胡萝卜素,µg,微克,4
+601,Cholesterol,胆固醇,mg,毫克,88
+450,"Choline, free",游离胆碱,mg,毫克,27
+453,"Choline, from glycerophosphocholine",来自甘油磷酸胆碱的胆碱,mg,毫克,27
+451,"Choline, from phosphocholine",来自磷酸胆碱的胆碱,mg,毫克,27
+452,"Choline, from phosphotidyl choline",来自磷脂酰胆碱的胆碱,mg,毫克,27
+455,"Choline, from sphingomyelin",来自鞘磷脂的胆碱,mg,毫克,27
+421,"Choline, total",胆碱总量,mg,毫克,27
+236,Citric acid,柠檬酸,mg,毫克,15
+311,"Cobalt, Co",钴（Co）,µg,微克,17
+312,"Copper, Cu",铜（Cu）,mg,毫克,351
+335,"Cryptoxanthin, alpha",α-隐黄质,µg,微克,13
+334,"Cryptoxanthin, beta",β-隐黄质,µg,微克,38
+526,Cysteine,半胱氨酸,g,克,25
+507,Cystine,胱氨酸,g,克,17
+710,Daidzein,大豆苷元,mg,毫克,6
+717,Daidzin,大豆苷,mg,毫克,6
+649,Delta-5-avenasterol,Δ5-燕麦甾醇,mg,毫克,19
+,Delta-7-Stigmastenol,Δ7-豆甾烯醇,mg,毫克,15
+268,Energy,能量,kJ,千焦,190
+957,Energy (Atwater General Factors),能量（Atwater通用系数）,kcal,千卡,226
+958,Energy (Atwater Specific Factors),能量（Atwater特定系数）,kcal,千卡,199
+,"Ergosta-5,7-dienol","麦角甾-5,7-二烯醇",mg,毫克,11
+,"Ergosta-7,22-dienol","麦角甾-7,22-二烯醇",mg,毫克,11
+,Ergosta-7-enol,麦角甾-7-烯醇,mg,毫克,11
+637,Ergosterol,麦角固醇,mg,毫克,11
+,Ergothioneine,麦角硫因,mg,毫克,11
+645,"Fatty acids, total monounsaturated",单不饱和脂肪酸总量,g,克,105
+646,"Fatty acids, total polyunsaturated",多不饱和脂肪酸总量,g,克,90
+606,"Fatty acids, total saturated",饱和脂肪酸总量,g,克,105
+605,"Fatty acids, total trans",反式脂肪酸总量,g,克,67
+694,"Fatty acids, total trans-dienoic",反式二烯脂肪酸总量,g,克,48
+693,"Fatty acids, total trans-monoenoic",反式单烯脂肪酸总量,g,克,54
+695,"Fatty acids, total trans-polyenoic",反式多烯脂肪酸总量,g,克,26
+297,"Fiber, insoluble",不溶性膳食纤维,g,克,10
+295,"Fiber, soluble",可溶性膳食纤维,g,克,10
+291,"Fiber, total dietary",膳食纤维总量,g,克,185
+417,"Folate, total",叶酸总量,µg,微克,123
+212,Fructose,果糖,g,克,139
+287,Galactose,半乳糖,g,克,78
+711,Genistein,染料木素,mg,毫克,6
+718,Genistin,染料木苷,mg,毫克,6
+211,Glucose,葡萄糖,g,克,139
+515,Glutamic acid,谷氨酸,g,克,42
+961,Glutathione,谷胱甘肽,mg,毫克,11
+516,Glycine,甘氨酸,g,克,42
+719,Glycitin,黄豆黄苷,mg,毫克,6
+293.3,High Molecular Weight Dietary Fiber (HMWDF),高分子量膳食纤维（HMWDF）,g,克,19
+512,Histidine,组氨酸,g,克,53
+521,Hydroxyproline,羟脯氨酸,g,克,27
+314,"Iodine, I",碘（I）,µg,微克,46
+303,"Iron, Fe",铁（Fe）,mg,毫克,351
+503,Isoleucine,异亮氨酸,g,克,53
+213,Lactose,乳糖,g,克,139
+504,Leucine,亮氨酸,g,克,53
+293.4,Low Molecular Weight Dietary Fiber (LMWDF),低分子量膳食纤维（LMWDF）,g,克,19
+338.1,Lutein,叶黄素,µg,微克,11
+338,Lutein + zeaxanthin,叶黄素+玉米黄质,µg,微克,29
+337,Lycopene,番茄红素,µg,微克,36
+505,Lysine,赖氨酸,g,克,53
+635,MUFA 12:1,单不饱和脂肪酸 12:1,g,克,15
+822,MUFA 14:1 c,单不饱和脂肪酸 14:1 c,g,克,58
+697,MUFA 15:1,单不饱和脂肪酸 15:1,g,克,50
+673,MUFA 16:1 c,单不饱和脂肪酸 16:1 c,g,克,66
+687,MUFA 17:1,单不饱和脂肪酸 17:1,g,克,56
+825,MUFA 17:1 c,单不饱和脂肪酸 17:1 c,g,克,56
+617,MUFA 18:1,单不饱和脂肪酸 18:1,g,克,3
+674,MUFA 18:1 c,单不饱和脂肪酸 18:1 c,g,克,76
+628,MUFA 20:1,单不饱和脂肪酸 20:1,g,克,32
+829,MUFA 20:1 c,单不饱和脂肪酸 20:1 c,g,克,65
+630,MUFA 22:1,单不饱和脂肪酸 22:1,g,克,2
+676,MUFA 22:1 c,单不饱和脂肪酸 22:1 c,g,克,51
+676.2,MUFA 22:1 n-11,单不饱和脂肪酸 22:1 n-11,g,克,15
+676.1,MUFA 22:1 n-9,单不饱和脂肪酸 22:1 n-9,g,克,28
+671,MUFA 24:1 c,单不饱和脂肪酸 24:1 c,g,克,49
+304,"Magnesium, Mg",镁（Mg）,mg,毫克,351
+243,Malic acid,苹果酸,mg,毫克,15
+214,Maltose,麦芽糖,g,克,139
+315,"Manganese, Mn",锰（Mn）,mg,毫克,351
+506,Methionine,蛋氨酸,g,克,53
+316,"Molybdenum, Mo",钼（Mo）,µg,微克,68
+406,Niacin,烟酸,mg,毫克,176
+371,"Nickel, Ni",镍（Ni）,µg,微克,17
+202,Nitrogen,氮,g,克,326
+245,Oxalic acid,草酸,mg,毫克,13
+618,PUFA 18:2,多不饱和脂肪酸 18:2,g,克,9
+670,PUFA 18:2 CLAs,多不饱和脂肪酸 18:2 共轭亚油酸（CLA）,g,克,55
+831,PUFA 18:2 c,多不饱和脂肪酸 18:2 c,g,克,63
+675,"PUFA 18:2 n-6 c,c","多不饱和脂肪酸 18:2 n-6 c,c",g,克,78
+619,PUFA 18:3,多不饱和脂肪酸 18:3,g,克,3
+833,PUFA 18:3 c,多不饱和脂肪酸 18:3 c,g,克,63
+851,"PUFA 18:3 n-3 c,c,c (ALA)","多不饱和脂肪酸 18:3 n-3 c,c,c (ALA)",g,克,66
+685,"PUFA 18:3 n-6 c,c,c","多不饱和脂肪酸 18:3 n-6 c,c,c",g,克,51
+856,PUFA 18:3i,多不饱和脂肪酸 18:3i,g,克,13
+627,PUFA 18:4,多不饱和脂肪酸 18:4,g,克,51
+840,PUFA 20:2 c,多不饱和脂肪酸 20:2 c,g,克,56
+672,"PUFA 20:2 n-6 c,c","多不饱和脂肪酸 20:2 n-6 c,c",g,克,56
+689,PUFA 20:3,多不饱和脂肪酸 20:3,g,克,1
+835,PUFA 20:3 c,多不饱和脂肪酸 20:3 c,g,克,61
+852,PUFA 20:3 n-3,多不饱和脂肪酸 20:3 n-3,g,克,49
+853,PUFA 20:3 n-6,多不饱和脂肪酸 20:3 n-6,g,克,60
+861,PUFA 20:3 n-9,多不饱和脂肪酸 20:3 n-9,g,克,39
+620,PUFA 20:4,多不饱和脂肪酸 20:4,g,克,58
+836,PUFA 20:4c,多不饱和脂肪酸 20:4c,g,克,58
+629,PUFA 20:5 n-3 (EPA),多不饱和脂肪酸 20:5 n-3 (EPA),g,克,62
+837,PUFA 20:5c,多不饱和脂肪酸 20:5c,g,克,57
+698,PUFA 22:2,多不饱和脂肪酸 22:2,g,克,50
+683,PUFA 22:3,多不饱和脂肪酸 22:3,g,克,15
+858,PUFA 22:4,多不饱和脂肪酸 22:4,g,克,49
+838,PUFA 22:5 c,多不饱和脂肪酸 22:5 c,g,克,56
+631,PUFA 22:5 n-3 (DPA),多不饱和脂肪酸 22:5 n-3 (DPA),g,克,61
+839,PUFA 22:6 c,多不饱和脂肪酸 22:6 c,g,克,57
+621,PUFA 22:6 n-3 (DHA),多不饱和脂肪酸 22:6 n-3 (DHA),g,克,62
+410,Pantothenic acid,泛酸,mg,毫克,52
+508,Phenylalanine,苯丙氨酸,g,克,53
+305,"Phosphorus, P",磷（P）,mg,毫克,351
+330,Phytoene,八氢番茄红素,µg,微克,2
+331,Phytofluene,六氢番茄红素,µg,微克,2
+651,"Phytosterols, other",其他植物甾醇,mg,毫克,4
+306,"Potassium, K",钾（K）,mg,毫克,351
+517,Proline,脯氨酸,g,克,42
+203,Protein,蛋白质,g,克,352
+247,Pyruvic acid,丙酮酸,mg,毫克,5
+248,Quinic acid,奎宁酸,mg,毫克,13
+288,Raffinose,棉子糖,g,克,2
+283,Resistant starch,抗性淀粉,g,克,17
+319,Retinol,视黄醇,µg,微克,53
+405,Riboflavin,核黄素,mg,毫克,133
+610,SFA 10:0,饱和脂肪酸 10:0,g,克,65
+699,SFA 11:0,饱和脂肪酸 11:0,g,克,49
+611,SFA 12:0,饱和脂肪酸 12:0,g,克,78
+612,SFA 14:0,饱和脂肪酸 14:0,g,克,83
+652,SFA 15:0,饱和脂肪酸 15:0,g,克,62
+613,SFA 16:0,饱和脂肪酸 16:0,g,克,87
+653,SFA 17:0,饱和脂肪酸 17:0,g,克,62
+614,SFA 18:0,饱和脂肪酸 18:0,g,克,87
+615,SFA 20:0,饱和脂肪酸 20:0,g,克,64
+681,SFA 21:0,饱和脂肪酸 21:0,g,克,19
+624,SFA 22:0,饱和脂肪酸 22:0,g,克,57
+682,SFA 23:0,饱和脂肪酸 23:0,g,克,15
+654,SFA 24:0,饱和脂肪酸 24:0,g,克,62
+607,SFA 4:0,饱和脂肪酸 4:0,g,克,58
+632,SFA 5:0,饱和脂肪酸 5:0,g,克,15
+608,SFA 6:0,饱和脂肪酸 6:0,g,克,58
+633,SFA 7:0,饱和脂肪酸 7:0,g,克,15
+609,SFA 8:0,饱和脂肪酸 8:0,g,克,58
+634,SFA 9:0,饱和脂肪酸 9:0,g,克,15
+317,"Selenium, Se",硒（Se）,µg,微克,152
+518,Serine,丝氨酸,g,克,42
+307,"Sodium, Na",钠（Na）,mg,毫克,333
+227,Specific Gravity,比重,sp gr,sp gr,1
+289,Stachyose,水苏糖,g,克,2
+209,Starch,淀粉,g,克,89
+,Stigmastadiene,豆甾二烯,mg,毫克,4
+638,Stigmasterol,豆甾醇,mg,毫克,19
+210,Sucrose,蔗糖,g,克,139
+269.3,"Sugars, Total",糖总量,g,克,136
+308,"Sulfur, S",硫（S）,mg,毫克,17
+821,TFA 14:1 t,反式脂肪酸 14:1 t,g,克,14
+662,TFA 16:1 t,反式脂肪酸 16:1 t,g,克,54
+663,TFA 18:1 t,反式脂肪酸 18:1 t,g,克,54
+832,TFA 18:2 t,反式脂肪酸 18:2 t,g,克,6
+665,TFA 18:2 t not further defined,反式脂肪酸 18:2 t（未进一步定义）,g,克,54
+834,TFA 18:3 t,反式脂肪酸 18:3 t,g,克,26
+830,TFA 20:1 t,反式脂肪酸 20:1 t,g,克,14
+664,TFA 22:1 t,反式脂肪酸 22:1 t,g,克,48
+404,Thiamin,硫胺素,mg,毫克,169
+502,Threonine,苏氨酸,g,克,53
+341,"Tocopherol, beta",β-生育酚,mg,毫克,59
+343,"Tocopherol, delta",δ-生育酚,mg,毫克,59
+342,"Tocopherol, gamma",γ-生育酚,mg,毫克,59
+344,"Tocotrienol, alpha",α-生育三烯酚,mg,毫克,58
+345,"Tocotrienol, beta",β-生育三烯酚,mg,毫克,58
+347,"Tocotrienol, delta",δ-生育三烯酚,mg,毫克,58
+346,"Tocotrienol, gamma",γ-生育三烯酚,mg,毫克,58
+269,Total Sugars,总糖,g,克,5
+293,Total dietary fiber (AOAC 2011.25),总膳食纤维（AOAC 2011.25）,g,克,34
+298,Total fat (NLEA),总脂肪（NLEA）,g,克,63
+204,Total lipid (fat),总脂质（脂肪）,g,克,340
+501,Tryptophan,色氨酸,g,克,53
+509,Tyrosine,酪氨酸,g,克,42
+510,Valine,缬氨酸,g,克,53
+,Verbascose,毛蕊花糖,g,克,2
+333,Vitamin A,维生素A,mg,毫克,27
+320,"Vitamin A, RAE",维生素A（视黄醇活性当量，RAE）,µg,微克,51
+418,Vitamin B-12,维生素B12,µg,微克,64
+415,Vitamin B-6,维生素B6,mg,毫克,197
+401,"Vitamin C, total ascorbic acid",维生素C（总抗坏血酸）,mg,毫克,111
+328,Vitamin D (D2 + D3),维生素D（D2+D3）,µg,微克,52
+324,"Vitamin D (D2 + D3), International Units",维生素D（D2+D3，国际单位）,IU,国际单位,52
+325,Vitamin D2 (ergocalciferol),维生素D2（麦角钙化醇）,µg,微克,47
+326,Vitamin D3 (cholecalciferol),维生素D3（胆钙化醇）,µg,微克,41
+,Vitamin D4,维生素D4,µg,微克,11
+323,Vitamin E (alpha-tocopherol),维生素E（α-生育酚）,mg,毫克,63
+429,Vitamin K (Dihydrophylloquinone),维生素K（二氢叶绿醌）,µg,微克,65
+428,Vitamin K (Menaquinone-4),维生素K（甲萘醌-4）,µg,微克,60
+430,Vitamin K (phylloquinone),维生素K（叶绿醌）,µg,微克,75
+255,Water,水分,g,克,355
+338.2,Zeaxanthin,玉米黄质,µg,微克,12
+309,"Zinc, Zn",锌（Zn）,mg,毫克,351
+338.3,cis-Lutein/Zeaxanthin,顺式叶黄素/玉米黄质,µg,微克,14
+337.1,cis-Lycopene,顺式番茄红素,µg,微克,11
+321.1,cis-beta-Carotene,顺式β-胡萝卜素,µg,微克,11
+337.2,trans-Lycopene,反式番茄红素,µg,微克,10
+321.2,trans-beta-Carotene,反式β-胡萝卜素,µg,微克,11

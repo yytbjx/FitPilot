@@ -1,0 +1,9 @@
+# ========== FitPilot Prometheus（开发期可选） ==========
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  # 抓取 FastAPI /metrics
+  - job_name: fitpilot-backend
+    static_configs:
+      - targets: ["host.docker.internal:8000"]

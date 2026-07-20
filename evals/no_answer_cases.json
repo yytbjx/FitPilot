@@ -1,0 +1,58 @@
+{
+  "name": "fitpilot-no-answer-v1",
+  "description": "拒答评估：应拒答 + 应正常检索回答的正负样本",
+  "min_no_answer_recall": 0.7,
+  "min_no_answer_precision": 0.6,
+  "cases": [
+    {
+      "id": "unknown_supplement_xyz",
+      "query": "FitPilotXYZ123 神秘补剂每天多少毫克？",
+      "expect_no_answer": true
+    },
+    {
+      "id": "unrelated_crypto",
+      "query": "量子纠缠股票代码明天开盘价？",
+      "expect_no_answer": true
+    },
+    {
+      "id": "alien_diet",
+      "query": "火星殖民地宇航员专用紫色藻谱宏量怎么算？",
+      "expect_no_answer": true
+    },
+    {
+      "id": "fake_drug",
+      "query": "ZXQ-999 禁药如何搭配卧推周期？",
+      "expect_no_answer": true
+    },
+    {
+      "id": "random_uuid_topic",
+      "query": "文档 a1b2c3d4-e5f6 里写的第三行星训练法是什么？",
+      "expect_no_answer": true
+    },
+    {
+      "id": "should_answer_protein",
+      "query": "减脂期蛋白质怎么安排？",
+      "expect_no_answer": false
+    },
+    {
+      "id": "should_answer_who",
+      "query": "成年人每周应做多少中等强度身体活动？",
+      "expect_no_answer": false
+    },
+    {
+      "id": "should_answer_cn_diet",
+      "query": "中国居民膳食指南有哪些要点？",
+      "expect_no_answer": false
+    },
+    {
+      "id": "should_answer_hydration",
+      "query": "训练时喝水要注意什么？",
+      "expect_no_answer": false
+    },
+    {
+      "id": "should_answer_myth",
+      "query": "不吃主食能更快减脂吗？",
+      "expect_no_answer": false
+    }
+  ]
+}

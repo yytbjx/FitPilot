@@ -1,0 +1,55 @@
+# FitPilot 开发基础设施 Compose
+# 用途：一键拉起 PostgreSQL / Redis；Qdrant 与 Ollama 使用本机已运行实例
+# 启动：docker compose -f docker-compose.dev.yml up -d
+# 说明：不重复启动已存在的 qdrant 容器，后端通过宿主机端口连接
+
+services:
+  # ---------- PostgreSQL：业务库（用户、计划、审计、版本） ----------
+  postgres:
+    image: postgres:16-alpine
+    container_name: fitpilot-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: fitpilot
+      POSTGRES_PASSWORD: fitpilot
+      POSTGRES_DB: fitpilot
+    ports:
+      - "5432:5432"
+    volumes:
+      - fitpilot_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fitpilot -d fitpilot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ---------- Redis：缓存、会话与任务队列 ----------
+  redis:
+    image: redis:7-alpine
+    container_name: fitpilot-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - fitpilot_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # ---------- 可选：若本机无现成 Qdrant，取消下方注释 ----------
+  # qdrant:
+  #   image: qdrant/qdrant:latest
+  #   container_name: fitpilot-qdrant
+  #   restart: unless-stopped
+  #   ports:
+  #     - "6333:6333"
+  #     - "6334:6334"
+  #   volumes:
+  #     - fitpilot_qdrant_data:/qdrant/storage
+
+volumes:
+  fitpilot_pg_data:
+  fitpilot_redis_data:
+  # fitpilot_qdrant_data:

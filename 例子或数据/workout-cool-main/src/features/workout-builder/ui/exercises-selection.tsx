@@ -1,0 +1,206 @@
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
+import { Loader2, Plus } from "lucide-react";
+import { useI18n } from "locales/client";
+import { arrayMove, SortableContext } from "@dnd-kit/sortable";
+import { restrictToVerticalAxis, restrictToParentElement } from "@dnd-kit/modifiers";
+import {
+  DndContext,
+  DragOverlay,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragStartEvent,
+  DragOverEvent,
+  MouseSensor,
+} from "@dnd-kit/core";
+
+import { useWorkoutStepper } from "../hooks/use-workout-stepper";
+import { ExerciseListItem, ExerciseListItemOverlay } from "./exercise-list-item";
+
+import type { ExerciseWithAttributes } from "../types";
+
+import { useDragFeedback } from "@/shared/hooks/use-drag-feedback";
+import { env } from "@/env";
+
+interface ExercisesSelectionProps {
+  isLoading: boolean;
+  exercisesByMuscle: { muscle: string; exercises: ExerciseWithAttributes[] }[];
+  error: any;
+  onShuffle: (exerciseId: string, muscle: string) => void;
+  onPick: (exerciseId: string) => void;
+  onDelete: (exerciseId: string, muscle: string) => void;
+  onAdd: () => void;
+  shufflingExerciseId?: string | null;
+}
+
+export const ExercisesSelection = ({
+  isLoading,
+  exercisesByMuscle,
+  error,
+  onShuffle,
+  onPick: _todo,
+  onDelete,
+  onAdd,
+  shufflingExerciseId,
+}: ExercisesSelectionProps) => {
+  const t = useI18n();
+  const [flatExercises, setFlatExercises] = useState<{ id: string; muscle: string; exercise: ExerciseWithAttributes }[]>([]);
+  const { setExercisesOrder, exercisesOrder } = useWorkoutStepper();
+  const feedback = useDragFeedback();
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const isMobile = useRef(typeof window !== "undefined" && window.innerWidth < 640);
+  const modifiers = isMobile.current ? [restrictToVerticalAxis] : [restrictToVerticalAxis, restrictToParentElement];
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 0,
+      },
+    }),
+    useSensor(MouseSensor, {
+      activationConstraint: {
+        delay: 0,
+        distance: 0,
+      },
+    }),
+  );
+
+  const sortableItems = useMemo(() => flatExercises.map((item) => item.id), [flatExercises]);
+
+  const flatExercisesComputed = useMemo(() => {
+    if (exercisesByMuscle.length === 0) return [];
+
+    const flat = exercisesByMuscle.flatMap((group) =>
+      group.exercises.map((exercise) => ({
+        id: exercise.id,
+        muscle: group.muscle,
+        exercise,
+      })),
+    );
+
+    if (exercisesOrder.length === 0) return flat;
+
+    const exerciseMap = new Map(flat.map((item) => [item.id, item]));
+    const orderedFlat = exercisesOrder.map((id) => exerciseMap.get(id)).filter(Boolean) as typeof flat;
+    const newExercises = flat.filter((item) => !exercisesOrder.includes(item.id));
+
+    return [...orderedFlat, ...newExercises];
+  }, [exercisesByMuscle, exercisesOrder]);
+
+  useEffect(() => {
+    setFlatExercises(flatExercisesComputed);
+  }, [flatExercisesComputed]);
+
+  const handleDragStart = useCallback(
+    (_event: DragStartEvent) => {
+      setActiveId(_event.active.id as string);
+      feedback.onPickUp();
+    },
+    [feedback],
+  );
+
+  const handleDragOver = useCallback(
+    (event: DragOverEvent) => {
+      feedback.onCrossItem(event.over?.id as string | null);
+    },
+    [feedback],
+  );
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      setActiveId(null);
+      feedback.onPlace();
+      if (active.id !== over?.id) {
+        setFlatExercises((items) => {
+          const oldIndex = items.findIndex((item) => item.id === active.id);
+          const newIndex = items.findIndex((item) => item.id === over?.id);
+          const newOrder = arrayMove(items, oldIndex, newIndex);
+          setExercisesOrder(newOrder.map((item) => item.id));
+          return newOrder;
+        });
+      }
+    },
+    [setExercisesOrder, feedback],
+  );
+
+  const handleDragCancel = useCallback(() => {
+    setActiveId(null);
+  }, []);
+
+  const activeItem = useMemo(() => flatExercises.find((item) => item.id === activeId), [flatExercises, activeId]);
+
+  if (isLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin mx-auto text-blue-600" />
+          <p className="mt-4 text-slate-600 dark:text-slate-400">{t("workout_builder.loading.exercises")}</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {flatExercises.length > 0 ? (
+        <div className="max-w-4xl mx-auto">
+          {/* Liste des exercices drag and drop */}
+          <DndContext
+            collisionDetection={closestCenter}
+            modifiers={modifiers}
+            onDragCancel={handleDragCancel}
+            onDragEnd={handleDragEnd}
+            onDragOver={handleDragOver}
+            onDragStart={handleDragStart}
+            sensors={sensors}
+          >
+            <SortableContext items={sortableItems}>
+              <div className="bg-white dark:bg-slate-900 rounded-t-lg border border-b-0 border-slate-200 dark:border-slate-800 overflow-hidden">
+                {flatExercises.map((item) => (
+                  <ExerciseListItem
+                    exercise={item.exercise}
+                    isActive={activeId === item.id}
+                    isShuffling={shufflingExerciseId === item.exercise.id}
+                    key={item.id}
+                    muscle={item.muscle}
+                    onDelete={onDelete}
+                    onDeleteFeedback={feedback.onDelete}
+                    onShuffle={onShuffle}
+                    onShuffleFeedback={feedback.onShuffle}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+
+            <DragOverlay dropAnimation={{ duration: 200, easing: "cubic-bezier(0.18, 0.67, 0.6, 1.22)" }}>
+              {activeItem ? <ExerciseListItemOverlay exercise={activeItem.exercise} muscle={activeItem.muscle} /> : null}
+            </DragOverlay>
+          </DndContext>
+          <div className="border border-t-0 border-slate-200 dark:border-slate-800 rounded-b-lg bg-white dark:bg-slate-900">
+            <button
+              className="w-full flex items-center gap-3 py-4 px-4 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950 transition-colors"
+              onClick={onAdd}
+            >
+              <div className="h-8 w-8 rounded-full bg-blue-600 flex items-center justify-center">
+                <Plus className="h-4 w-4 text-white" />
+              </div>
+              <span className="font-medium">{t("commons.add")}</span>
+            </button>
+          </div>
+        </div>
+      ) : error ? (
+        <div className="text-center py-20">
+          <p className="text-red-600 dark:text-red-400">{t("workout_builder.error.loading_exercises")}</p>
+        </div>
+      ) : (
+        <div className="text-center py-20">
+          <p className="text-slate-600 dark:text-slate-400">{t("workout_builder.no_exercises_found")}</p>
+        </div>
+      )}
+
+    </div>
+  );
+};

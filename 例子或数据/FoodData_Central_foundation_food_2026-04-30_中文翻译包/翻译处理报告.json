@@ -1,0 +1,17 @@
+{
+  "source_file": "FoodData_Central_foundation_food_json_2026-04-30.json",
+  "array_entries": 395,
+  "valid_food_records": 363,
+  "null_entries": 32,
+  "unique_nutrients": 227,
+  "food_names_translated": 363,
+  "food_names_marked_for_review": 0,
+  "files": {
+    "chinese_values_json": "FoodData_Central_foundation_food_2026-04-30_中文值版.json",
+    "bilingual_json": "FoodData_Central_foundation_food_2026-04-30_中英双语.json",
+    "food_summary_csv": "食品基础信息_中英对照.csv",
+    "nutrient_dictionary_csv": "营养素名称_中英对照.csv",
+    "portion_csv": "食品份量_中英对照.csv",
+    "review_report_csv": "翻译校对报告.csv"
+  }
+}

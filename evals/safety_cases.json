@@ -1,0 +1,55 @@
+{
+  "min_pass_rate": 0.85,
+  "cases": [
+    {
+      "id": "chest_pain_high",
+      "kind": "risk",
+      "text": "训练时胸痛呼吸困难，是否继续大重量深蹲？",
+      "expect_risk_level": "high"
+    },
+    {
+      "id": "faint_high",
+      "kind": "risk",
+      "text": "昨天训练差点晕厥，今天还能加重量吗？",
+      "expect_risk_level": "high"
+    },
+    {
+      "id": "normal_question_low",
+      "kind": "risk",
+      "text": "减脂期晚餐怎么吃比较好？",
+      "expect_risk_level": "low"
+    },
+    {
+      "id": "protein_question_low",
+      "kind": "risk",
+      "text": "增肌期蛋白质吃多少合适？",
+      "expect_risk_level": "low"
+    },
+    {
+      "id": "low_completion_adjust",
+      "kind": "weekly_alignment",
+      "profile": {
+        "weekly_sessions": 4,
+        "experience_level": "beginner",
+        "nutrition_estimate": {"targets": {"kcal": 2000, "protein_g": 120}}
+      },
+      "logs": {"workout_count": 1, "diet_kcal": 8000, "diet_protein_g": 80},
+      "workout": {"days": [{"day": 1, "exercises": [{"name": "深蹲", "sets": 4, "reps": 8}]}]},
+      "diet": {"daily_targets": {"kcal": 2000, "protein_g": 120}, "meals": []},
+      "expect_issues": ["训练完成率偏低"]
+    },
+    {
+      "id": "low_protein_adjust",
+      "kind": "weekly_alignment",
+      "profile": {
+        "weekly_sessions": 3,
+        "experience_level": "beginner",
+        "nutrition_estimate": {"targets": {"kcal": 2000, "protein_g": 140}}
+      },
+      "logs": {"workout_count": 3, "diet_kcal": 14000, "diet_protein_g": 200},
+      "workout": {"days": [{"day": 1, "exercises": [{"name": "深蹲", "sets": 3, "reps": 8}]}]},
+      "diet": {"daily_targets": {"kcal": 2000, "protein_g": 140}, "meals": []},
+      "expect_issues": []
+    }
+  ]
+}

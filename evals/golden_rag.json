@@ -1,0 +1,107 @@
+{
+  "name": "fitpilot-golden-rag-v1",
+  "description": "RAG 黄金集：expect_any 为检索上下文中应出现的关键词（中/英/文档名片段均可）",
+  "min_hit_rate": 0.5,
+  "cases": [
+    {
+      "id": "protein_fatloss",
+      "query": "减脂期蛋白质怎么安排？",
+      "expect_any": ["蛋白", "1.6", "2.2", "protein", "protein_basics"]
+    },
+    {
+      "id": "who_pa_adult",
+      "query": "成年人每周应做多少中等强度身体活动？",
+      "expect_any": ["150", "300", "身体活动", "who", "久坐"]
+    },
+    {
+      "id": "cn_diet",
+      "query": "中国居民膳食指南八准则有哪些要点？",
+      "expect_any": ["膳食", "准则", "食物多样", "cn_dietary"]
+    },
+    {
+      "id": "fat_loss_myth",
+      "query": "不吃主食能更快减脂吗？",
+      "expect_any": ["误区", "主食", "减脂", "fat_loss"]
+    },
+    {
+      "id": "usda_hummus",
+      "query": "鹰嘴豆泥每100克大概多少热量和蛋白质？",
+      "expect_any": ["鹰嘴豆", "hummus", "229", "7.35", "蛋白"]
+    },
+    {
+      "id": "hydration",
+      "query": "高强度训练时喝水要注意什么？",
+      "expect_any": ["饮水", "电解质", "hydration", "运动饮料"]
+    },
+    {
+      "id": "strength_basics",
+      "query": "力量训练新手每周练几次比较合适？",
+      "expect_any": ["力量", "2", "3", "渐进", "strength"]
+    },
+    {
+      "id": "safety_boundary",
+      "query": "FitPilot 会不会帮我诊断伤病或开药？",
+      "expect_any": ["诊断", "医", "安全", "safety_boundary", "不能"]
+    },
+    {
+      "id": "protein_sources",
+      "query": "蛋白质可以从哪些食物获取？",
+      "expect_any": ["鸡胸", "鸡蛋", "豆", "蛋白", "protein"]
+    },
+    {
+      "id": "who_strength_days",
+      "query": "每周至少几天做增强肌肉力量的活动？",
+      "expect_any": ["2", "肌肉", "力量", "who", "150"]
+    },
+    {
+      "id": "sedentary",
+      "query": "久坐有什么健康建议？",
+      "expect_any": ["久坐", "活动", "身体活动", "who"]
+    },
+    {
+      "id": "progressive_overload",
+      "query": "什么是渐进超负荷？",
+      "expect_any": ["渐进", "负荷", "力量", "strength"]
+    },
+    {
+      "id": "cn_variety",
+      "query": "膳食为什么要食物多样？",
+      "expect_any": ["食物多样", "膳食", "准则", "cn_dietary"]
+    },
+    {
+      "id": "fat_loss_carb",
+      "query": "减脂期是不是完全不能吃碳水？",
+      "expect_any": ["减脂", "主食", "误区", "fat_loss", "碳水"]
+    },
+    {
+      "id": "kidney_protein_note",
+      "query": "有肾病限制蛋白还能按健身建议吃吗？",
+      "expect_any": ["医嘱", "肾病", "蛋白", "protein"]
+    },
+    {
+      "id": "electrolyte",
+      "query": "出汗多时要不要补充电解质？",
+      "expect_any": ["电解质", "钠", "出汗", "hydration"]
+    },
+    {
+      "id": "chest_pain_advice",
+      "query": "训练时胸痛应该怎么办？",
+      "expect_any": ["胸痛", "就医", "安全", "safety"]
+    },
+    {
+      "id": "sleep_recovery",
+      "query": "睡眠对力量训练恢复重要吗？",
+      "expect_any": ["睡眠", "恢复", "力量", "strength"]
+    },
+    {
+      "id": "usda_macros_intro",
+      "query": "USDA 食物宏量数据可以用来算热量吗？",
+      "expect_any": ["kcal", "蛋白", "usda", "宏量", "foundation"]
+    },
+    {
+      "id": "protein_timing",
+      "query": "力量训练日蛋白质是一天达标重要还是某一顿重要？",
+      "expect_any": ["全天", "蛋白", "力量", "protein"]
+    }
+  ]
+}

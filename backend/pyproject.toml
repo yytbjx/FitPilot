@@ -1,0 +1,109 @@
+# FitPilot 后端项目配置
+# 依赖管理使用 uv；PyTorch 按本机 NVIDIA 驱动（CUDA 13.0 兼容）锁定 cu126 轮子
+[project]
+name = "fitpilot-backend"
+version = "0.1.0"
+description = "FitPilot 个性化训练与膳食协同 AI Agent 后端"
+readme = "README.md"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+    # Web 框架与校验
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "pydantic>=2.9.0",
+    "pydantic-settings>=2.6.0",
+    "python-multipart>=0.0.12",
+    "email-validator>=2.2.0",
+    # 数据库与迁移
+    "sqlalchemy[asyncio]>=2.0.36",
+    "asyncpg>=0.30.0",
+    "alembic>=1.14.0",
+    # 缓存 / 会话
+    "redis>=5.2.0",
+    # 认证
+    "python-jose[cryptography]>=3.3.0",
+    "passlib[bcrypt]>=1.7.4",
+    # HTTP / SSE 客户端（连接 Ollama、外部服务）
+    "httpx>=0.28.0",
+    "tenacity>=9.0.0",
+    # 向量库与检索
+    "qdrant-client>=1.12.0",
+    # 日志与可观测
+    "structlog>=24.4.0",
+    "prometheus-client>=0.21.0",
+    # Agent / LLM 编排（Ollama 通过 langchain-ollama 适配）
+    "langgraph>=0.2.0",
+    "langchain-core>=0.3.0",
+    "langchain-ollama>=0.2.0",
+    # Embedding / Reranker（配合本机 6GB 显存选型；阶段 2 再加载权重）
+    "sentence-transformers>=3.3.0",
+    # PyTorch CUDA 12.6（驱动 CUDA 13.0 向下兼容；见 [[tool.uv.index]]）
+    "torch>=2.5.0",
+    "transformers>=4.46.0",
+    "pypdf>=6.14.2",
+    "python-docx>=1.2.0",
+    "python-pptx>=1.0.2",
+    "openpyxl>=3.1.5",
+    "beautifulsoup4>=4.12.3",
+    "lxml>=5.3.0",
+    "pillow>=10.4.0",
+    "typer>=0.15.0",
+    "ortools>=9.11.0",
+]
+
+[project.scripts]
+fitpilot = "app.cli:main"
+
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.8.0",
+    "mypy>=1.13.0",
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "httpx>=0.28.0",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+# ---------- uv：锁定 PyTorch 官方 cu126 索引 ----------
+[tool.uv]
+# 默认从 PyPI 拉取；torch 相关包强制走 pytorch-cu126
+default-groups = ["dev"]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu126" }
+
+[[tool.uv.index]]
+name = "pytorch-cu126"
+url = "https://download.pytorch.org/whl/cu126"
+explicit = true
+
+[dependency-groups]
+dev = [
+    "ruff>=0.8.0",
+    "mypy>=1.13.0",
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = false
+ignore_missing_imports = true

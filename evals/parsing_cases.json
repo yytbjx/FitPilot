@@ -1,0 +1,42 @@
+{
+  "min_pass_rate": 0.85,
+  "cases": [
+    {
+      "id": "plain_txt",
+      "suffix": ".txt",
+      "content": "蛋白质摄入指南\n\n每日每公斤体重 1.6-2.2g 蛋白质有助于增肌。",
+      "min_chars": 10
+    },
+    {
+      "id": "markdown",
+      "suffix": ".md",
+      "content": "# 减脂 FAQ\n\n## 热量缺口\n\n建议每日 300-500 kcal 缺口。",
+      "min_chars": 20,
+      "expect_title_contains": "减脂"
+    },
+    {
+      "id": "csv_macros",
+      "suffix": ".csv",
+      "content": "name,kcal,protein_g\n鸡胸肉,165,31\n燕麦,389,17\n",
+      "min_chars": 10
+    },
+    {
+      "id": "json_food",
+      "suffix": ".json",
+      "content": "{\"name\": \"鸡胸肉\", \"kcal_per_100g\": 165, \"protein_g_per_100g\": 31}",
+      "min_chars": 10
+    },
+    {
+      "id": "html_snippet",
+      "suffix": ".html",
+      "content": "<html><body><h1>训练热身</h1><p>每次训练前热身 5-10 分钟。</p></body></html>",
+      "min_chars": 10
+    },
+    {
+      "id": "jsonl_rows",
+      "suffix": ".jsonl",
+      "content": "{\"q\": \"蛋白\", \"a\": \"1.6-2.2g/kg\"}\n{\"q\": \"减脂\", \"a\": \"热量缺口\"}\n",
+      "min_chars": 10
+    }
+  ]
+}

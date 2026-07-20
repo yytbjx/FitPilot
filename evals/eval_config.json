@@ -1,0 +1,41 @@
+{
+  "modules": {
+    "parsing": {"enabled": true, "description": "文档解析成功率"},
+    "retrieval": {"enabled": true, "description": "RAG 检索 Hit@K / MRR"},
+    "no_answer": {"enabled": true, "description": "拒答 Recall / Precision"},
+    "generation": {"enabled": true, "description": "引用精度 / 检索端到端 / 无依据陈述"},
+    "generation_online": {"enabled": false, "description": "LLM-as-judge Faithfulness/Relevance（需 --online）"},
+    "agent": {"enabled": true, "description": "意图准确率 / Macro-F1"},
+    "plan": {"enabled": true, "description": "训练计划硬约束"},
+    "meal": {"enabled": true, "description": "食谱宏量误差 / 忌口"},
+    "safety": {"enabled": true, "description": "风险识别 / 周联合调整"}
+  },
+  "suites": {
+    "parsing": "evals/parsing_cases.json",
+    "retrieval": "evals/golden_rag.json",
+    "no_answer": "evals/no_answer_cases.json",
+    "generation": "evals/generation_cases.json",
+    "generation_online": "evals/generation_online_cases.json",
+    "agent": "evals/agent_routing_cases.json",
+    "plan": "evals/plan_cases.json",
+    "meal": "evals/meal_cases.json",
+    "safety": "evals/safety_cases.json"
+  },
+  "parameters": {
+    "dataset_path": "evals/golden_rag.json",
+    "dataset_limit": null,
+    "top_k_list": [1, 3, 5],
+    "top_k": 4,
+    "output_dir": "evals/reports"
+  },
+  "thresholds": {
+    "retrieval": {"hit_rate": 0.5, "mrr": 0.0},
+    "agent": {"min_accuracy": 0.85, "min_macro_f1": 0.75},
+    "meal": {"max_kcal_error_pct": 0.25, "max_protein_error_pct": 0.25, "min_pass_rate": 0.75},
+    "parsing": {"min_pass_rate": 0.85},
+    "plan": {"min_pass_rate": 0.85},
+    "safety": {"min_pass_rate": 0.85},
+    "generation": {"min_pass_rate": 0.75},
+    "no_answer": {"min_no_answer_recall": 0.7, "min_no_answer_precision": 0.6}
+  }
+}

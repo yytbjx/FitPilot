@@ -1,0 +1,138 @@
+name: Discord Notification
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: "Tag name (leave empty for latest release)"
+        required: false
+        type: string
+      custom_title:
+        description: "Custom title for the release notification"
+        required: false
+        type: string
+
+jobs:
+  Discord:
+    runs-on: ubuntu-latest
+    name: Discord Notifier
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get release info
+        id: release-info
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            # For manual trigger, get the latest release or use the input
+            if [ -n "${{ github.event.inputs.tag_name }}" ]; then
+              TAG_NAME="${{ github.event.inputs.tag_name }}"
+            else
+              TAG_NAME=$(gh release list --limit 1 --json tagName --jq '.[0].tagName')
+            fi
+            
+            # Get release info via GitHub CLI
+            RELEASE_INFO=$(gh release view "$TAG_NAME" --json name,body,url,author,publishedAt,tagName)
+            
+            echo "tag_name=$(echo "$RELEASE_INFO" | jq -r '.tagName')" >> $GITHUB_OUTPUT
+            echo "name=$(echo "$RELEASE_INFO" | jq -r '.name')" >> $GITHUB_OUTPUT
+            
+            # Use EOF for the body which may contain special characters
+            echo "body<<EOF" >> $GITHUB_OUTPUT
+            echo "$RELEASE_INFO" | jq -r '.body' >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            
+            echo "html_url=$(echo "$RELEASE_INFO" | jq -r '.url')" >> $GITHUB_OUTPUT
+            echo "author_login=$(echo "$RELEASE_INFO" | jq -r '.author.login')" >> $GITHUB_OUTPUT
+            echo "author_html_url=https://github.com/$(echo "$RELEASE_INFO" | jq -r '.author.login')" >> $GITHUB_OUTPUT
+            echo "published_at=$(echo "$RELEASE_INFO" | jq -r '.publishedAt')" >> $GITHUB_OUTPUT
+          else
+            # For automatic trigger, use event data
+            echo "tag_name=${{ github.event.release.tag_name }}" >> $GITHUB_OUTPUT
+            echo "name=${{ github.event.release.name }}" >> $GITHUB_OUTPUT
+            
+            # Use EOF for the automatic release body as well
+            echo "body<<EOF" >> $GITHUB_OUTPUT
+            echo "${{ github.event.release.body }}" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            
+            echo "html_url=${{ github.event.release.html_url }}" >> $GITHUB_OUTPUT
+            echo "author_login=${{ github.event.release.author.login }}" >> $GITHUB_OUTPUT
+            echo "author_html_url=${{ github.event.release.author.html_url }}" >> $GITHUB_OUTPUT
+            echo "published_at=${{ github.event.release.published_at }}" >> $GITHUB_OUTPUT
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+      - name: Get previous release
+        id: previous-release
+        run: |
+          PREV_TAG=$(git tag --sort=-version:refname | grep -v '${{ steps.release-info.outputs.tag_name }}' | head -n1)
+          echo "previous_tag=${PREV_TAG}" >> $GITHUB_OUTPUT
+
+      - name: Get changed files since last release
+        id: changed-files
+        uses: tj-actions/changed-files@v44
+        with:
+          base_sha: ${{ steps.previous-release.outputs.previous_tag }}
+          separator: "\n• "
+
+      - name: Create Discord webhook payload
+        run: |
+          # Create a temporary JSON file
+          cat > discord_payload.json << 'EOF'
+          {
+            "avatar_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+            "embeds": [
+              {
+                "title": "🚀 New Release: ${{ steps.release-info.outputs.tag_name }}${{ github.event.inputs.custom_title && ' - ' || '' }}${{ github.event.inputs.custom_title || '' }}",
+                "description": "${{ steps.release-info.outputs.name }}",
+                "url": "${{ steps.release-info.outputs.html_url }}",
+                "color": 5763719,
+                "thumbnail": {
+                  "url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+                },
+                "fields": [
+                  {
+                    "name": "📦 Version",
+                    "value": "`${{ steps.release-info.outputs.tag_name }}`",
+                    "inline": true
+                  },
+                  {
+                    "name": "👤 Released by",
+                    "value": "[${{ steps.release-info.outputs.author_login }}](${{ steps.release-info.outputs.author_html_url }})",
+                    "inline": true
+                  },
+                  {
+                    "name": "📁 Repository",
+                    "value": "[${{ github.event.repository.name }}](${{ github.event.repository.html_url }})",
+                    "inline": true
+                  },
+                  {
+                    "name": "🔗 Download",
+                    "value": "[Release Page](${{ steps.release-info.outputs.html_url }})",
+                    "inline": true
+                  }
+                ],
+                "timestamp": "${{ steps.release-info.outputs.published_at }}",
+                "footer": {
+                  "text": "Workout Cool • Release",
+                  "icon_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+                }
+              }
+            ]
+          }
+          EOF
+
+      - name: Send Discord notification
+        run: |
+          curl -H "Content-Type: application/json" \
+               -d @discord_payload.json \
+               "${{ secrets.DISCORD_RELEASE_WEBHOOK }}"
+
+# https://stackoverflow.com/a/68068674/19395252
+# https://birdie0.github.io/discord-webhooks-guide/structure/embeds.html
+# https://github.com/marketplace/actions/changed-files

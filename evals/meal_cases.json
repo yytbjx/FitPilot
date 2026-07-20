@@ -1,0 +1,75 @@
+{
+  "max_kcal_error_pct": 0.25,
+  "max_protein_error_pct": 0.25,
+  "min_pass_rate": 0.75,
+  "cases": [
+    {
+      "id": "cut_2000",
+      "use_ortools": true,
+      "targets": {"kcal": 2000, "protein_g": 120, "carb_g": 200, "fat_g": 60},
+      "profile": {"restrictions": "", "diet_prefs": ""},
+      "foods": [
+        {"id": 1, "name": "鸡胸肉", "kcal_per_100g": 165, "protein_g_per_100g": 31, "carb_g_per_100g": 0, "fat_g_per_100g": 3.6},
+        {"id": 2, "name": "燕麦", "kcal_per_100g": 389, "protein_g_per_100g": 17, "carb_g_per_100g": 66, "fat_g_per_100g": 7},
+        {"id": 3, "name": "西兰花", "kcal_per_100g": 34, "protein_g_per_100g": 2.8, "carb_g_per_100g": 7, "fat_g_per_100g": 0.4},
+        {"id": 4, "name": "糙米", "kcal_per_100g": 111, "protein_g_per_100g": 2.6, "carb_g_per_100g": 23, "fat_g_per_100g": 0.9},
+        {"id": 5, "name": "鸡蛋", "kcal_per_100g": 155, "protein_g_per_100g": 13, "carb_g_per_100g": 1.1, "fat_g_per_100g": 11},
+        {"id": 6, "name": "三文鱼", "kcal_per_100g": 208, "protein_g_per_100g": 20, "carb_g_per_100g": 0, "fat_g_per_100g": 13}
+      ]
+    },
+    {
+      "id": "cut_2000_greedy",
+      "use_ortools": false,
+      "targets": {"kcal": 2000, "protein_g": 120, "carb_g": 200, "fat_g": 60},
+      "profile": {"restrictions": "", "diet_prefs": ""},
+      "foods": [
+        {"id": 1, "name": "鸡胸肉", "kcal_per_100g": 165, "protein_g_per_100g": 31, "carb_g_per_100g": 0, "fat_g_per_100g": 3.6},
+        {"id": 2, "name": "燕麦", "kcal_per_100g": 389, "protein_g_per_100g": 17, "carb_g_per_100g": 66, "fat_g_per_100g": 7},
+        {"id": 3, "name": "西兰花", "kcal_per_100g": 34, "protein_g_per_100g": 2.8, "carb_g_per_100g": 7, "fat_g_per_100g": 0.4},
+        {"id": 4, "name": "糙米", "kcal_per_100g": 111, "protein_g_per_100g": 2.6, "carb_g_per_100g": 23, "fat_g_per_100g": 0.9},
+        {"id": 5, "name": "鸡蛋", "kcal_per_100g": 155, "protein_g_per_100g": 13, "carb_g_per_100g": 1.1, "fat_g_per_100g": 11}
+      ]
+    },
+    {
+      "id": "ban_salmon",
+      "use_ortools": true,
+      "targets": {"kcal": 2000, "protein_g": 120, "carb_g": 200, "fat_g": 60},
+      "profile": {"restrictions": "三文鱼", "diet_prefs": ""},
+      "foods": [
+        {"id": 1, "name": "鸡胸肉", "kcal_per_100g": 165, "protein_g_per_100g": 31, "carb_g_per_100g": 0, "fat_g_per_100g": 3.6},
+        {"id": 2, "name": "燕麦", "kcal_per_100g": 389, "protein_g_per_100g": 17, "carb_g_per_100g": 66, "fat_g_per_100g": 7},
+        {"id": 3, "name": "西兰花", "kcal_per_100g": 34, "protein_g_per_100g": 2.8, "carb_g_per_100g": 7, "fat_g_per_100g": 0.4},
+        {"id": 4, "name": "糙米", "kcal_per_100g": 111, "protein_g_per_100g": 2.6, "carb_g_per_100g": 23, "fat_g_per_100g": 0.9},
+        {"id": 5, "name": "鸡蛋", "kcal_per_100g": 155, "protein_g_per_100g": 13, "carb_g_per_100g": 1.1, "fat_g_per_100g": 11},
+        {"id": 6, "name": "三文鱼", "kcal_per_100g": 208, "protein_g_per_100g": 20, "carb_g_per_100g": 0, "fat_g_per_100g": 13}
+      ]
+    },
+    {
+      "id": "allergy_egg",
+      "use_ortools": true,
+      "targets": {"kcal": 1800, "protein_g": 110, "carb_g": 180, "fat_g": 55},
+      "profile": {"restrictions": "", "diet_prefs": "鸡蛋"},
+      "foods": [
+        {"id": 1, "name": "鸡胸肉", "kcal_per_100g": 165, "protein_g_per_100g": 31, "carb_g_per_100g": 0, "fat_g_per_100g": 3.6},
+        {"id": 2, "name": "燕麦", "kcal_per_100g": 389, "protein_g_per_100g": 17, "carb_g_per_100g": 66, "fat_g_per_100g": 7},
+        {"id": 3, "name": "西兰花", "kcal_per_100g": 34, "protein_g_per_100g": 2.8, "carb_g_per_100g": 7, "fat_g_per_100g": 0.4},
+        {"id": 4, "name": "豆腐", "kcal_per_100g": 76, "protein_g_per_100g": 8, "carb_g_per_100g": 2, "fat_g_per_100g": 4.8},
+        {"id": 5, "name": "鸡蛋", "kcal_per_100g": 155, "protein_g_per_100g": 13, "carb_g_per_100g": 1.1, "fat_g_per_100g": 11}
+      ]
+    },
+    {
+      "id": "bulk_2800",
+      "use_ortools": true,
+      "targets": {"kcal": 2800, "protein_g": 160, "carb_g": 320, "fat_g": 80},
+      "profile": {"restrictions": "", "diet_prefs": ""},
+      "foods": [
+        {"id": 1, "name": "鸡胸肉", "kcal_per_100g": 165, "protein_g_per_100g": 31, "carb_g_per_100g": 0, "fat_g_per_100g": 3.6},
+        {"id": 2, "name": "燕麦", "kcal_per_100g": 389, "protein_g_per_100g": 17, "carb_g_per_100g": 66, "fat_g_per_100g": 7},
+        {"id": 3, "name": "香蕉", "kcal_per_100g": 89, "protein_g_per_100g": 1.1, "carb_g_per_100g": 23, "fat_g_per_100g": 0.3},
+        {"id": 4, "name": "糙米", "kcal_per_100g": 111, "protein_g_per_100g": 2.6, "carb_g_per_100g": 23, "fat_g_per_100g": 0.9},
+        {"id": 5, "name": "花生酱", "kcal_per_100g": 588, "protein_g_per_100g": 25, "carb_g_per_100g": 20, "fat_g_per_100g": 50},
+        {"id": 6, "name": "牛奶", "kcal_per_100g": 54, "protein_g_per_100g": 3.3, "carb_g_per_100g": 5, "fat_g_per_100g": 3}
+      ]
+    }
+  ]
+}

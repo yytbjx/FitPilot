@@ -1,0 +1,50 @@
+{
+  "min_pass_rate": 0.75,
+  "cases": [
+    {
+      "id": "cite_ok",
+      "mode": "static",
+      "answer": "根据知识库，减脂期建议每公斤体重摄入 1.6-2.2g 蛋白质。",
+      "citations": ["蛋白质摄入指南", "减脂营养 FAQ"],
+      "expect_citation_keywords": ["蛋白"],
+      "expect_answer_contains": ["蛋白质"],
+      "min_citation_precision": 0.5,
+      "max_unsupported_rate": 0.0
+    },
+    {
+      "id": "no_unsupported",
+      "mode": "static",
+      "answer": "建议循序渐进增加训练量，避免疼痛换进度。",
+      "citations": ["训练渐进原则"],
+      "forbidden_claims": ["保证一周增肌5公斤", "无需休息"],
+      "max_unsupported_rate": 0.0
+    },
+    {
+      "id": "cite_who",
+      "mode": "static",
+      "answer": "成年人每周宜积累约 150–300 分钟中等强度身体活动。",
+      "citations": ["WHO 身体活动指南摘要", "who_pa_2020_core"],
+      "expect_citation_keywords": ["who", "身体"],
+      "expect_answer_contains": ["150"],
+      "min_citation_precision": 0.5
+    },
+    {
+      "id": "e2e_protein",
+      "mode": "e2e_retrieve",
+      "query": "减脂期蛋白质怎么安排？",
+      "expect_citation_keywords": ["protein", "蛋白"],
+      "expect_context_contains": ["1.6"],
+      "min_citation_precision": 0.5,
+      "allow_no_answer": false
+    },
+    {
+      "id": "e2e_who",
+      "mode": "e2e_retrieve",
+      "query": "成年人每周应做多少中等强度身体活动？",
+      "expect_citation_keywords": ["who", "身体"],
+      "expect_context_contains": ["150"],
+      "min_citation_precision": 0.5,
+      "allow_no_answer": false
+    }
+  ]
+}

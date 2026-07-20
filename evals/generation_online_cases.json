@@ -1,0 +1,26 @@
+{
+  "min_faithfulness": 0.5,
+  "min_relevance": 0.5,
+  "min_pass_rate": 0.6,
+  "cases": [
+    {
+      "id": "protein_faithful",
+      "question": "减脂期蛋白质摄入多少？",
+      "context": "文献建议减脂期每公斤体重摄入 1.6-2.2 克蛋白质，有助于保留瘦体重。",
+      "answer": "减脂期建议每公斤体重约 1.6-2.2 克蛋白质。"
+    },
+    {
+      "id": "who_faithful",
+      "question": "成年人每周中等强度活动多久？",
+      "context": "成年人每周宜积累中等强度有氧活动约 150–300 分钟。",
+      "answer": "成年人每周约 150 到 300 分钟中等强度有氧活动。"
+    },
+    {
+      "id": "hallucination_low",
+      "expect_fail": true,
+      "question": "减脂期蛋白质摄入多少？",
+      "context": "文献建议减脂期每公斤体重摄入 1.6-2.2 克蛋白质。",
+      "answer": "减脂期必须每天注射生长激素并禁食三天。"
+    }
+  ]
+}
