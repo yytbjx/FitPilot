@@ -1,5 +1,8 @@
 # FitPilot 仓库忽略规则
 
+# GitHub Desktop 误建的嵌套空仓库（勿提交）
+FitPilot/
+
 # 环境与密钥
 .env
 .env.local
