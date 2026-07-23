@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from app.rag import RetrievedChunk
+from app.rag.citations import map_citations
 
 
 def _chunk_sources(chunks: list[RetrievedChunk]) -> set[str]:
@@ -78,21 +79,10 @@ def build_context(
             }
 
     parts: list[str] = []
-    citations: list[dict] = []
-    for i, c in enumerate(usable, start=1):
+    usable_for_cite = usable
+    for i, c in enumerate(usable_for_cite, start=1):
         parts.append(f"[{i}] {c.citation}\n{c.text}")
-        citations.append(
-            {
-                "index": i,
-                "citation": c.citation,
-                "title": c.title,
-                "section_path": c.section_path,
-                "document_id": c.document_id,
-                "version_id": c.version_id,
-                "chunk_id": c.chunk_id,
-                "score": c.score,
-            }
-        )
+    citations = map_citations(usable_for_cite)
     return {
         "no_answer": False,
         "reason": None,

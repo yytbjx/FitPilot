@@ -120,6 +120,53 @@ class QdrantService:
         except Exception:
             return None
 
+    def create_snapshot(self) -> dict[str, Any]:
+        """创建当前知识集合快照（存储于 Qdrant 服务端）。"""
+        snap = self.client.create_snapshot(collection_name=self.collection)
+        name = getattr(snap, "name", None) or str(snap)
+        logger.info("qdrant_snapshot_created", collection=self.collection, name=name)
+        return {"ok": True, "collection": self.collection, "name": name, "snapshot": str(snap)}
+
+    def list_snapshots(self) -> list[dict[str, Any]]:
+        snaps = self.client.list_snapshots(collection_name=self.collection) or []
+        out: list[dict[str, Any]] = []
+        for s in snaps:
+            out.append(
+                {
+                    "name": getattr(s, "name", None) or str(s),
+                    "creation_time": str(getattr(s, "creation_time", "") or ""),
+                    "size": getattr(s, "size", None),
+                }
+            )
+        return out
+
+    def recover_snapshot(self, snapshot_name: str, *, wait: bool = True) -> dict[str, Any]:
+        """从集合快照恢复（覆盖当前集合数据）。"""
+        # qdrant-client: recover_snapshot(collection_name, location)
+        location = snapshot_name
+        if not location.startswith("file://") and "/" not in location and "\\" not in location:
+            # 相对名：使用 Qdrant 本地快照路径约定
+            location = f"file:///qdrant/snapshots/{self.collection}/{snapshot_name}"
+        try:
+            self.client.recover_snapshot(
+                collection_name=self.collection,
+                location=location,
+                wait=wait,
+            )
+        except Exception as exc:  # noqa: BLE001
+            # 回退：部分版本 API 为 snapshot_name 参数
+            try:
+                self.client.recover_snapshot(
+                    collection_name=self.collection,
+                    location=snapshot_name,
+                    wait=wait,
+                )
+            except Exception as exc2:  # noqa: BLE001
+                logger.warning("qdrant_recover_failed", error=str(exc), error2=str(exc2))
+                return {"ok": False, "error": str(exc2), "tried_location": location}
+        logger.info("qdrant_snapshot_recovered", collection=self.collection, location=location)
+        return {"ok": True, "collection": self.collection, "location": location}
+
 
 _svc: QdrantService | None = None
 

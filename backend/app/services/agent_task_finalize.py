@@ -31,6 +31,14 @@ async def finalize_agent_result(
 
     for ev in result.get("events") or []:
         if ev.get("event") in {"completed", "failed", "approval_required", "node_started", "approval_decision"}:
+            if ev.get("event") == "completed":
+                ev = {
+                    **ev,
+                    "reply": ev.get("reply") or result.get("reply"),
+                    "citations": ev.get("citations") or result.get("citations") or [],
+                    "final_status": ev.get("final_status") or result.get("final_status"),
+                    "retrieved_evidence": ev.get("retrieved_evidence") or result.get("retrieved_evidence"),
+                }
             if not any(
                 e.get("event") == ev.get("event") and e.get("status") == ev.get("status") for e in buf
             ):

@@ -1,0 +1,43 @@
+name: Online Eval (optional)
+
+# 需要本机/自托管服务时手动触发；默认不阻断 PR。
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * 1"
+
+jobs:
+  online-rag:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install deps
+        run: uv sync --extra dev
+      - name: Probe services then eval
+        env:
+          PYTHONPATH: ${{ github.workspace }}/backend
+          NO_PROXY: 127.0.0.1,localhost
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          QDRANT_URL: ${{ secrets.QDRANT_URL }}
+          OLLAMA_BASE_URL: ${{ secrets.OLLAMA_BASE_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+        continue-on-error: true
+        run: |
+          if [ -z "${QDRANT_URL}" ]; then
+            echo "QDRANT_URL secret 未配置，跳过在线 RAG 评估"
+            exit 0
+          fi
+          uv run python main.py status --local || true
+          uv run python main.py eval --out ../evals/reports/online_rag_ci.json || {
+            echo "在线评估失败（服务未就绪时属预期）"
+            exit 0
+          }

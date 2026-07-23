@@ -45,10 +45,22 @@ app = FastAPI(
     description="个性化训练与膳食协同 AI Agent 系统后端",
 )
 
-# 开发期允许本地前端跨域
+def _cors_origins() -> list[str]:
+    """生产环境禁止 credentials + 通配 * 组合；开发可用 *。"""
+    raw = (settings.cors_origins or "*").strip()
+    origins = [o.strip() for o in raw.split(",") if o.strip()]
+    if settings.app_env == "production":
+        if not origins or origins == ["*"]:
+            # 未显式配置时回退到本机前端，避免开放任意源
+            return ["http://127.0.0.1:5173", "http://localhost:5173"]
+        return [o for o in origins if o != "*"]
+    return origins or ["*"]
+
+
+_origins = _cors_origins()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -90,14 +102,30 @@ async def prometheus_metrics() -> Response:
     return Response(generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
+_WEAK_JWT = {
+    "change-me",
+    "change-me-fitpilot-dev-secret-please",
+    "secret",
+    "jwt-secret",
+}
+
+
 @app.on_event("startup")
 async def on_startup() -> None:
-    """启动摘要：配置、Token 阈值、推荐模型。"""
+    """启动摘要：配置、Token 阈值、推荐模型；生产校验 JWT/CORS。"""
+    if settings.app_env == "production" and settings.jwt_secret.strip() in _WEAK_JWT:
+        raise RuntimeError(
+            "生产环境禁止使用弱 JWT_SECRET，请在 .env 中设置足够强度的随机密钥"
+        )
+    if settings.app_env == "production" and _origins == ["*"]:
+        raise RuntimeError("生产环境禁止 CORS allow_origins=* ，请设置 CORS_ORIGINS")
+
     monitor = get_token_monitor()
     logger.info(
         "fitpilot_startup",
         version=__version__,
         env=settings.app_env,
+        cors_origins=_origins,
         ollama_url=settings.ollama_base_url,
         ollama_model=settings.ollama_model,
         ollama_models_by_role=settings.ollama_model_roles(),
@@ -107,6 +135,7 @@ async def on_startup() -> None:
         reranker_model=settings.resolved_reranker_model,
         reranker_device=settings.reranker_device,
         qdrant_url=settings.qdrant_url,
+        agent_use_worker=settings.agent_use_worker,
         token_budget=monitor.budget,
         token_stop_ratio=monitor.stop_ratio,
         token_stop_threshold=monitor.stop_threshold,

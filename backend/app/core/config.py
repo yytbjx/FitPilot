@@ -38,10 +38,25 @@ class Settings(BaseSettings):
     jwt_expire_minutes: int = Field(default=60, description="访问令牌有效期（分钟）")
     refresh_token_expire_days: int = Field(default=14, description="Refresh Token 有效期（天）")
 
-    # ---------- Worker ----------
+    # ---------- Worker / Redis Streams ----------
     agent_use_worker: bool = Field(
         default=False,
-        description="为 True 时 Agent 任务入 Redis 队列，由独立 worker 消费",
+        description="为 True 时 Agent 任务入 Redis Streams，由独立 worker 消费",
+    )
+    agent_queue_max_retries: int = Field(
+        default=3,
+        description="Worker 任务最大重试次数（超过进入死信流）",
+        ge=0,
+        le=20,
+    )
+    agent_queue_claim_idle_ms: int = Field(
+        default=60_000,
+        description="Pending 消息空闲超过该毫秒后可被其他 consumer 认领",
+        ge=1000,
+    )
+    cors_origins: str = Field(
+        default="*",
+        description="CORS 允许源，逗号分隔；production 禁止单独使用 * 且开启 credentials",
     )
 
     # ---------- 食谱优化 ----------
@@ -116,6 +131,12 @@ class Settings(BaseSettings):
     reranker_device: str = Field(default="cpu", description="Reranker 推理设备；与 Ollama 错峰可用 cpu")
     rag_top_k: int = Field(default=8, description="混合检索召回条数")
     rag_rerank_top_k: int = Field(default=4, description="精排后保留条数")
+    rag_chunk_strategy: Literal[
+        "auto", "fixed", "heading", "parent_child", "faq_qa", "clause", "table_row"
+    ] = Field(
+        default="auto",
+        description="入库分块策略；auto 按文档类型选择",
+    )
     rag_skip_rerank: bool = Field(
         default=False,
         description="为 True 时跳过 Reranker，直接取 RRF 前 N 条（显著提速，略降精准度）",

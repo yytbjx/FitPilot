@@ -108,18 +108,29 @@ def _window(text: str, *, max_chars: int, overlap: int) -> list[str]:
     return [x for x in out if x]
 
 
-def chunks_from_file(path: Path, *, version_id: str = "v1") -> list[DocumentChunk]:
+def chunks_from_file(
+    path: Path,
+    *,
+    version_id: str = "v1",
+    strategy: str | None = None,
+) -> list[DocumentChunk]:
+    from app.core.config import get_settings
+    from app.rag.chunk_strategies import split_with_strategy
     from app.rag.parsing import parse_file_rich
 
     result = parse_file_rich(path)
     title, text = result.title, result.text
     doc_id = path.stem
-    chunks = split_text_parent_child(
+    settings = get_settings()
+    resolved_strategy = strategy or getattr(settings, "rag_chunk_strategy", "auto") or "auto"
+    chunks = split_with_strategy(
         text,
         document_id=doc_id,
         version_id=version_id,
         title=title,
         source_path=str(path),
+        strategy=resolved_strategy,  # type: ignore[arg-type]
+        parse_format=result.format,
     )
     for c in chunks:
         c.metadata = {

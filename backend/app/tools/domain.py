@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import random
-from datetime import date, timedelta
 from typing import Any
 
 from sqlalchemy import select
@@ -11,19 +10,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.audit import AuditLog
-from app.models.body import BodyMetric
 from app.models.exercise import Exercise
 from app.models.food import FoodItem
-from app.models.logs import DietLog, WorkoutLog
 from app.models.plan_adjustment import PlanAdjustment
-from app.models.plans import DietPlan, DietPlanVersion, WorkoutPlan, WorkoutPlanVersion
-from app.models.user import UserProfile
+from app.models.plans import DietPlan, WorkoutPlan
 from app.services.diet_plan_validator import validate_diet_plan
 from app.services.meal_optimizer import optimize_meals
-from app.services.nutrition import estimate_tdee, macros_from_per_100g, target_macros_for_goal
 from app.services.plan_diff import build_plan_diff
 from app.services.progressive_load import apply_progressive_load
-from app.services.training_load import SetVolume, weekly_volume
 from app.services.training_plan_validator import validate_training_plan
 from app.services.training_templates import pick_template
 from app.services.weekly_adjustment import build_weekly_adjustment
@@ -55,35 +49,9 @@ def check_risk(text: str) -> dict[str, Any]:
 
 
 async def get_user_profile_data(db: AsyncSession, user_id: int) -> dict[str, Any]:
-    profile = await db.scalar(select(UserProfile).where(UserProfile.user_id == user_id))
-    if not profile:
-        return {}
-    data = {
-        "display_name": profile.display_name,
-        "sex": profile.sex,
-        "age": profile.age,
-        "height_cm": profile.height_cm,
-        "weight_kg": profile.weight_kg,
-        "goal": profile.goal,
-        "activity_level": profile.activity_level,
-        "equipment": profile.equipment,
-        "injuries": profile.injuries,
-        "restrictions": profile.restrictions,
-        "weekly_sessions": profile.weekly_sessions,
-    }
-    if profile.weight_kg and profile.height_cm and profile.age:
-        energy = estimate_tdee(
-            sex=profile.sex,
-            weight_kg=profile.weight_kg,
-            height_cm=profile.height_cm,
-            age=profile.age,
-            activity_level=profile.activity_level,
-        )
-        data["nutrition_estimate"] = {
-            **energy,
-            "targets": target_macros_for_goal(energy["tdee"], profile.goal, profile.weight_kg),
-        }
-    return data
+    from app.infrastructure.persistence.user_repository import SqlUserRepository
+
+    return await SqlUserRepository(db).get_profile_dict(user_id)
 
 
 async def query_foods(db: AsyncSession, q: str | None = None, limit: int = 10) -> list[dict]:
@@ -299,49 +267,9 @@ async def build_plan_preview(
 
 
 async def recent_logs(db: AsyncSession, user_id: int, days: int = 7) -> dict[str, Any]:
-    since = date.today() - timedelta(days=days)
-    workouts = (
-        await db.scalars(
-            select(WorkoutLog).where(WorkoutLog.user_id == user_id, WorkoutLog.log_date >= since)
-        )
-    ).all()
-    diets = (
-        await db.scalars(
-            select(DietLog).where(DietLog.user_id == user_id, DietLog.log_date >= since)
-        )
-    ).all()
-    bodies = (
-        await db.scalars(
-            select(BodyMetric)
-            .where(BodyMetric.user_id == user_id)
-            .order_by(BodyMetric.log_date.desc())
-            .limit(10)
-        )
-    ).all()
-    volumes = weekly_volume(
-        [
-            SetVolume(
-                exercise=w.exercise,
-                sets=w.sets or 0,
-                reps=w.reps or 0,
-                weight_kg=w.weight_kg or 0,
-            )
-            for w in workouts
-            if w.sets and w.reps
-        ]
-    )
-    diet_kcal = round(sum(d.kcal for d in diets), 1)
-    diet_protein = round(sum(d.protein_g for d in diets), 1)
-    return {
-        "workout_count": len(workouts),
-        "volume": volumes,
-        "diet_kcal": diet_kcal,
-        "diet_protein_g": diet_protein,
-        "body_metrics": [
-            {"date": b.log_date.isoformat(), "weight_kg": b.weight_kg, "body_fat_pct": b.body_fat_pct}
-            for b in bodies
-        ],
-    }
+    from app.infrastructure.persistence.user_repository import SqlUserRepository
+
+    return await SqlUserRepository(db).recent_logs(user_id, days=days)
 
 
 def validate_constraints(profile: dict[str, Any], plan: dict[str, Any]) -> dict[str, Any]:
@@ -447,77 +375,16 @@ async def preview_and_stage_plans(
 
 
 async def commit_plans(db: AsyncSession, user_id: int, pending: dict[str, Any]) -> dict[str, Any]:
-    w_id = pending["workout_plan_id"]
-    d_id = pending["diet_plan_id"]
-    preview = pending["preview"]
-    w_plan = await db.scalar(select(WorkoutPlan).where(WorkoutPlan.id == w_id, WorkoutPlan.user_id == user_id))
-    d_plan = await db.scalar(select(DietPlan).where(DietPlan.id == d_id, DietPlan.user_id == user_id))
-    if not w_plan or not d_plan:
-        return {"ok": False, "error": "PLAN_NOT_FOUND"}
+    """兼容入口：委托 Application + UnitOfWork。"""
+    from app.application.plans import commit_plan_use_case
 
-    wv = pending["next_workout_version"]
-    dv = pending["next_diet_version"]
-    db.add(
-        WorkoutPlanVersion(
-            plan_id=w_plan.id,
-            version=wv,
-            content=preview["workout"],
-            change_summary="用户确认提交",
-        )
-    )
-    db.add(
-        DietPlanVersion(
-            plan_id=d_plan.id,
-            version=dv,
-            content=preview["diet"],
-            change_summary="用户确认提交",
-        )
-    )
-    w_plan.current_version = wv
-    w_plan.status = "active"
-    w_plan.title = preview["workout"]["title"]
-    d_plan.current_version = dv
-    d_plan.status = "active"
-    d_plan.title = preview["diet"]["title"]
-    db.add(
-        AuditLog(
-            user_id=user_id,
-            action="plan_commit",
-            resource_type="workout_plan",
-            resource_id=str(w_plan.id),
-            detail={"workout_version": wv, "diet_version": dv},
-            message="计划已提交",
-        )
-    )
-    await db.commit()
-    return {"ok": True, "workout_version": wv, "diet_version": dv}
+    return await commit_plan_use_case(db, user_id=user_id, pending=pending)
 
 
 async def rollback_plan(db: AsyncSession, user_id: int, workout_plan_id: int) -> dict[str, Any]:
-    w_plan = await db.scalar(
-        select(WorkoutPlan)
-        .where(WorkoutPlan.id == workout_plan_id, WorkoutPlan.user_id == user_id)
-        .options(selectinload(WorkoutPlan.versions))
-    )
-    if not w_plan or w_plan.current_version <= 1:
-        return {"ok": False, "error": "CANNOT_ROLLBACK"}
-    target = w_plan.current_version - 1
-    exists = next((v for v in w_plan.versions if v.version == target), None)
-    if not exists:
-        return {"ok": False, "error": "VERSION_MISSING"}
-    w_plan.current_version = target
-    db.add(
-        AuditLog(
-            user_id=user_id,
-            action="plan_rollback",
-            resource_type="workout_plan",
-            resource_id=str(w_plan.id),
-            detail={"to_version": target},
-            message="训练计划回滚",
-        )
-    )
-    await db.commit()
-    return {"ok": True, "current_version": target}
+    from app.application.plans import rollback_workout_plan_use_case
+
+    return await rollback_workout_plan_use_case(db, user_id=user_id, workout_plan_id=workout_plan_id)
 
 
 async def weekly_adjust_preview(

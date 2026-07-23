@@ -47,3 +47,8 @@ models/
 
 # 数据卷备份
 *.dump
+
+# 知识索引版本元数据（本地生成）
+knowledge_base/index_versions.jsonl
+knowledge_base/active_index_version.json
+evals/reports/

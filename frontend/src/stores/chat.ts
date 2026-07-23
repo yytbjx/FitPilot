@@ -31,6 +31,8 @@ export const useChatStore = defineStore('chat', () => {
   const streaming = ref(false)
   const elapsedMs = ref(0)
   const lastElapsedMs = ref<number | null>(null)
+  const lastCitations = ref<any[]>([])
+  const lastEvidence = ref<any>(null)
 
   let timerId: number | null = null
   let startedAt = 0
@@ -96,6 +98,8 @@ export const useChatStore = defineStore('chat', () => {
     progressSteps.value = []
     currentStep.value = null
     pending.value = null
+    lastCitations.value = []
+    lastEvidence.value = null
     startTimer()
     pushProgress({ event: 'progress', title: '已提交问题', detail: text.slice(0, 80), status: 'done' })
 
@@ -168,6 +172,17 @@ export const useChatStore = defineStore('chat', () => {
           }
           if (event === 'completed') {
             const assistant = payload.reply || payload.message || JSON.stringify(payload)
+            if (payload.citations?.length) {
+              lastCitations.value = payload.citations
+            } else if (payload.meta?.citations?.length) {
+              lastCitations.value = payload.meta.citations
+            }
+            if (payload.evidence_assessment) {
+              lastEvidence.value = payload.evidence_assessment
+            }
+            if (payload.retrieved_evidence?.length && !lastEvidence.value) {
+              lastEvidence.value = { selected_evidence: payload.retrieved_evidence }
+            }
             messages.value.push({
               role: 'assistant',
               content: assistant,
@@ -240,6 +255,8 @@ export const useChatStore = defineStore('chat', () => {
     progressSteps.value = []
     currentStep.value = null
     pending.value = null
+    lastCitations.value = []
+    lastEvidence.value = null
     lastElapsedMs.value = null
     elapsedMs.value = 0
   }
@@ -257,6 +274,8 @@ export const useChatStore = defineStore('chat', () => {
     lastElapsedMs,
     elapsedLabel,
     lastElapsedLabel,
+    lastCitations,
+    lastEvidence,
     send,
     approvePlan,
     clearHistory,

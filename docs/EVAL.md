@@ -34,6 +34,10 @@ uv run python main.py eval --suite ..\evals\golden_rag.json --top-k 5 --out ..\e
 uv run python main.py eval-all
 uv run python main.py eval-all --out ..\evals\reports\full_eval.json --md ..\evals\reports\full_eval.md
 
+# CI 离线门禁（parsing / agent / plan / meal / safety，不依赖 Qdrant）
+uv run python main.py eval-gate
+uv run python main.py eval-gate --out ..\evals\reports\ci_gate.json
+
 # 写入 Postgres evaluation_* 表
 uv run python main.py eval-all --persist
 

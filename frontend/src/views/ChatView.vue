@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { nextTick, ref, watch } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { useChatStore } from '@/stores/chat'
 
 defineOptions({ name: 'ChatView' })
@@ -24,6 +24,42 @@ function statusType(status?: string) {
   if (status === 'error') return 'danger'
   return 'warning'
 }
+
+const pendingDiffLines = computed(() => {
+  const d = chat.pending?.diff
+  if (!d) return [] as { side: string; text: string }[]
+  const lines: { side: string; text: string }[] = []
+  const push = (arr: unknown, label: string) => {
+    if (!Array.isArray(arr)) return
+    for (const x of arr) {
+      const text = String(x)
+      lines.push({
+        side: text.startsWith('+') ? 'add' : text.startsWith('-') ? 'del' : label,
+        text,
+      })
+    }
+  }
+  if (Array.isArray(d)) {
+    push(d, 'chg')
+  } else if (typeof d === 'object') {
+    push(d.workout || d.training, 'workout')
+    push(d.diet || d.nutrition, 'diet')
+    for (const [k, v] of Object.entries(d)) {
+      if (k === 'workout' || k === 'diet' || k === 'training' || k === 'nutrition') continue
+      if (Array.isArray(v)) push(v, k)
+      else if (v != null) lines.push({ side: 'chg', text: `${k}: ${JSON.stringify(v)}` })
+    }
+  }
+  return lines
+})
+
+const pendingRiskNotes = computed(() => {
+  const notes = chat.pending?.risk_notes
+  return Array.isArray(notes) ? notes.map(String) : []
+})
+
+const pendingLogBasis = computed(() => chat.pending?.data_basis?.logs || null)
+const pendingOperation = computed(() => chat.pending?.operation || '将预览计划写入正式版本')
 </script>
 
 <template>
@@ -66,7 +102,7 @@ function statusType(status?: string) {
         <template #header>
           <div style="display: flex; justify-content: space-between; align-items: center">
             <span>
-              {{ chat.streaming ? '执行链路（实时）' : '最近一次链路' }}
+              {{ chat.streaming ? 'Agent 执行轨迹（实时）' : '最近一次执行轨迹' }}
             </span>
             <el-tag size="small" type="warning" v-if="chat.streaming">用时 {{ chat.elapsedLabel }}</el-tag>
           </div>
@@ -92,6 +128,40 @@ function statusType(status?: string) {
           当前环节：{{ chat.currentTitle }}…
         </div>
       </el-card>
+
+      <el-collapse v-if="chat.lastCitations?.length || chat.lastEvidence" style="margin-top: 12px">
+        <el-collapse-item title="RAG 证据面板" name="evidence">
+          <div v-if="chat.lastEvidence" style="margin-bottom: 8px; color: #6b7280; font-size: 13px">
+            Evidence Gate：
+            answerable={{ chat.lastEvidence.answerable ?? '-' }}；
+            confidence={{ chat.lastEvidence.confidence ?? '-' }}；
+            coverage={{ chat.lastEvidence.coverage ?? '-' }}；
+            reason={{ chat.lastEvidence.reason ?? '-' }}
+          </div>
+          <el-table
+            v-if="chat.lastCitations?.length"
+            :data="chat.lastCitations"
+            size="small"
+            stripe
+            style="width: 100%"
+          >
+            <el-table-column prop="index" label="#" width="48" />
+            <el-table-column prop="title" label="标题" min-width="120" />
+            <el-table-column prop="section_path" label="章节" min-width="120" />
+            <el-table-column prop="citation" label="引用" min-width="160" />
+            <el-table-column prop="score" label="相关度" width="90" />
+          </el-table>
+          <div
+            v-for="(ev, i) in chat.lastEvidence?.selected_evidence || []"
+            :key="i"
+            style="margin-top: 8px; padding: 8px; background: #f9fafb; border-radius: 6px; font-size: 13px"
+          >
+            <div style="font-weight: 600">{{ ev.title || ev.chunk_id || `证据 ${i + 1}` }}</div>
+            <div style="color: #6b7280">{{ ev.section_path || ev.citation }}</div>
+            <div style="white-space: pre-wrap; margin-top: 4px">{{ ev.text_preview || '' }}</div>
+          </div>
+        </el-collapse-item>
+      </el-collapse>
     </div>
 
     <el-alert
@@ -99,9 +169,32 @@ function statusType(status?: string) {
       style="margin-top: 12px"
       type="warning"
       :closable="false"
-      title="需要确认计划写入"
+      :title="pendingOperation"
     >
-      <pre style="white-space: pre-wrap">{{ chat.pending }}</pre>
+      <div v-if="chat.pending.weekly_reason" style="margin-bottom: 8px">
+        <strong>调整依据：</strong>{{ chat.pending.weekly_reason }}
+      </div>
+      <div v-if="pendingLogBasis" style="margin-bottom: 8px; font-size: 13px; color: #374151">
+        <strong>数据依据：</strong>
+        近{{ pendingLogBasis.days || '-' }}天训练
+        {{ pendingLogBasis.workout_count ?? '-' }} 次；
+        饮食热量 {{ pendingLogBasis.diet_kcal ?? '-' }} kcal
+      </div>
+      <div v-if="pendingDiffLines.length" style="margin-bottom: 8px">
+        <strong>计划 Diff</strong>
+        <pre
+          v-for="(line, i) in pendingDiffLines"
+          :key="i"
+          style="margin: 2px 0; white-space: pre-wrap; font-size: 12px"
+          :style="{ color: line.side === 'add' ? '#059669' : line.side === 'del' ? '#dc2626' : '#374151' }"
+        >{{ line.text }}</pre>
+      </div>
+      <div v-if="pendingRiskNotes.length" style="margin-bottom: 8px; font-size: 12px; color: #92400e">
+        <div v-for="(n, i) in pendingRiskNotes" :key="i">• {{ n }}</div>
+      </div>
+      <div v-if="chat.pending.can_rollback !== false" style="margin-bottom: 8px; font-size: 12px; color: #6b7280">
+        确认后可回滚到上一计划版本。
+      </div>
       <el-button type="primary" size="small" @click="chat.approvePlan(true)">批准</el-button>
       <el-button size="small" @click="chat.approvePlan(false)">拒绝</el-button>
     </el-alert>

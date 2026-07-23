@@ -56,7 +56,8 @@ def describe_rag_stack() -> dict[str, str]:
         "dense_store": "Qdrant",
         "sparse": "BM25 in-process",
         "fusion": "RRF",
-        "chunking": "section-aware recursive + Parent-Child indexing",
-        "query": "rewrite + Multi-Query",
+        "chunking": "doc-type aware (fixed/heading/parent-child/faq/clause/table) + A/B compare",
+        "query": "rewrite + Multi-Query + query_type/entities/time_range",
+        "citations": "mapped evidence with coverage + index_version",
         "parsing": "multi-format registry (md/docx/pdf/html/csv/json/xlsx/pptx/image…)",
     }

@@ -1,0 +1,801 @@
+FitPilot 工程化与 Agent/RAG 能力强化改进方案
+1. 改进目标
+FitPilot 当前已经具备用户档案、训练与饮食计划、打卡、RAG 问答、LangGraph 工作流、人工确认、Worker、评估与监控等功能，其定位并不是简单聊天机器人，而是将结构化健身业务数据与非结构化知识统一到一个个人助手中，并通过确定性代码处理营养与计划约束。
+本轮改进不以继续堆叠功能为主要目标，而应重点实现以下升级：
+将现有“带有 Agent 功能的业务系统”升级为“以 Agent Runtime 为核心的业务系统”。
+将现有“能够检索知识的 RAG”升级为“可追踪、可评估、可增量维护的知识服务”。
+将任务执行从进程内状态升级为可靠、可恢复、可审计的持久化工作流。
+建立从输入、路由、检索、工具调用、计划生成到最终写库的完整评估体系。
+通过前端执行轨迹和证据面板，直观体现 Agent 与 RAG 的实际能力。
+2. 当前结构的主要不足与改进方向
+2.1 总体架构不足
+当前项目采用前后端分离的单体后端，并通过 api / services / rag / graphs / models / worker 进行分层。这一结构适合作为当前阶段的基础，不需要直接拆分微服务。
+但目前存在以下问题：
+现有代码已经明确存在 Graph、领域工具与计划表之间的高耦合，以及 API 内存事件与 SSE 绑定的问题。
+3. 推荐的目标架构
+建议继续采用模块化单体后端 + 独立 Worker，而不是立即拆微服务。
+Vue 3 Frontend
+    │
+    ▼
+FastAPI Interface Layer
+    ├── Auth API
+    ├── Business API
+    ├── Agent Task API
+    ├── SSE/Event API
+    └── Admin/Evaluation API
+              │
+              ▼
+Application Layer
+    ├── User Use Cases
+    ├── Plan Use Cases
+    ├── Log Use Cases
+    ├── Knowledge Use Cases
+    └── Agent Task Service
+              │
+      ┌───────┴────────┐
+      ▼                ▼
+Agent Runtime       RAG Service
+      │                │
+      ▼                ▼
+Domain Tools       Retrieval Pipeline
+      │                │
+      └───────┬────────┘
+              ▼
+Infrastructure Layer
+    ├── PostgreSQL
+    ├── Redis Streams
+    ├── Qdrant
+    ├── BM25 Index
+    ├── Ollama
+    └── Metrics / Trace / Audit
+核心原则是：
+API 不直接运行复杂 Agent；
+Agent 不直接操作 ORM；
+LLM 不直接写数据库；
+RAG 不直接拼装最终业务回答； -所有写操作必须经过应用服务、事务和权限检查；
+所有 Agent 执行步骤都能够被记录、恢复和评估。
+4. Agent 部分改进方案
+4.1 将单一 Fitness Graph 拆分为领域子图
+当前 Agent 节点包括意图识别、安全、边界、RAG、个人数据、计划预览、确认、提交和拒绝等。
+建议重构为：
+agent/
+├── runtime/
+│   ├── runner.py
+│   ├── context.py
+│   ├── policies.py
+│   ├── exceptions.py
+│   └── result.py
+├── routing/
+│   ├── router.py
+│   ├── intents.py
+│   └── schemas.py
+├── workflows/
+│   ├── main_graph.py
+│   ├── knowledge_graph.py
+│   ├── personal_graph.py
+│   ├── plan_graph.py
+│   ├── adjustment_graph.py
+│   └── logging_graph.py
+├── nodes/
+│   ├── safety.py
+│   ├── planning.py
+│   ├── tool_execution.py
+│   ├── validation.py
+│   ├── approval.py
+│   └── response.py
+├── tools/
+│   ├── registry.py
+│   ├── contracts.py
+│   ├── permissions.py
+│   └── adapters/
+└── memory/
+    ├── session_memory.py
+    ├── user_memory.py
+    └── summarizer.py
+主图只负责：
+输入处理
+→ 安全检查
+→ 意图路由
+→ 选择领域子图
+→ 汇总结果
+→ 输出
+训练计划、饮食计划、知识问答和日志记录分别进入不同子图。
+改进效果
+图结构更加直观；
+每个子图可独立测试；
+新增意图不再修改一个超大文件；
+可单独统计各子图成功率、耗时和失败原因；
+简历和演示中能够明确展示“领域工作流 Agent”。
+4.2 强化意图路由
+当前不足
+当前以规则分类为主，规则未命中时默认进入 knowledge_query。这种设计稳定、成本低，但对以下请求支持不足：
+“先看我最近训练情况，再调整下周计划”；
+“我最近体重没变化，饮食和训练都帮我分析一下”；
+“解释蛋白质摄入原则，然后给我生成食谱”；
+一句话包含多个任务；
+表述模糊或缺少必要参数。
+改进方法
+定义结构化路由输出：
+class RoutingDecision(BaseModel):
+    primary_intent: Intent
+    secondary_intents: list[Intent]
+    confidence: float
+    requires_personal_data: bool
+    requires_knowledge: bool
+    requires_write: bool
+    requires_approval: bool
+    missing_fields: list[str]
+    risk_level: Literal["low", "medium", "high"]
+采用三级路由：
+第一级：高风险与业务边界规则
+第二级：高置信规则分类
+第三级：LLM 结构化分类
+增加以下机制：
+置信度门控
+低于阈值时不直接执行，进入澄清节点。
+多意图分解
+将“分析日志并调整计划”拆分为：
+获取日志；
+分析趋势；
+生成调整建议；
+预览计划；
+等待确认。
+参数完整性检查
+在执行前判断目标、训练天数、器械条件等是否缺失。
+回退策略
+LLM 分类失败时回退规则，而不是让整个 Agent 失败。
+建议验收指标
+意图分类 Macro-F1 ≥ 0.90；
+高风险意图召回率 ≥ 0.98；
+多意图任务分解成功率 ≥ 0.85；
+低置信误执行率接近 0；
+未知意图不再全部默认进入 RAG。
+4.3 增加显式“计划—执行—验证”循环
+当前 LangGraph 已经具备计划预览、interrupt 确认和恢复执行，这是项目的重要基础。
+在此基础上，建议增加：
+Task Planner
+→ Tool Executor
+→ Result Validator
+→ 必要时重试或补充工具
+→ Human Approval
+→ Commit
+这里的 Task Planner 不应输出大段自然语言思维过程，而应输出结构化执行计划：
+{
+  "goal": "根据最近两周日志调整下周训练计划",
+  "steps": [
+    {
+      "step_id": "s1",
+      "tool": "get_recent_workout_logs",
+      "arguments": {"days": 14}
+    },
+    {
+      "step_id": "s2",
+      "tool": "calculate_training_load",
+      "depends_on": ["s1"]
+    },
+    {
+      "step_id": "s3",
+      "tool": "preview_weekly_adjustment",
+      "depends_on": ["s2"]
+    }
+  ]
+}
+验证节点负责检查：
+工具是否全部成功；
+输入和输出 Schema 是否匹配；
+计划是否满足业务约束；
+是否存在未经引用的知识性结论；
+是否存在未经确认的写操作；
+是否需要重新检索或补充用户信息。
+建议最多允许一次自动修复或重试，避免 Agent 无限循环。
+4.4 建立 Tool Registry
+当前 tools/domain.py 已经承担白名单工具职责，并限制 LLM 直接写库或编造热量。
+但需要进一步工程化，每个工具都应声明：
+class ToolDefinition:
+    name: str
+    description: str
+    input_schema: type[BaseModel]
+    output_schema: type[BaseModel]
+    permission: str
+    operation_type: Literal["read", "preview", "write"]
+    timeout_seconds: int
+    retry_policy: RetryPolicy
+    idempotent: bool
+    requires_approval: bool
+每次工具调用必须记录：
+task_id；
+step_id；
+工具名称；
+脱敏后的输入；
+输出摘要；
+开始和结束时间；
+是否成功；
+错误类型；
+重试次数；
+幂等键；
+调用者和用户；
+Trace ID。
+当前不足的对应改进
+4.5 引入受控记忆，而不是简单保存全部聊天
+建议将 Agent 记忆分成三类。
+会话记忆
+保存当前任务需要的信息：
+当前目标；
+已完成步骤；
+缺少参数；
+检索证据；
+工具结果；
+待确认内容。
+任务结束后仅保留摘要。
+用户结构化长期记忆
+保存明确且稳定的信息：
+训练目标；
+器械条件；
+每周训练天数；
+饮食偏好；
+忌口；
+常用训练时间；
+用户确认过的个性化设置。
+这些信息应进入结构化数据库，而不是全部保存成向量记忆。
+临时推断信息
+例如“用户本周可能恢复不足”，只能作为当前分析结果，不能永久写入用户档案，除非用户明确确认。
+长期记忆需要具备：
+信息来源；
+创建时间；
+最近确认时间；
+置信度；
+是否需要用户确认；
+删除和修改能力。
+4.6 扩展 Human-in-the-loop 策略
+当前计划写库前需要用户确认，这是正确设计。
+建议将确认机制升级为统一策略：
+确认内容应展示：
+将执行什么操作；
+修改前后差异；
+数据依据；
+使用的用户记录；
+使用的知识来源；
+可否回滚；
+风险提示。
+5. RAG 部分改进方案
+5.1 建立知识库生命周期管理
+当前 RAG 已具备多格式解析、分块、Embedding、Qdrant、BM25、RRF、Reranker 和证据不足拒答。
+下一步应从“检索功能”升级为“知识服务”。
+新增知识源清单表：
+knowledge_sources
+├── source_id
+├── title
+├── source_type
+├── original_path
+├── content_hash
+├── document_version
+├── parser_version
+├── chunker_version
+├── embedding_version
+├── authority_level
+├── effective_date
+├── language
+├── ingestion_status
+└── created_at
+每个 Chunk 增加：
+文档 ID；
+文档版本；
+标题路径；
+章节；
+页码；
+父 Chunk；
+数据来源；
+内容哈希；
+解析器版本；
+权威级别；
+生效日期；
+标签；
+可见权限。
+解决的问题
+知道答案来自哪个版本的文档；
+文档更新时只重建变更内容；
+可以删除失效文档；
+能追踪 Citation；
+可以按来源、日期、主题和权限过滤；
+能对不同知识版本进行回归比较。
+5.2 改进固定分块策略
+当前默认使用约 900 字符、120 字符重叠的标题感知切分。
+固定长度可以作为基线，但建议按文档类型选择策略：
+建议输出：
+Chunk(
+    text=...,
+    parent_text=...,
+    heading_path=["营养", "蛋白质", "每日摄入量"],
+    page_number=12,
+    chunk_type="paragraph",
+    keywords=[...]
+)
+不要在第一轮直接引入复杂神经语义分块，应先通过黄金集比较固定分块、标题分块和 Parent-Child 的效果。
+5.3 增强 Query Understanding
+在检索前增加独立查询理解模块：
+原始问题
+→ 查询类型识别
+→ 关键实体抽取
+→ 时间范围识别
+→ 是否需要个人数据
+→ 查询改写
+→ 必要时多查询分解
+→ 元数据过滤
+示例：
+原问题：
+“我减脂期间训练后该吃多少蛋白？”
+
+拆分为：
+1. 减脂阶段蛋白质摄入原则
+2. 训练后蛋白质摄入时机
+3. 结合用户体重计算目标范围
+其中：
+前两项进入 RAG；
+第三项调用确定性营养工具；
+最终由 Agent 合并结果。
+这能够真正体现“Agent 调用 RAG 与业务工具协同”，而不是 RAG 单独回答所有问题。
+5.4 将固定检索流水线升级为动态检索策略
+当前流程为：
+Dense + BM25
+→ RRF(k=60)
+→ Rerank
+→ Context
+建议保留该流程作为默认基线，同时增加动态控制：
+简单事实查询
+BM25 + Dense
+→ top 5
+→ 无精排或轻量精排
+复杂解释查询
+Query Rewrite
+→ 多路 Dense/BM25
+→ RRF
+→ Rerank
+→ Parent Expansion
+高风险问题
+仅检索高权威来源
+→ 严格 Evidence Gate
+→ 无足够证据则拒答
+个性化问题
+RAG 证据
++ 用户档案
++ 确定性计算
+→ Agent 汇总
+建议将这些策略封装为：
+RetrievalPlan(
+    queries=[...],
+    metadata_filters={...},
+    top_k_dense=8,
+    top_k_sparse=8,
+    rerank_top_k=4,
+    expand_parent=True,
+    authority_threshold=2
+)
+5.5 增加 Evidence Gate
+目前已有证据不足拒答，但应将其从简单逻辑升级为独立的证据质量门。
+评估维度包括：
+Top 文档相关度；
+多个证据是否一致；
+是否命中权威来源；
+是否覆盖问题的主要子问题；
+是否存在过期文档；
+最终回答中的每个关键结论是否能够映射到证据。
+输出：
+EvidenceAssessment(
+    answerable=True,
+    confidence=0.87,
+    coverage=0.92,
+    conflicts=[],
+    unsupported_claims=[],
+    selected_evidence=[...]
+)
+最终回答必须满足：
+有知识性事实时返回引用；
+引用能够定位到具体 Chunk 或文档位置；
+个性化数值标注为“根据用户档案计算”；
+证据不足时明确拒答；
+不使用检索结果中不存在的信息补全答案。
+5.6 改进上下文构建
+建议增加：
+相似 Chunk 去重；
+同一文档相邻 Chunk 合并；
+Parent Chunk 扩展；
+标题路径保留；
+证据按子问题分组；
+Token 预算分配；
+低价值证据截断；
+冲突证据显式标记。
+不要简单按照相关度把所有 Chunk 拼接起来。
+推荐上下文结构：
+[任务说明]
+
+[用户结构化信息]
+- 体重：
+- 训练目标：
+- 近期日志摘要：
+
+[证据组 A：蛋白质摄入]
+- 文档、章节、正文
+
+[证据组 B：训练后营养]
+- 文档、章节、正文
+
+[工具计算结果]
+- 计算公式
+- 输入参数
+- 输出范围
+
+[回答约束]
+- 不诊断
+- 必须引用
+- 不编造数值
+5.7 支持增量入库与索引版本
+当前修改 Embedding 或分块后通常需要重置并重新入库。
+建议增加：
+fitpilot knowledge diff
+fitpilot knowledge ingest --incremental
+fitpilot knowledge reindex --source-id xxx
+fitpilot knowledge rollback --version xxx
+fitpilot knowledge delete --source-id xxx
+每次索引构建生成：
+index_version
+embedding_model
+embedding_dimension
+chunker_version
+source_count
+chunk_count
+created_at
+status
+查询请求记录使用的索引版本，保证评估结果可复现。
+6. 任务队列与状态可靠性改进
+6.1 Redis 队列升级
+当前 Worker 使用 LPUSH 和 BRPOP 消费任务。
+建议改为 Redis Streams：
+fitpilot:agent:tasks
+fitpilot:agent:events
+fitpilot:agent:dead_letter
+使用 Consumer Group 支持：
+消息 ACK；
+Pending Entry List；
+Worker 崩溃后的任务认领；
+最大重试次数；
+指数退避；
+死信队列；
+队列深度监控；
+Worker 优雅退出；
+相同任务幂等处理。
+任务状态机统一为：
+created
+→ queued
+→ running
+→ awaiting_approval
+→ resumed
+→ completed
+
+失败路径：
+running
+→ retrying
+→ failed
+→ dead_letter
+6.2 SSE 事件持久化
+当前 Agent 事件同时写入进程内缓冲和数据库，多 API 实例时存在不一致风险。
+建议：
+agent_task_events 作为权威事件源；
+Redis Stream 用于实时分发；
+SSE 连接先读取历史事件，再订阅新事件；
+客户端携带 Last-Event-ID；
+断线重连后从上次 Event ID 继续；
+API 进程不再保存任务级全局字典。
+事件结构：
+{
+  "event_id": 1024,
+  "task_id": "task_xxx",
+  "event_type": "tool_completed",
+  "stage": "retrieval",
+  "step_id": "s2",
+  "payload": {},
+  "created_at": "..."
+}
+7. 代码分层改进
+7.1 API 层变薄
+API 只负责：
+参数校验；
+鉴权；
+调用 Use Case；
+返回统一响应；
+SSE 事件转发。
+禁止 API 层直接：
+执行 Agent；
+操作 Qdrant；
+调用 ORM 完成复杂事务；
+缓存任务事件；
+拼装业务计划。
+7.2 增加 Application 层
+建议新增：
+application/
+├── agent/
+│   ├── create_task.py
+│   ├── approve_task.py
+│   ├── cancel_task.py
+│   └── get_task.py
+├── plans/
+│   ├── preview_plan.py
+│   ├── commit_plan.py
+│   └── rollback_plan.py
+├── knowledge/
+│   ├── ingest_document.py
+│   └── search_knowledge.py
+└── users/
+Application 层负责：
+用例编排；
+事务边界；
+权限；
+幂等；
+调用领域服务；
+发布事件。
+7.3 引入 Repository 和 Unit of Work
+Agent 和工具不应直接依赖 SQLAlchemy Model。
+class PlanRepository(Protocol):
+    async def get_active_plan(self, user_id: UUID): ...
+    async def save_preview(self, preview: PlanPreview): ...
+    async def commit_version(self, version: PlanVersion): ...
+通过 Unit of Work 保证：
+计划版本写入
++ 审计记录
++ Agent 任务状态更新
++ Domain Event
+在同一事务中完成。
+8. 可观测性改进
+当前已有 Request ID、Prometheus、Token 指标、structlog 和进度事件，具备良好基础。
+建议建立统一 Trace：
+HTTP Request
+→ Agent Task
+→ Graph Node
+→ LLM Call
+→ Retrieval
+→ Tool Call
+→ Database Transaction
+每层统一携带：
+request_id；
+trace_id；
+task_id；
+user_id；
+graph_node；
+step_id；
+tool_name；
+model_role；
+index_version。
+关键指标
+Agent
+任务完成率；
+平均执行步骤；
+路由准确率；
+工具调用成功率；
+自动重试次数；
+interrupt/resume 成功率；
+每类意图平均耗时；
+每个任务 Token 消耗。
+RAG
+检索 P50/P95；
+Dense/BM25 命中率；
+Reranker 耗时；
+空证据比例；
+拒答比例；
+Citation 数量；
+Context Token 数；
+缓存命中率。
+Worker
+队列长度；
+Pending 数量；
+任务等待时间；
+重试率；
+死信数量；
+Worker 活跃数。
+9. 评估体系改进
+现有九层评估顺序包括 parsing、retrieval、no-answer、generation、agent、plan、meal 和 safety 等模块。
+建议将其正式化为以下评估矩阵。
+CI 中应设置回归门槛，例如：
+高风险召回率不得下降；
+计划约束满足率必须为 100%；
+工具 Schema 合法率必须为 100%；
+重复任务不得产生重复写入；
+RAG Recall@5 不得比基线下降超过 2%；
+Citation Precision 不低于设定阈值；
+关键 Agent 用例完成率不低于 95%。
+10. 前端展示改进
+仅在后端实现 Agent 和 RAG，不足以让用户或面试官直观看出系统能力。
+建议在聊天页面新增两个可折叠区域。
+10.1 Agent 执行轨迹
+✓ 安全检查
+✓ 识别意图：计划调整
+✓ 获取最近 14 天训练日志
+✓ 计算训练负荷
+✓ 检索恢复与训练量相关知识
+✓ 生成调整方案
+● 等待用户确认
+每一步可展示：
+节点名称；
+工具名称；
+执行耗时；
+状态；
+输出摘要；
+是否重试；
+是否需要确认。
+不要展示模型私有推理过程，只展示结构化执行步骤。
+10.2 RAG 证据面板
+展示：
+引用文档；
+标题和章节；
+页码；
+相关度；
+匹配片段；
+来源类型；
+文档版本；
+是否为高权威来源。
+10.3 计划 Diff
+计划确认前展示：
+- 深蹲 5×5，100 kg
++ 深蹲 4×5，92.5 kg
+
+- 每周训练 5 天
++ 每周训练 4 天
+并显示调整依据：
+最近两周训练完成率；
+主观疲劳；
+训练负荷变化；
+引用知识；
+确定性计算结果。
+这一功能能够同时体现 Agent 工具调用、个人数据分析、RAG 证据和 Human-in-the-loop。
+11. 推荐实施阶段
+阶段一：可靠任务基础设施
+主要任务：
+Redis Streams；
+ACK、重试和死信；
+移除进程内任务事件；
+SSE 断线恢复；
+approve 幂等；
+Worker 优雅退出；
+修复 CORS 和 JWT 默认配置。
+交付标准：
+Worker 中断后任务可恢复；
+重复 approve 不重复写库；
+API 重启后 SSE 可继续；
+多 API 实例不丢事件；
+任务全链路可审计。
+阶段二：Agent Runtime 重构
+主要任务：
+拆分主图和领域子图；
+结构化 Router；
+Tool Registry；
+Planner—Executor—Validator；
+统一异常和执行结果；
+动态审批策略；
+Agent Trace。
+交付标准：
+每个子图可单独测试；
+每个工具有输入输出 Schema；
+每个任务有结构化执行步骤；
+Agent 不直接访问 ORM；
+所有写操作经过确认和幂等控制。
+阶段三：RAG 服务强化
+主要任务：
+知识源 Manifest；
+索引版本；
+增量入库；
+文档类型感知分块；
+Query Understanding；
+动态检索；
+Evidence Gate；
+Citation 映射。
+交付标准：
+每条引用可定位到文档和 Chunk；
+支持按单文档增量更新；
+支持索引版本回滚；
+检索效果有黄金集指标；
+低证据问题能够稳定拒答。
+阶段四：评估与可观测性
+主要任务：
+补齐 Agent/RAG 黄金集；
+增加离线回归测试；
+Prometheus 指标；
+Graph Node Trace；
+检索分析报告；
+Agent 执行报告；
+CI 指标门禁。
+交付标准：
+每次修改能比较前后指标；
+可以定位失败发生在哪个节点；
+可以区分检索失败、生成失败和工具失败；
+项目 README 展示真实实验数据。
+阶段五：展示与交付
+主要任务：
+Agent 时间线；
+RAG 证据面板；
+计划 Diff；
+一键演示数据；
+Compose 启动；
+演示视频；
+架构图与评估报告。
+推荐演示流程：
+填写用户档案
+→ 连续打卡
+→ 询问健身知识
+→ 查看引用证据
+→ 请求分析近期状态
+→ Agent 调用日志和 RAG
+→ 生成计划调整
+→ 展示调整依据和 Diff
+→ 用户确认
+→ 写入新计划版本
+→ 回滚到旧版本
+12. 最终建议
+FitPilot 当前不需要盲目增加以下内容：
+为了技术名词而引入多个 Agent；
+将每个模块拆成独立微服务；
+让 LLM 自由选择任意数据库写操作；
+无限制 Reflection 和自动重试；
+将全部聊天内容保存成长期向量记忆；
+继续增加功能但不进行评估。
+更适合的升级路线是：
+以单 Agent 主图和领域子图为核心，以 Tool Registry 管理确定性业务能力，以 RAG Service 提供可验证证据，以 Redis Streams 和 Postgres 保证可靠执行，再通过 Trace、评估和前端执行轨迹证明系统真正具备 Agent 与 RAG 能力。
+完成上述改进后，FitPilot 的项目定位可以从：
+基于 LangGraph 和 RAG 的健身助手
+提升为：
+一个支持多步骤任务规划、领域工具调用、检索增强生成、人工审批、断点恢复、计划版本管理及全链路评估的个性化训练与膳食协同 AI Agent 系统。
+
+--- TABLE 1 ---
+当前不足 | 造成的影响 | 改进方法 | 优先级
+fitness_graph.py 同时承担路由、流程编排、安全判断和节点实现 | 图文件持续膨胀，新意图难以维护 | 拆分为主图、领域子图和独立节点 | P1
+Graph、tools/domain.py 和计划数据库高度耦合 | Agent 测试必须依赖大量业务模块 | 引入 Tool Registry、应用服务和 Repository 接口 | P1
+API 层既处理 HTTP，又承担任务执行和事件缓存 | 多实例部署时状态不一致 | API 仅负责创建任务、查询状态和推送持久化事件 | P0
+Agent 事件保存在 _TASK_EVENTS 等进程内变量 | 进程重启或负载均衡后可能丢失 SSE 事件 | 使用 Postgres 事件表或 Redis Stream 作为唯一事件源 | P0
+Worker 使用 LPUSH/BRPOP 简单队列 | 无显式 ACK、重试、死信和超时回收 | 升级为 Redis Streams Consumer Group | P0
+Agent 意图主要依赖规则，未命中默认进入知识问答 | 复杂请求和多意图请求容易误路由 | 结构化 Router + 置信度 + 多意图分解 + 回退策略 | P1
+RAG 使用固定分块和固定检索流程 | 不同类型文档无法获得最优检索效果 | 文档类型感知分块和动态检索策略 | P1
+已有九层评估框架，但缺少完整指标结果和回归门槛 | 无法证明 Agent、RAG 改进是否真实有效 | 建立黄金集、指标基线和 CI 回归阈值 | P1
+
+--- TABLE 2 ---
+当前不足 | 改进
+工具函数与领域逻辑混在一个文件中 | 按 profile、log、plan、nutrition、knowledge 分类
+输入输出多为普通字典 | 全部改为 Pydantic Schema
+写操作依靠流程约定控制 | Tool Registry 强制 requires_approval=True
+工具失败处理不统一 | 统一超时、重试和异常分类
+无法统计单个工具质量 | 增加成功率、耗时和错误指标
+重复 approve 可能重复写入 | 写工具使用 task_id + action + version 幂等键
+
+--- TABLE 3 ---
+操作 | 是否确认
+查询知识 | 否
+读取用户档案 | 否
+读取历史日志 | 否
+计算 TDEE 或训练负荷 | 否
+生成计划预览 | 否
+修改有效计划 | 是
+回滚计划 | 是
+修改用户长期偏好 | 是
+批量写入日志 | 是
+删除数据 | 是
+高风险健康建议 | 不执行，转安全提示
+
+--- TABLE 4 ---
+文档类型 | 推荐分块方法
+指南、教材 | 标题层级 + Parent-Child
+FAQ | 一问一答为一个 Chunk
+动作说明 | 一个动作或一个动作阶段为单位
+营养表格 | 表格整体 + 行级摘要
+用户上传文档 | 标题优先，超长段落再语义切分
+法规或安全边界 | 条款级分块，保留章节路径
+
+--- TABLE 5 ---
+评估层 | 核心指标
+文档解析 | 解析成功率、标题保留率、页码准确率、表格保留率
+分块 | Chunk 完整率、答案跨块比例、平均 Chunk 长度
+检索 | Recall@K、MRR、nDCG@K、Hit@K
+拒答 | Precision、Recall、F1
+生成 | Groundedness、Citation Precision、Citation Coverage
+Agent 路由 | Accuracy、Macro-F1、多意图识别率
+工具调用 | 调用成功率、Schema 合法率、重试率
+工作流 | 任务完成率、恢复成功率、重复写入率
+计划 | 约束满足率、Diff 正确率、版本一致性
+食谱 | 热量误差、蛋白质误差、求解成功率、求解耗时
+安全 | 高风险召回率、误拦截率、越权工具调用次数
+性能 | P50/P95 延迟、Token、吞吐量

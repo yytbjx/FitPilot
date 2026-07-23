@@ -1,1096 +1,1208 @@
-# FitPilot — 个性化训练与膳食协同 AI Agent
+# FitPilot
 
-基于《FitPilot 标准开发文档 V1.0》落地的 **阶段 1–3 MVP + 工程深化**（可本地联调、可验收、可生产交付）。
+个性化训练与膳食协同 AI Agent：面向健身与膳食场景的个人助手。目标用户为希望在本地完成档案管理、打卡、训练/饮食计划、知识问答与 Agent 对话的终端用户与二次开发工程师。运行形态为 **Vue 3 前端 + FastAPI 后端** 的本地/容器 Web 系统，并可选 Redis Streams Worker。输入包括用户档案、打卡、自然语言对话与知识库文档；核心处理为确定性营养/计划计算、RAG 混合检索与 LangGraph 领域子图；输出为结构化 API 响应、计划预览/确认写库、带引用的问答与 SSE 任务进度。
 
-本仓库默认路径：`D:\FitPilot`（下文 PowerShell 示例可按本机路径替换）。
+当前实现覆盖：阶段 1–3 MVP、工程审查 P0/P1、**Agent/RAG 增强方案主干**（可靠队列、结构化路由与 clarify、PEV、可编译子图、Application/Repository、受控记忆、类型感知分块、Evidence Gate、增量知识入库/回滚/快照、离线 CI 门禁、演示数据）。**不提供**疾病诊断、伤病治疗、教练端 SaaS，或未经用户确认的自动写库。
 
----
-
-## 目录
-
-1. [项目定位](#1-项目定位)
-2. [功能全景](#2-功能全景)
-3. [系统架构](#3-系统架构)
-4. [技术栈与硬件选型](#4-技术栈与硬件选型)
-5. [仓库目录结构](#5-仓库目录结构)
-6. [数据模型与存储](#6-数据模型与存储)
-7. [RAG 知识问答](#7-rag-知识问答)
-8. [LangGraph Agent](#8-langgraph-agent)
-9. [业务域工具与确定性计算](#9-业务域工具与确定性计算)
-10. [安全、合规与输入防护](#10-安全合规与输入防护)
-11. [可观测性、Trace 与 Token 预算](#11-可观测性trace-与-token-预算)
-12. [知识库与数据导入管线](#12-知识库与数据导入管线)
-13. [外部数据集与参考项目](#13-外部数据集与参考项目)
-14. [环境变量与配置](#14-环境变量与配置)
-15. [从零部署（完整命令步骤）](#15-从零部署完整命令步骤)
-16. [Worker 异步任务模式](#16-worker-异步任务模式)
-17. [生产环境部署](#17-生产环境部署)
-18. [备份与恢复](#18-备份与恢复)
-19. [CLI 命令大全](#19-cli-命令大全)
-20. [REST API 参考](#20-rest-api-参考)
-21. [前端页面与交互](#21-前端页面与交互)
-22. [测试、七层评估与 CI](#22-测试七层评估与-ci)
-23. [管理员与 RBAC](#23-管理员与-rbac)
-24. [性能与延迟优化](#24-性能与延迟优化)
-25. [路线图与未实现项](#25-路线图与未实现项)
-26. [相关文档索引](#26-相关文档索引)
+包名 `fitpilot-backend`（`backend/pyproject.toml`）；CLI 入口名 `fitpilot`；前端包名 `fitpilot-frontend`。本文档为全量归档版，路径均相对仓库根目录。增强落地说明见 [`docs/ENGINEERING_ENHANCEMENT.md`](docs/ENGINEERING_ENHANCEMENT.md)；架构图见 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)；演示清单见 [`docs/DEMO.md`](docs/DEMO.md)。
 
 ---
 
-## 1. 项目定位
+## 1. 项目整体介绍
 
-FitPilot 是面向健身与膳食场景的 **个人 AI 助手**：
+### 1.1 项目核心用途
 
-- **结构化业务数据**（档案、打卡、计划、食物库、动作库）存 **PostgreSQL**，由确定性代码读写与计算。
-- **非结构化知识**（指南、科普、FAQ、上传文档）经 **RAG** 入库 **Qdrant + BM25**，对话时检索证据再由 **Ollama** 组织回答并附引用。
-- **Agent** 用 **LangGraph** 做意图路由、风险拦截、计划预览与 **interrupt() 人工确认**、个人数据汇总；前端通过 **SSE** 展示执行进度。
-- **食谱优化** 支持 **OR-Tools SCIP** 约束求解（`MEAL_USE_ORTOOLS=true`），失败时自动贪心回退。
-- **评估体系** 覆盖解析 / 检索 / 拒答 / 生成 / Agent 路由 / 计划硬约束 / 食谱 / 安全等 **九模块**，可 `--persist` 写入数据库。
+FitPilot 解决的问题是：在个人健身场景中，把 **结构化业务数据**（档案、食物库、动作库、计划、打卡）与 **非结构化知识**（指南、FAQ、上传文档）统一到同一助手里，同时用确定性代码计算热量/宏量与计划约束，避免大模型直接编造数值或擅自写库。
 
-**当前范围**：阶段 1–3 MVP + 工程审查 P0/P1 + LangGraph Checkpointer + Worker 队列 + 多层评估。  
-**非目标**：疾病诊断、伤病治疗、教练端 SaaS、自动无确认写库。
-
----
-
-## 2. 功能全景
-
-| 模块 | 能力 | 实现要点 |
-|------|------|----------|
-| **账号** | 注册 / 登录 / 刷新 / 登出 | JWT + Refresh Token（`refresh_tokens` 表）；前端 Axios 401 自动续期 |
-| **RBAC** | `user` / `admin` | 知识库入库、评估查询需 `admin` |
-| **用户档案** | 身高体重、目标、器械、伤病、活动量 | `user_profiles`；TDEE / 宏量由 `nutrition.py` 计算 |
-| **食物库** | 中文种子 + USDA Foundation | Postgres `food_items`；`source` / `external_id` 溯源 |
-| **动作库** | ~1324 条 exercises-dataset | 器械×部位筛选、`POST /exercises/shuffle` |
-| **打卡记录** | 训练 / 饮食 / 体测 | 饮食宏量由食物库 **确定性** 换算 |
-| **训练+饮食计划** | 预览 → 确认 → 写入；回滚；Diff | 版本表 `*_plan_versions`；`plan_adjustments` 周调整记录 |
-| **周联合调整** | 基于近 7 日日志诊断 | `POST /plans/weekly-adjust`；`weekly_adjust_preview` |
-| **单餐换菜** | 锁定其余餐次重优化 | `POST /plans/meals/swap`；OR-Tools / 贪心 |
-| **知识问答** | 混合检索 + 引用 + 拒答 | Dense + BM25 → RRF → Rerank → Ollama |
-| **Agent 对话** | 多意图路由、SSE、异步任务 | LangGraph；`interrupt()` 计划确认 |
-| **Agent 持久化** | 任务事件 / 步骤 / 工具调用 | `agent_task_*` 表；重启可回放 |
-| **LangGraph Checkpointer** | 全状态断点续跑 | `lg_checkpoints` 等；`GET/POST .../checkpoint|resume` |
-| **Worker 模式** | Redis 队列消费 | `AGENT_USE_WORKER=true` + `fitpilot worker` |
-| **知识管理** | 多格式入库、上传（admin） | `ingest_kb.py` + `/knowledge/*` |
-| **健康检查** | 存活 / 就绪 / Token | `/health`、`/health/ready`、`/metrics/tokens` |
-| **评估** | 九模块多层评估 + RAG 黄金集 | `eval-all`、`eval`、`eval-agent` 等；`evaluation_runs` 持久化 |
-| **运维** | status / backup / restore / Prometheus | CLI + `docker-compose.prod.yml` |
-
----
-
-## 3. 系统架构
-
-```text
-┌─────────────┐     HTTPS/JWT      ┌──────────────────────────────────────────┐
-│  Vue3 前端   │ ◄────────────────► │  FastAPI (backend/app)  /api/v1         │
-│  Pinia/SSE  │   Refresh Token    │  auth / users / foods / exercises / logs  │
-└─────────────┘                    │  plans / knowledge / agent / eval / health │
-                                   └───────┬──────────────┬──────────┬─────────┘
-                                           │              │          │
-                    ┌──────────────────────┘              │          │
-                    ▼                                     ▼          ▼
-            ┌───────────────┐                    ┌────────────┐  ┌─────────┐
-            │  PostgreSQL    │                    │   Qdrant   │  │  Ollama │
-            │  用户/计划/库   │                    │  向量 chunks│  │  LLM    │
-            │  Agent/评估    │                    └─────┬──────┘  └─────────┘
-            └───────────────┘                          │
-                    │                          ┌───────▼──────┐
-            ┌───────┴───────┐                  │  BM25 本地索引 │
-            │     Redis      │                  │  + Embedding │
-            │  缓存/任务队列  │                  └──────────────┘
-            └───────┬───────┘
-                    │  AGENT_USE_WORKER=true
-                    ▼
-            ┌───────────────┐
-            │ Agent Worker  │  BRPOP 消费 → run_fitness_agent
-            └───────────────┘
-```
-
-### 3.1 对话主路径（知识问答）
-
-1. 用户消息 → **InputSanitizer**
-2. LangGraph **classify** → **rag** 节点
-3. **hybrid_retrieve**：Qdrant Dense + BM25 → RRF → Reranker
-4. **build_context**：证据 + citation；不足则 `no_answer`
-5. **Ollama chat** → 返回 `reply` + `citations`；SSE 推送进度
-
-### 3.2 计划主路径（含 interrupt）
-
-1. 意图 `plan_create` / `plan_adjust` → **plan_preview**
-2. `preview_and_stage_plans`：器械×部位抽动作 + 营养目标生成饮食
-3. **plan_confirm** 节点调用 `interrupt()` → 任务状态 `awaiting_confirmation`
-4. 前端 SSE 收到 `approval_required` → 用户 **approve/reject**
-5. `POST /agent/tasks/{id}/approve` 或 `POST /plans/{id}/approve` → **plan_commit** / **plan_reject**
-
-### 3.3 CLI 双入口
-
-| 入口 | 路径 | 说明 |
-|------|------|------|
-| 根目录 | `python main.py <cmd>` | `web`/`ui`/`dev` = 前端；其余转发后端 CLI |
-| 后端 | `cd backend && uv run python main.py <cmd>` | 等同 `uv run fitpilot <cmd>` |
-
-> **约定**：`web` = 前端 Vite；`api` = 后端 FastAPI。后端 `web` 命令已废弃。
-
----
-
-## 4. 技术栈与硬件选型
-
-| 层级 | 选型 | 说明 |
-|------|------|------|
-| 前端 | Vue 3 + Vite + TypeScript + Pinia + Element Plus | JWT + Refresh；路由守卫 |
-| 后端 | FastAPI + SQLAlchemy 2 (async) + Alembic | `asyncpg`；API 前缀 `/api/v1` |
-| 编排 | LangGraph + langchain-ollama | `fitness_graph.py`；Postgres Checkpointer |
-| 优化 | OR-Tools SCIP | `meal_optimizer.py`；`MEAL_USE_ORTOOLS` |
-| 业务库 | PostgreSQL 16 | Docker 或生产 Compose |
-| 缓存/队列 | Redis 7 | 就绪检查；Agent 任务队列 |
-| 向量库 | Qdrant | 集合 `fitpilot_knowledge` |
-| 稀疏检索 | 自研 BM25 | 与 Dense 做 RRF |
-| 对话 LLM | Ollama（按环节分模型） | 默认 RAG=`qwen2.5:1.5b`，Judge=`qwen2.5:0.5b` |
-| Embedding | `BAAI/bge-small-zh-v1.5` | 本仓库 `models/bge-small-zh-v1.5`（独立副本） |
-| Reranker | `bge-reranker-large`（可换 base） | 本仓库 `models/bge-reranker-large`（独立副本，默认 **CPU**） |
-| 依赖管理 | uv + pnpm | 后端 / 前端 |
-| 可观测 | Prometheus + structlog | `/metrics`；可选 Grafana |
-
-> **部署独立**：本仓库模型权重位于 `models/`，不依赖其他项目的目录联接；迁移时请一并拷贝 `models/` 与 `.env`。
-
-### 本机硬件示例（GTX 1660 Ti 6GB）
-
-| 组件 | 推荐 |
+| 维度 | 说明 |
 |------|------|
-| Ollama RAG | `qwen2.5:1.5b`（质量优先可 `qwen3.5:4b`） |
-| Ollama Judge / 改写 / 分类 | `qwen2.5:0.5b` |
-| Embedding 设备 | **`cpu`**（与 Ollama 错峰） |
-| Reranker 设备 | `cpu` |
-| 显存策略 | `OLLAMA_KEEP_ALIVE=30s`；勿默认加载 `qwen2.5:7b` |
+| 目标用户 | 个人训练者；本地部署与二次开发工程师 |
+| 业务场景 | 注册登录、档案与营养目标、食物/动作检索、训练饮食打卡、计划预览确认、知识问答、Agent 对话 |
+| 形态 | Web（前后端分离）+ Typer CLI + 可选 Docker Compose 生产栈 |
+| 输入 | HTTP/JWT 请求、SSE 客户端、CLI、知识库文件、评测 JSON |
+| 处理 | SQLAlchemy/Postgres、RAG（Qdrant+BM25）、Ollama 生成、LangGraph、OR-Tools/贪心食谱 |
+| 输出 | JSON API、计划版本写入、引用问答、评估报告、Prometheus 指标 |
+| 实现范围 | 见 1.2；路线图中未落地能力不以已实现功能描述 |
 
-#### Ollama 分环节选型（对照本机已装模型）
+### 1.2 核心功能清单
 
-| 环节 | 环境变量 | 推荐模型 | 说明 |
-|------|----------|----------|------|
-| RAG 生成 | `OLLAMA_MODEL_RAG` | `qwen2.5:1.5b` | 日常问答；显存够再升 `qwen3.5:4b` |
-| 默认回退 | `OLLAMA_MODEL` | `qwen2.5:1.5b` | RAG 未单独配置时使用 |
-| 评估裁判 | `OLLAMA_MODEL_JUDGE` | `qwen2.5:0.5b` | 短结构化输出，极省显存 |
-| 查询改写 | `OLLAMA_MODEL_REWRITE` | `qwen2.5:0.5b` | 需 `OLLAMA_USE_LLM_REWRITE=true` |
-| 意图辅助 | `OLLAMA_MODEL_CLASSIFY` | `qwen2.5:0.5b` | 需 `OLLAMA_USE_LLM_CLASSIFY=true`；默认仍用规则 |
-| （不推荐默认） | — | `qwen2.5:7b` / `gemma3:4b` | 7B 易 OOM；gemma 中文弱于 Qwen |
+| 功能 | 入口 | 对应文件 | 调用模块 | 输入 | 输出 | 外部依赖 | 使用限制 |
+|------|------|----------|----------|------|------|----------|----------|
+| 注册/登录/刷新/登出 | `POST /auth/*` | `backend/app/api/auth.py` | `core/security.py`、`models` | 邮箱密码 / refresh | JWT + refresh | Postgres | 生产必须更换 `JWT_SECRET` |
+| 用户档案读写 | `GET/PUT /users/me/profile` | `backend/app/api/users.py` | `nutrition.py` | 身高体重目标等 | 档案 + TDEE/宏量 | Postgres | 需登录 |
+| 食物库 | `GET/POST /foods` | `backend/app/api/foods.py` | `food_seed`/`food_fdc` | 查询/创建 | `food_items` | Postgres | 种子依赖 FDC/中文包 |
+| 动作库 | `GET /exercises*`、`POST /shuffle` | `backend/app/api/exercises.py` | `exercise_seed.py` | 器械×部位 | 动作列表 | Postgres | 需先 `seed-exercises` |
+| 打卡 | `/workouts/logs` 等 | `backend/app/api/logs.py` | 宏量换算 | 日志体 | 持久化日志 | Postgres | 饮食宏量由食物库计算 |
+| 计划预览/确认/回滚/周调整/换菜 | `/plans/*` | `backend/app/api/plans.py` | `tools/domain.py`、`meal_optimizer.py`、`weekly_adjustment.py` | 预览参数 | 计划/Diff | Postgres、OR-Tools 可选 | 写库需 approve |
+| 知识问答（RAG） | Agent `rag` 节点 / `POST /knowledge/search` | `backend/app/rag/*`、`graphs/fitness_graph.py` | Embedding、Qdrant、BM25、Ollama | 自然语言 | reply+citations 或拒答 | Qdrant、Ollama、本地权重 | 需 ingest；admin 入库 |
+| Agent 对话/SSE | `/agent/chat`、`/tasks`、`/stream` | `backend/app/api/agent.py` | Application + `run_fitness_agent` | message | 任务事件流 | Postgres、可选 Redis Streams | 输入经 `InputSanitizer`；事件权威源为 Postgres |
+| 计划 interrupt 确认 | `POST /agent/tasks/{id}/approve` | `api/agent.py`、`application/agent/` | Checkpointer + 子图 | approve bool | 续跑 commit/reject | Postgres | 须处于 awaiting；幂等 |
+| 任务取消/恢复 | `/agent/tasks/{id}/cancel`、`/resume` | `application/agent/lifecycle.py` | Checkpointer | — | 状态变更 | Postgres | 已结束任务 cancel 幂等 |
+| 受控记忆 | `/memories*` | `api/memories.py`、`agents/memory/` | `application/memories` | key/value | 确认后可写回档案 | Postgres | 未确认推断不写档案 |
+| Worker 异步 | `fitpilot worker` | `backend/app/worker/*` | Redis Streams Consumer Group | 队列 JSON | 同 Agent 结果 | Redis | 需 `AGENT_USE_WORKER=true`；含 ACK/重试/死信 |
+| 知识入库 | CLI `ingest` / `knowledge-ingest` / `/knowledge/ingest*` | `rag/ingest.py`、`knowledge_lifecycle.py` | 解析器+类型分块 | 文件路径 | Qdrant+BM25+manifest | 本地文件 | API 需 admin；支持增量/回滚/快照 |
+| 健康/指标 | `/health`、`/health/ready`、`/metrics`、`/metrics/tokens` | `api/health.py`、`main.py` | 各客户端 | 无 | 状态 JSON/Prometheus | 依赖服务 | ready 探测外部服务 |
+| 九层评估 / 离线门禁 | `fitpilot eval-all`、`eval-gate` | `backend/app/eval/*` | `evals/*.json` | 用例集 | 报告；可 `--persist` | 部分层需 Ollama | CI 跑 `eval-gate`；`/eval` 查询需 admin |
+| 一键演示数据 | `fitpilot seed-demo` | `scripts/seed_demo.py` | users/logs | — | demo 账号+两周打卡 | Postgres | 见 `docs/DEMO.md` |
+| 前端 UI | Vite 页面 | `frontend/src/views/*` | Pinia stores | 用户操作 | 轨迹/证据/审批 Diff | 后端 API | 路由守卫 |
 
-```powershell
-# 确保小模型已拉取
-ollama pull qwen2.5:0.5b
-ollama pull qwen2.5:1.5b
-# 可选：质量优先 RAG（同时把 EMBEDDING_DEVICE=cpu）
-# ollama pull qwen3.5:4b
-```
+实际 Agent 实现在 `backend/app/graphs/` 与 `backend/app/agents/`（路由、子图、PEV、记忆）；评估在 `backend/app/eval/`。
 
-详见 [`docs/MODEL_DOWNLOAD.md`](docs/MODEL_DOWNLOAD.md)。
+### 1.3 程序启动执行主线
+
+**后端 API（开发）：**
+
+1. 入口：`python main.py api`（根）或 `cd backend && uv run python main.py api` / `uv run fitpilot api`
+2. `backend/app/cli.py` → `_start_api` → `uvicorn.run("app.main:app", ...)`
+3. `backend/app/main.py`：`setup_logging()`、`get_settings()`、挂载 CORS、双前缀 `api_router`、`/metrics`、启动日志打印模型角色
+4. 请求进入中间件：注入 `X-Request-ID`、Prometheus 计数
+5. 路由 → `deps.get_current_user`（如需）→ 业务服务 / `run_fitness_agent` / RAG
+6. 结果 JSON 或 SSE；Token 超预算抛 `TokenBudgetExceeded` → 429
+7. 进程退出：Ctrl+C 停止 uvicorn（无专门 atexit 写盘逻辑）
+
+**前端：**
+
+1. `python main.py web` → `pnpm start`（`frontend/`）
+2. `frontend/src/main.ts` 挂载 Vue；`router` 守卫检查登录
+3. Axios（`api/client.ts`）带 Bearer；401 尝试 refresh
+
+**Agent Worker（可选）：**
+
+1. `fitpilot worker` → Redis Streams Consumer Group（`fitpilot:agent:tasks`）→ ACK / 认领 / 死信 → `run_fitness_agent` → `finalize_agent_result`；任务结束后写会话摘要到 `session_memories`
+
+### 1.4 典型使用流程
+
+**案例 A：知识问答**
+
+1. 用户打开 `/chat`，发送「增肌每天蛋白怎么算」
+2. `POST /agent/tasks` → `InputSanitizer.sanitize` → Application `create_agent_task`
+3. 结构化 `route_intent` → `knowledge_query` → 知识子图
+4. `RetrievalPlan` + `retrieve_with_plan`（Dense + BM25 → RRF → 可选 rerank）→ Evidence Gate → `build_context` / Citation 映射
+5. 证据不足则拒答；否则 `OllamaClient.chat`（角色 `rag`）返回 `reply` + `citations`
+6. SSE 仅从 `agent_task_events` 推送（支持 `Last-Event-ID`）；前端渲染轨迹与证据面板
+
+**案例 B：生成/调整计划（含人工确认）**
+
+1. 用户说「根据我最近两周的训练记录调整饮食和训练」
+2. 意图 `plan_adjust`（复杂任务）→ 计划子图 PEV：档案 → `recent_logs` → `weekly_adjust_preview`
+3. `plan_approval` 子图 `interrupt()`；SSE `approval_required`（含 Diff、数据依据、风险提示、可否回滚）
+4. 用户 `POST /agent/tasks/{id}/approve`（幂等）
+5. 恢复图 → `commit_plan_use_case`（Unit of Work 写计划版本 + 审计）
+6. 若拒绝则 `plan_reject`，不写有效计划
+
+**案例 C：从零灌库 + 演示**
+
+1. `docker compose -f docker-compose.dev.yml up -d`
+2. `cd backend && uv run python main.py migrate`
+3. `seed-exercises`、`seed-foods`、`seed-demo`、`knowledge-ingest --incremental`（或 `ingest`）
+4. 启动 `api` + 根目录 `python main.py web`，用 `demo@fitpilot.local` / `demo123456` 登录
 
 ---
 
-## 5. 仓库目录结构
+## 2. 技术栈详细清单
+
+### 2.1 编程语言与版本
+
+| 语言 | 版本约束 | 依据 | 特性使用 | 不匹配风险 |
+|------|----------|------|----------|------------|
+| Python | `>=3.11,<3.13` | `backend/pyproject.toml` `requires-python` | `str \| None`、`TypedDict`、async | 3.10 语法失败；3.13 未声明支持 |
+| TypeScript | `~5.7.2` | `frontend/package.json` | Vue SFC + `vue-tsc` | 构建类型检查失败 |
+| 前端运行时 | ES modules | `"type": "module"` | Vite 6 | 旧 Node 可能不兼容 |
+
+### 2.2 框架、运行时与构建工具
+
+| 名称 | 版本约束 | 作用 | 使用位置 |
+|------|----------|------|----------|
+| FastAPI | `>=0.115.0` | HTTP API | `backend/app/main.py`、`api/` |
+| Uvicorn | `>=0.32.0` | ASGI | `cli._start_api` |
+| SQLAlchemy asyncio | `>=2.0.36` | ORM | `db/session.py`、`models/` |
+| Alembic | `>=1.14.0` | 迁移 | `alembic.ini`、`migrations/` |
+| Typer | `>=0.15.0` | CLI | `backend/app/cli.py` |
+| LangGraph | `>=0.2.0` | Agent 图 | `graphs/fitness_graph.py` |
+| langchain-ollama | `>=0.2.0` | LLM 适配 | `services/ollama_client.py` |
+| Vue 3 / Vite 6 / Pinia / Vue Router / Element Plus | 见 `frontend/package.json` | SPA | `frontend/src/` |
+| uv | 项目约定 | Python 依赖 | `backend/` |
+| pnpm | 根 CLI 查找 | 前端依赖 | `main.py` `_run_web` |
+| Docker Compose | 仓库文件 | 基础设施/生产 | `docker-compose.*.yml` |
+
+### 2.3 第三方依赖
+
+后端直接依赖声明于 `backend/pyproject.toml`（核心行）：
+
+| 依赖名称 | 版本约束 | 声明位置 | 实际使用位置 | 核心用途 | 是否必需 | 注意事项 |
+|---|---|---|---|---|---|---|
+| fastapi | >=0.115.0 | pyproject | `app/main.py`、`api/` | Web API | 是 | — |
+| uvicorn[standard] | >=0.32.0 | pyproject | `cli.py` | 服务进程 | 是 | — |
+| pydantic / pydantic-settings | >=2.9 / >=2.6 | pyproject | `core/config.py`、schemas | 配置与校验 | 是 | — |
+| sqlalchemy[asyncio] / asyncpg | >=2.0.36 / >=0.30 | pyproject | `db/`、`models/` | 异步 Postgres | 是 | 需 Postgres |
+| alembic | >=1.14.0 | pyproject | 迁移 | Schema | 是 | — |
+| redis | >=5.2.0 | pyproject | `worker/redis_queue.py`、ready | 缓存/队列 | 就绪与 Worker | — |
+| python-jose / passlib[bcrypt] | >=3.3 / >=1.7.4 | pyproject | `core/security.py` | JWT/密码 | 是 | — |
+| httpx / tenacity | >=0.28 / >=9.0 | pyproject | Ollama 客户端等 | HTTP/重试 | 是 | — |
+| qdrant-client | >=1.12.0 | pyproject | `services/qdrant_client.py` | 向量库 | RAG 必需 | — |
+| structlog / prometheus-client | >=24.4 / >=0.21 | pyproject | logging、metrics、`/metrics` | 可观测 | 是 | — |
+| langgraph / langchain-core / langchain-ollama | 见 pyproject | graphs、ollama | Agent/LLM | 是 | — |
+| sentence-transformers / torch / transformers | 见 pyproject | embeddings、rerank | 向量/精排 | RAG 完整模式 | 可用 `RAG_OFFLINE` 降级 |
+| pypdf / python-docx / python-pptx / openpyxl / bs4 / lxml / pillow | 见 pyproject | `rag/parsing/` | 多格式解析 | 入库相关 | — |
+| ortools | >=9.11.0 | pyproject | `meal_optimizer.py` | 食谱 SCIP | `MEAL_USE_ORTOOLS` | 失败回退贪心 |
+| typer | >=0.15.0 | pyproject | `cli.py` | CLI | 是 | — |
+
+开发组（`[project.optional-dependencies] dev` / `[dependency-groups] dev`）：`ruff`、`mypy`、`pytest`、`pytest-asyncio`。
+
+前端直接依赖：`vue`、`vue-router`、`pinia`、`axios`、`element-plus`、`@element-plus/icons-vue`；开发：`vite`、`@vitejs/plugin-vue`、`typescript`、`vue-tsc`、`sass`。
+
+**代码导入但需运行时环境变量/可选行为：** `RAG_OFFLINE`、OCR（`RAG_ENABLE_OCR`，依赖系统 Tesseract 时才有实际 OCR 能力——现有项目文件中未捆绑 Tesseract 安装脚本，故 OCR 需本机自行具备）。
+
+**依赖已声明且在 RAG/评估/优化路径中使用：** 上表所列均为直接依赖；未对传递依赖做完整审计。
+
+**未声明却可能由环境注入：** 无额外强制系统 pip 包；Ollama、Docker、pnpm、uv 为系统级工具。
+
+### 2.4 系统环境要求
+
+- 操作系统：开发在 Windows 上验证较多；Compose 与 Python 路径处理跨平台。
+- CPU/内存：定性上 Embedding/Reranker/Ollama 为主要消耗；6GB 显存场景在 `.env.example` 注释中按错峰设计（Embedding/Reranker 默认 `cpu`）。
+- GPU：可选；`EMBEDDING_DEVICE`/`RERANKER_DEVICE` 可设 `cuda`。
+- 磁盘：`models/`（gitignore）、Qdrant 存储、Postgres 卷、语料 PDF。
+- 网络：访问本机 Ollama/Qdrant；可选 HuggingFace 镜像 `HF_ENDPOINT`。
+- 外部命令：`docker`/`docker compose`、`ollama`、`pnpm`、`uv`、`pg_dump`（备份脚本使用时）。
+
+现有文件中**未**给出经基准测试的最低 CPU/RAM 数字，故不虚构具体最低配置。
+
+### 2.5 外部服务与资源
+
+| 服务/资源 | 连接方式 | 配置入口 | 调用位置 | 失败影响 |
+|-----------|----------|----------|----------|----------|
+| PostgreSQL 16 | `DATABASE_URL` asyncpg | `.env` / compose | 全业务 ORM、Checkpointer、评估持久化 | API/迁移不可用 |
+| Redis 7 | `REDIS_URL` | `.env` | ready、Worker 队列 | Worker 模式失败；ready 标红 |
+| Qdrant | `QDRANT_URL` | `.env` | `qdrant_client.py`、retrieve/ingest | RAG 空或失败 |
+| Ollama | `OLLAMA_BASE_URL` | `.env` | `ollama_client.py` | 生成/可选分类失败 |
+| Embedding/Reranker 权重 | `models/` 或 HF 名 | `Settings.resolved_*` | `embeddings.py`、`rerank.py` | 检索质量下降或离线哈希 |
+| 知识语料 | `knowledge_base/raw/` | CLI ingest | `ingest.py` | 无证据可答 |
+| 动作/食物种子 | `例子或数据/`、`_refs/`、scripts | seed CLI | seed 服务 | 库为空 |
+| Prometheus/Grafana | prod compose | `deploy/prometheus.yml` 等 | 刮取 `/metrics` | 仅监控缺失 |
+
+---
+
+## 3. 完整项目目录结构
 
 ```text
-FitPilot/
-├── main.py                      # 根目录 CLI（web=api 分离）
-├── .env / .env.example          # 全局环境变量
-├── docker-compose.dev.yml       # 开发：Postgres + Redis
-├── docker-compose.prod.yml      # 生产：全栈 + Worker + Prometheus/Grafana
-├── deploy/prometheus.yml        # 生产 Prometheus scrape
-├── alembic.ini + migrations/    # 数据库迁移 0001–0007
+./
+├── main.py                              # 根 CLI：web/ui/dev→前端；其余转发 backend CLI
+├── .env.example                         # 环境变量模板（可提交）
+├── .env                                 # 本机密钥与连接（应忽略，勿提交）
+├── .gitignore                           # 忽略 .env、models/、venv、node_modules 等
+├── .gitattributes                       # 文本换行规范化
+├── alembic.ini                          # Alembic；script_location=migrations
+├── docker-compose.dev.yml               # 开发：Postgres + Redis（Qdrant 注释可选）
+├── docker-compose.prod.yml              # 生产：全栈 + worker + prometheus + grafana
+├── README.md                            # 本归档文档
+├── README2.md                           # 旧版说明文档（结构不同；以代码与本 README 为准）
+├── 项目README全量归档生成提示词.md      # README 归档生成指令（非业务源码）
+├── FitPilot Engineering Review and Improvement Plan.docx
+├── FitPilot_AI_Agent_标准开发文档_v1.0.docx
+├── .github/workflows/ci.yml             # CI：backend 子集 pytest
+├── deploy/prometheus.yml                # 生产 Prometheus 配置
+├── monitoring/prometheus/prometheus.yml # 监控目录副本
+├── migrations/                          # Alembic 版本 0001–0007
+│   ├── env.py
+│   └── versions/
+│       ├── 0001_initial.py
+│       ├── 0002_exercises.py
+│       ├── 0003_foods_source.py
+│       ├── 0004_agent_persistence.py
+│       ├── 0005_engineering_p1.py
+│       ├── 0006_langgraph_checkpoint.py
+│       └── 0007_evaluation_persistence.py
 ├── scripts/
-│   ├── ingest_kb.py             # 知识入库（--reset）
-│   ├── seed_exercises.py        # 动作库 → Postgres
-│   ├── seed_foods.py            # 食物库 → Postgres
-│   ├── prepare_fdc_kb.py        # USDA 中文包 → curated/fdc
-│   ├── backup.py / restore.py   # 备份恢复
-│   └── check_env.py             # 环境检查
+│   ├── ingest_kb.py                     # 知识入库
+│   ├── seed_exercises.py                # 动作种子
+│   ├── seed_foods.py                    # 食物种子
+│   ├── prepare_fdc_kb.py                # USDA 中文包预处理
+│   ├── backup.py / restore.py           # 备份恢复
+│   ├── check_env.py                     # 环境检查
+│   └── make_sample_docx.py              # 样例文档
 ├── knowledge_base/
-│   ├── raw/                     # RAG 原文（curated / external / uploads）
-│   └── SOURCES.md
-├── models/                      # 本地 Embedding / Reranker 权重
-├── evals/                       # 评测集 + eval_config.json + reports/
-├── docs/                        # 专题文档
+│   ├── SOURCES.md                       # 语料来源说明
+│   ├── bm25_index.json                  # BM25 持久化（运行生成/更新）
+│   └── raw/                             # 原文：curated/external/uploads 等
+├── models/                              # Embedding/Reranker 权重（gitignore，本地下载）
+├── evals/                               # 评测用例 JSON/YAML 与配置
+├── eval_datasets/                       # 评估数据集占位/附属
+├── docs/                                # MODEL_DOWNLOAD、INGEST_FORMATS、EVAL、ENGINEERING_REVIEW 等
 ├── backend/
-│   ├── main.py                  # 后端 CLI 入口
-│   ├── app/
-│   │   ├── api/                 # REST 路由
-│   │   ├── core/                # 配置、日志、指标、消毒、Token
-│   │   ├── db/                  # 异步 Session
-│   │   ├── models/              # SQLAlchemy 模型
-│   │   ├── schemas/             # Pydantic
-│   │   ├── services/            # Ollama、Qdrant、营养
-│   │   ├── rag/                 # 解析、切块、检索、入库
-│   │   ├── graphs/              # LangGraph + Checkpointer
-│   │   ├── tools/               # 领域工具（白名单）
-│   │   ├── eval/                # 七层评估
-│   │   ├── worker/              # Agent Worker
-│   │   └── cli.py               # fitpilot 子命令
-│   └── tests/                   # pytest（37+ 项）
-└── frontend/
-    └── src/
-        ├── views/               # 8 个页面
-        ├── stores/              # auth（含 refresh）/ chat（SSE + approve）
-        └── api/client.ts        # Axios + 401 续期
+│   ├── main.py                          # 转发 app.cli:main
+│   ├── pyproject.toml / uv.lock         # 依赖与工具配置
+│   ├── Dockerfile                       # 生产镜像
+│   ├── README.md                        # 后端简要说明
+│   ├── tests/                           # pytest（11 个测试模块）
+│   └── app/
+│       ├── main.py                      # FastAPI 应用
+│       ├── cli.py                       # fitpilot 子命令
+│       ├── api/                         # REST 路由
+│       ├── core/                        # 配置、安全、日志、指标、消毒、Token
+│       ├── db/                          # 异步引擎与 Session
+│       ├── models/                      # SQLAlchemy 模型
+│       ├── schemas/                     # Pydantic schema
+│       ├── services/                    # 业务与外部客户端
+│       ├── rag/                         # 解析、切块、检索、入库
+│       ├── graphs/                      # LangGraph + Checkpointer
+│       ├── tools/                       # 领域工具白名单
+│       ├── eval/                        # 九层评估实现
+│       ├── worker/                      # Redis 队列与 runner
+│       ├── agents/                      # 占位包（无业务实现）
+│       └── evaluation/                  # 占位包（实现见 eval/）
+├── frontend/
+│   ├── package.json                     # pnpm 脚本 start/web/dev/build
+│   ├── vite.config.ts
+│   ├── tsconfig.json
+│   ├── README.md
+│   └── src/
+│       ├── main.ts / App.vue
+│       ├── router/index.ts
+│       ├── api/client.ts
+│       ├── stores/auth.ts / chat.ts
+│       └── views/*.vue                  # login/dashboard/profile/logs/foods/exercises/chat/plans
+├── _refs/                               # 外部参考工程副本（exercises-dataset、workout-cool）
+├── 例子或数据/                           # 数据集与参考项目副本（种子/对照）
+├── FitPilot/                            # GitHub Desktop 误建嵌套目录（应忽略，勿提交）
+├── _docx_extract/ / _doc*.txt / _doc.zip # 文档提取临时（gitignore 部分）
+└── .git/                                # 版本控制（不解析内部对象）
 ```
+
+**补充说明：**
+
+- 主程序入口：根 `main.py`；API `backend/app/main.py`；CLI `backend/app/cli.py`。
+- 核心源码：`backend/app/`、`frontend/src/`。
+- 配置：根 `.env` / `.env.example`、`alembic.ini`、compose、`frontend` 的 `VITE_*`。
+- 数据：`knowledge_base/`、`evals/`、`例子或数据/`、`_refs/`。
+- 测试：`backend/tests/`。
+- 脚本：`scripts/` + CLI 封装。
+- 构建产物：`frontend/dist/`、`backend/.venv/`（忽略）。
+- 运行时生成：BM25 索引、Qdrant 集合、Postgres 数据、Agent 事件。
+- 不应手改：已发布迁移文件内容；勿提交 `.env` 与 `models/` 权重。
+- `项目README全量归档生成提示词.md` 仅用于指导生成本文档，不是运行时模块。
+
+对 `_refs/`、`例子或数据/` 中第三方仓库的海量图片/JSON：**按数据集用途归纳**，不逐文件展开；动作库种子读取 exercises JSON，食物种子读取 FDC 相关文件（见 `scripts/seed_*.py`、`prepare_fdc_kb.py`）。
 
 ---
 
-## 6. 数据模型与存储
+## 4. 全局配置说明
 
-### 6.1 存哪里
+### 4.1 配置加载顺序
 
-| 数据 | 存储 | 清库注意 |
-|------|------|----------|
-| 用户、密码、档案、Refresh Token | Postgres | **勿**为灌知识库而清 |
-| 训练/饮食计划及版本 | Postgres | approve / rollback |
-| 计划周调整记录 | Postgres `plan_adjustments` | 含 diagnosis / diff |
-| 训练/饮食/体测日志 | Postgres | Agent 引导前端录入 |
-| 食物 / 动作 | Postgres | ~373 食物；~1324 动作 |
-| 知识 chunks | Qdrant + BM25 文件 | `ingest --reset` 可重建 |
-| Agent 任务与事件 | Postgres + 进程 SSE 缓冲 | 事件持久化；SSE 同进程 |
-| LangGraph 检查点 | Postgres `lg_*` | 断点续跑 |
-| 评估运行记录 | Postgres `evaluation_*` | `eval-all --persist` |
-| Trace | 进程内存 deque(200) | 调试用途 |
+1. 进程环境变量  
+2. `Settings` 读取 `env_file=("../.env", ".env")`（相对 `backend` 启动时优先上级根目录 `.env`）  
+3. 字段默认值（`backend/app/core/config.py`）  
+4. 派生属性：`resolved_embedding_model`、`resolved_reranker_model`、`resolve_ollama_model(role)`  
 
-### 6.2 Alembic 迁移（0001–0007）
+覆盖关系：环境变量覆盖文件；空字符串的分角色模型回退到 `ollama_model`。配置在进程启动时通过 `get_settings()`（`lru_cache`）加载，**不支持**热更新全部 Settings（需重启进程）。前端 `import.meta.env.VITE_*` 在构建/开发时由 Vite 注入。
 
-| 迁移 | 内容 |
-|------|------|
-| `0001_initial` | users, profiles, food_items, plans + versions, logs, body_metrics, agent_tasks, audit_logs |
-| `0002_exercises` | exercises 表；workout_logs.exercise_id |
-| `0003_foods_source` | food_items.source / external_id / name_en |
-| `0004_agent_persistence` | agent_tasks 扩展字段；agent_task_events/steps/tool_calls/checkpoints |
-| `0005_engineering_p1` | users.role；refresh_tokens；data_sources；plan_adjustments |
-| `0006_langgraph_checkpoint` | lg_checkpoints / lg_channel_blobs / lg_checkpoint_writes |
-| `0007_evaluation_persistence` | evaluation_runs / evaluation_results / evaluation_cases |
+### 4.2 配置项明细
 
-```powershell
-# 升级到最新 schema（每次拉代码后建议执行）
-cd D:\FitPilot\backend
-uv run python main.py migrate
-```
+| 配置项 | 所在文件 | 类型 | 默认值 | 可选值或范围 | 作用 | 生效模块 | 修改影响 |
+|---|---|---|---|---|---|---|---|
+| APP_NAME | `.env` / Settings | str | FitPilot | — | 应用名 | FastAPI title | 展示 |
+| APP_ENV | 同上 | enum | development | development/test/production | 环境标记 | 日志启动 | 运维语义 |
+| APP_DEBUG | 同上 | bool | true | true/false | 调试 | 应用 | 生产应收紧 |
+| APP_HOST / APP_PORT | 同上 | str/int | 0.0.0.0 / 8000 | — | 监听 | uvicorn | 端口冲突 |
+| JWT_SECRET | 同上 | str | change-me | 强随机 | JWT 签名 | auth | 泄露可伪造令牌 |
+| JWT_ALGORITHM | 同上 | str | HS256 | jose 支持 | 算法 | security | 需全员一致 |
+| JWT_EXPIRE_MINUTES | 同上 | int | 60（代码）/1440（example） | >0 | access 有效期 | auth | 登录频率 |
+| REFRESH_TOKEN_EXPIRE_DAYS | 同上 | int | 14 | >0 | refresh | auth | 会话长度 |
+| AGENT_USE_WORKER | 同上 | bool | false | true/false | 任务是否入队 | agent API | 需配套 worker |
+| MEAL_USE_ORTOOLS | 同上 | bool | true | true/false | 食谱求解器 | meal_optimizer | false 则贪心 |
+| DATABASE_URL | 同上 | str | postgresql+asyncpg://… | asyncpg URL | 数据库 | 全库 | 连接失败则不可用 |
+| REDIS_URL | 同上 | str | redis://127.0.0.1:6379/0 | — | Redis | worker/ready | — |
+| QDRANT_URL / QDRANT_COLLECTION / QDRANT_API_KEY | 同上 | str | 127.0.0.1:6333 / fitpilot_knowledge / None | — | 向量库 | RAG | — |
+| OLLAMA_BASE_URL / OLLAMA_MODEL* / OLLAMA_USE_LLM_* / OLLAMA_KEEP_ALIVE / OLLAMA_TIMEOUT_SECONDS | 同上 | 多类型 | 见 `.env.example` | 本机已拉模型名 | LLM 分角色 | ollama、graph、eval | 显存与延迟 |
+| EMBEDDING_MODEL / EMBEDDING_DEVICE / RERANKER_* / RAG_TOP_K / RAG_RERANK_TOP_K / RAG_SKIP_RERANK | 同上 | 多类型 | 空则本地 models 路径；device=cpu；top_k=8/4 | cpu/cuda 等 | 检索 | rag | 质量/速度 |
+| TOKEN_BUDGET / TOKEN_STOP_RATIO | 同上 | int/float | 100000 / 0.5 | ratio (0,1] | Token 熔断 | token_monitor | 429 |
+| LOG_LEVEL | 同上 | str | INFO | 标准级别 | 日志 | logging | — |
+| LANGFUSE_* | `.env.example` | — | 默认关闭 | — | 可选追踪 | 若代码启用 | example 有，Settings 主类未全部建模时以代码读取为准 |
+| RAG_OFFLINE / HF_ENDPOINT / RAG_* 截断与 OCR | 环境变量 | — | 见 example | — | 离线/镜像/解析上限 | embeddings、parsers | 开发联调 |
+| VITE_API_BASE | `frontend/.env` | str | `http://127.0.0.1:8000`（代码默认） | URL | Axios baseURL | `api/client.ts` | 前后端联通 |
 
-### 6.3 统一响应格式
+说明：`.env.example` 中 `JWT_EXPIRE_MINUTES=1440` 与 `Settings` 字段默认 `60` 不一致；**以实际加载的环境文件为准**，未设置时用代码默认 60。
 
-```json
-{ "status": "ok", "request_id": "req_...", "data": { ... } }
-{ "status": "error", "request_id": "req_...", "error": { "code": "...", "message": "..." } }
-```
+### 4.3 路径配置
+
+| 路径 | 类型 | 说明 |
+|------|------|------|
+| `Settings.project_root` | 相对代码推导 | `backend/app/core/config.py` 上溯两级到仓库根 |
+| `models/bge-small-zh-v1.5` | 相对根 | 默认 Embedding 本地路径 |
+| `models/bge-reranker-large` 或 `base` | 相对根 | 默认 Reranker |
+| `knowledge_base/` | 相对根 | 语料与 BM25 |
+| `migrations/` | 相对根 | Alembic（`alembic.ini`） |
+| 工作目录 | CLI 约定 | 根 CLI 以仓库根运行前端；后端 CLI `cwd=backend` 或脚本设 `PYTHONPATH=backend` |
+
+从错误工作目录启动可能导致读不到 `.env` 或相对数据路径偏移；推荐始终在仓库根或文档指定的 `backend/` 下执行。
+
+### 4.4 网络与服务配置
+
+| 项 | 值/来源 |
+|----|---------|
+| API 默认 | `0.0.0.0:8000` |
+| 前端 Vite | 默认 5173（Vite 惯例；以启动日志为准） |
+| Qdrant | 6333/6334 |
+| Postgres | 5432 |
+| Redis | 6379 |
+| Ollama | 11434 |
+| CORS | `allow_origins=["*"]`，`allow_credentials=True`（`main.py`） |
+| Axios timeout | 120000 ms |
+| Ollama timeout | `OLLAMA_TIMEOUT_SECONDS` 默认 120 |
+
+### 4.5 开关与运行模式
+
+| 开关 | 默认 | 开启行为 | 关闭行为 |
+|------|------|----------|----------|
+| `AGENT_USE_WORKER` | false | API 入 Redis 队列 | 同进程跑图 |
+| `MEAL_USE_ORTOOLS` | true | SCIP 优化，失败贪心 | 直接贪心 |
+| `OLLAMA_USE_LLM_REWRITE` | false | 小模型改写查询 | 规则改写 |
+| `OLLAMA_USE_LLM_CLASSIFY` | false | 规则不自信时 LLM 辅助意图 | 纯规则 |
+| `RAG_SKIP_RERANK` | false | 跳过精排 | RRF 后精排 |
+| `RAG_OFFLINE` | 未设 | 哈希向量等联调路径（见 embeddings） | 正常加载模型 |
+| `APP_DEBUG` | true | 调试语义 | 生产应 false |
+
+### 4.6 敏感信息管理
+
+| 类别 | 配置名 | 读取位置 | 安全用法 |
+|------|--------|----------|----------|
+| JWT 密钥 | `JWT_SECRET` | Settings | 仅本地 `.env`；勿提交 |
+| DB 密码 | `DATABASE_URL` / `POSTGRES_PASSWORD` | Settings/compose | 生产改默认 `fitpilot` |
+| Qdrant Key | `QDRANT_API_KEY` | Settings | 可选 |
+| Langfuse | `LANGFUSE_*_KEY` | example | 可选 |
+| 本机绝对路径 | 用户本机 | 文档旧版曾写死盘符 | 本归档仅用相对路径 |
+
+应加入 `.gitignore` 且已忽略：`.env`、`models/`、`.venv/`、`node_modules/` 等（见根 `.gitignore`）。
 
 ---
 
-## 7. RAG 知识问答
+## 5. 项目整体架构设计
 
-### 7.1 流程
+### 5.1 架构模式
 
-**RAG = 检索 + 生成**：召回证据 → `build_context` → Ollama 依据证据回答并挂 `citation`。
+现有实现为 **前后端分离的模块化单体后端 + 可选 Worker**，分层包括 Interface（API）→ Application（用例）→ Agent Runtime / RAG Service → Infrastructure（Postgres / Redis Streams / Qdrant）。Agent 侧为 **主图 + 可编译领域子图 + Planner—Executor—Validator**；RAG 侧为 **类型感知分块 + 动态 RetrievalPlan + Evidence Gate + Citation 映射**。详见 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)。
+
+### 5.2 模块划分
+
+| 模块 | 对应路径 | 职责 | 上游依赖 | 下游依赖 | 对外接口 |
+|---|---|---|---|---|---|
+| 根 CLI | `main.py` | 转发 web/api/其它 | 用户 | frontend/backend | 命令行 |
+| API | `backend/app/api/` | HTTP 鉴权与编排 | 前端 | Application/services | `/api/v1/*` |
+| Application | `backend/app/application/` | 任务/计划/记忆用例 | API | UoW、Runtime | create/approve/cancel… |
+| Agents | `backend/app/agents/` | 路由、子图、PEV、记忆 | Graph | tools/rag | workflows/graphs |
+| Core | `backend/app/core/` | 配置安全日志 | 全局 | — | Settings 等 |
+| Graphs | `backend/app/graphs/` | 主图组装 | API/worker | agents 子图 | `run_fitness_agent` |
+| RAG | `backend/app/rag/` | 检索入库生命周期 | graphs/CLI | Qdrant/BM25/模型 | retrieve/ingest/lifecycle |
+| Infrastructure | `backend/app/infrastructure/` | Repository / UoW | Application/tools | Postgres | persistence |
+| Services | `backend/app/services/` | 业务与客户端 | API/tools | DB/外部 | 函数库 |
+| Tools | `backend/app/tools/` | Agent 白名单 + Registry | graphs/PEV | services/repos | `domain.py`、`registry.py` |
+| Models/DB | `backend/app/models/`、`db/` | 持久化 | 多层 | Postgres | ORM |
+| Worker | `backend/app/worker/` | Streams 消费 | Redis | graphs | CLI worker |
+| Eval | `backend/app/eval/` | 评测与门禁 | CLI/CI | rag/graph/services | eval-* / eval-gate |
+| Frontend | `frontend/src/` | UI（轨迹/证据/Diff） | 用户 | API | 页面路由 |
+
+### 5.3 数据流转全流程
+
+1. **来源**：HTTP JSON、上传文件、`knowledge_base/raw`、种子 JSON  
+2. **格式**：业务表行；RAG `DocumentChunk`；Agent `FitnessAgentState`；记忆 `user_memories` / `session_memories`  
+3. **读取**：async SQLAlchemy（经 Repository）；Qdrant search；BM25  
+4. **校验**：Pydantic、`InputSanitizer`、计划/饮食校验、Evidence Gate  
+5. **转换**：多格式解析 → 文档类型感知分块（`RAG_CHUNK_STRATEGY`）→ Embedding  
+6. **核心处理**：主图路由 → 领域子图 / PEV / `hybrid_retrieve` / `optimize_meals`  
+7. **中间状态**：pending plans、统一审批载荷、LangGraph interrupt、会话摘要  
+8. **队列**：Redis Streams（ACK / XAUTOCLAIM / 死信）  
+9. **持久化**：Postgres（含 `agent_task_events` 为 SSE 权威源）；Qdrant；`bm25_index.json`；`index_versions.jsonl`  
+10. **输出**：统一 `{status, request_id, data|error}`；SSE（`Last-Event-ID`）  
+11. **错误**：fail 码、429 Token、拒答、校验失败、死信  
+12. **清理**：Ollama `keep_alive`；任务结束写会话摘要
+
+### 5.4 模块调用关系
+
+```mermaid
+flowchart TD
+    RootCLI["main.py"] --> Front["frontend Vite"]
+    RootCLI --> BackendCLI["backend/app/cli.py"]
+    BackendCLI --> API["FastAPI app.main"]
+    BackendCLI --> Worker["worker Streams"]
+    Front --> API
+    API --> AppLayer["application/*"]
+    AppLayer --> Graph["graphs/fitness_graph"]
+    Worker --> Graph
+    Graph --> Subgraphs["agents/workflows/graphs"]
+    Subgraphs --> PEV["agents/runtime PEV"]
+    Subgraphs --> RAG["rag RetrievalPlan + Gate"]
+    PEV --> Tools["tools/registry + domain"]
+    Tools --> UoW["infrastructure UoW"]
+    UoW --> PG[(PostgreSQL)]
+    RAG --> Qdrant[(Qdrant)]
+    RAG --> BM25["rag/bm25"]
+    AppLayer --> Redis[(Redis Streams)]
+    Graph --> CKPT["Postgres Checkpointer"]
+```
+
+### 5.5 核心执行链路
 
 ```text
-磁盘文件 → parsing/* → chunking.py (~900字/重叠120)
-         → embed → Qdrant upsert → BM25 rebuild
-query → dense + BM25 → RRF(k=60) → Rerank → build_context → Ollama
+启动：cli.api → uvicorn → app.main:app（CORS_ORIGINS / JWT 生产校验）
+认证：auth.login → JWT + RefreshToken
+问答：create_task → route_intent → knowledge 子图 → RetrievalPlan → Gate → citations → SSE
+计划：PEV 预览 → approval 子图 interrupt → approve（幂等）→ commit_plan_use_case
+记忆：propose → confirm(apply_to_profile) → UserProfile + AuditLog
+入库：knowledge-ingest / ingest → 类型分块 → Qdrant + BM25 + knowledge_sources + index_version
+关闭：信号优雅停 Worker；compose down
 ```
 
-- **幂等**：按 `document_id` 先删后写
-- **拒答**：证据过少 → `no_answer=true`，不调用 LLM 胡编
+### 5.6 依赖方向与耦合关系
 
-### 7.2 支持格式
+- **可独立**：`nutrition.py`、纯函数校验器、离线 eval 层、chunk-compare  
+- **依赖全局**：`get_settings()`、Qdrant/Ollama 单例  
+- **已降耦**：主图委托子图；写计划经 Application + UoW；SSE 不以进程内存为权威源  
+- **扩展点**：新子图、Tool Registry 新工具、parser/分块策略、eval 层与 `eval_config.thresholds`  
+- **跨层**：子图编排仍可调用 RAG/Ollama（应用级编排，可接受）
 
-| 分组 | 后缀 | 模块 |
+---
+
+## 6. 逐模块详细源码解析
+
+### 6.0 AI 代码定位索引
+
+| 开发任务 | 首要查看文件 | 关联文件 | 关键符号 | 修改注意事项 |
+|---|---|---|---|---|
+| 改 API 路由 | `backend/app/api/__init__.py` | 各 `api/*.py` | `api_router` | 双前缀同时生效 |
+| 改 JWT/密码 | `backend/app/core/security.py` | `api/auth.py` | `create_access_token` | 使已有 token 失效 |
+| 改意图路由 | `backend/app/agents/routing.py` | `graphs/fitness_graph.py`、`evals/agent_routing_cases.json` | `route_intent` | 同步评测与 clarify 阈值 |
+| 改领域子图 | `backend/app/agents/workflows/graphs/` | `fitness_graph.py`、`workflows/*` | `build_*_subgraph` | 保持状态字段兼容 |
+| 改 PEV / 审批 | `backend/app/agents/runtime/` | `plan_workflow.py`、前端 ChatView | `build_approval_payload` | Diff/依据字段对齐前端 |
+| 改记忆写回 | `backend/app/application/memories/` | `api/memories.py`、`UserProfile` | `confirm_memory_use_case` | 仅白名单键写档案 |
+| 改检索融合 | `backend/app/rag/retrieve.py` | `retrieval_plan.py`、`evidence_gate.py` | `hybrid_retrieve`、`build_retrieval_plan` | 重建索引后回归 |
+| 改分块 | `backend/app/rag/chunk_strategies.py` | `chunking.py`、`ingest` | `split_with_strategy` | `chunk-compare` 后重入库 |
+| 改食谱优化 | `backend/app/services/meal_optimizer.py` | `tools/domain.py`、`evals/meal_cases.json` | `optimize_meals` | 验证 OR-Tools/贪心 |
+| 改营养公式 | `backend/app/services/nutrition.py` | profile API | `estimate_tdee` | 影响目标热量 |
+| 改前端对话 | `frontend/src/stores/chat.ts` | `views/ChatView.vue` | SSE / pending Diff | 事件字段对齐 |
+| 改队列 | `backend/app/worker/redis_queue.py` | `agent_runner.py`、config | Streams + DLQ | 双端一致 |
+| 加评估层 / 门禁 | `backend/app/eval/full_eval.py`、`ci_gate.py` | `evals/eval_config.json`、`ci.yml` | `thresholds` | CI 同步 |
+
+### 6.1 API 层（`backend/app/api/`）
+
+#### 6.1.1 模块职责与定位
+
+HTTP 边界：鉴权、CRUD、Agent/SSE、知识、记忆、评估、健康检查。被前端调用；复杂 Agent 经 Application 用例，不在 API 内直接长跑写库。SSE 事件权威源为 Postgres `agent_task_events`（支持 `Last-Event-ID`）。生命周期=请求。
+
+#### 6.1.2 内部文件分工
+
+| 文件 | 前缀 | 职责 |
 |------|------|------|
-| 文本 | md, txt, rst, log | `parsing/text_plain.py` |
-| Office | docx, pptx, xlsx | `parsing/office.py` |
-| PDF | pdf | `parsing/pdf_parser.py` |
-| Web | html, xml | `parsing/web.py` |
-| 数据 | csv, tsv, json, jsonl | `parsing/data_tabular.py` |
-| 图片 | png, jpg, webp… | `parsing/image_parser.py`（可选 OCR） |
+| `__init__.py` | — | 聚合路由 |
+| `deps.py` | — | `get_current_user`、`require_role`、`ok`/`fail` |
+| `health.py` | — | `/health`、`/health/ready`、`/metrics/tokens` |
+| `auth.py` | `/auth` | 注册登录刷新登出 |
+| `users.py` | `/users` | 档案 |
+| `foods.py` | `/foods` | 食物 |
+| `exercises.py` | `/exercises` | 动作 |
+| `logs.py` | 路径分散 | 训练/饮食/体测日志 |
+| `plans.py` | `/plans` | 计划生命周期 |
+| `agent.py` | `/agent` | 对话与任务（create/approve/cancel/resume/stream） |
+| `memories.py` | `/memories` | 受控记忆提出/确认写回/删除 |
+| `knowledge.py` | `/knowledge` | 入库检索（admin） |
+| `eval.py` | `/eval` | 评估查询（admin） |
 
-完整说明：[`docs/INGEST_FORMATS.md`](docs/INGEST_FORMATS.md)。
+#### 6.1.3 核心类
 
----
+无独立业务类；`require_role(*roles)` 为依赖工厂。
 
-## 8. LangGraph Agent
+#### 6.1.4 核心函数
 
-实现：`backend/app/graphs/fitness_graph.py`；状态：`graphs/state.py`。
+| 函数或方法 | 文件位置 | 入参 | 返回值 | 核心逻辑 | 副作用 | 异常 | 调用位置 |
+|---|---|---|---|---|---|---|---|
+| `get_current_user` | `deps.py` | Bearer, db | `User` | 解码 JWT 查库 | DB 读 | 401 | 受保护路由 |
+| `_sanitize_or_fail` | `agent.py` | rid, message | clean 或 JSON error | `get_sanitizer().sanitize` | 指标 | 400 | chat/tasks |
+| 任务创建/流式 | `agent.py` + `application/agent/` | body, user | JSON/SSE | 入队或同进程跑图；事件落库 | DB/Redis | 429 等 | 前端 |
 
-### 8.1 意图分类
+#### 6.1.5 关键实现原理
 
-| 意图 | 示例 | 节点 |
-|------|------|------|
-| `risk_or_medical` | 胸痛、骨折、处方 | **safety**（阻断） |
-| `plan_create` / `plan_adjust` | 生成/调整计划 | **plan_preview** → **plan_confirm** |
-| `personal_data_query` | 我的档案、本周训练 | **personal** |
-| `workout_log_write` / `diet_log_write` | 打卡引导 | **log_hint** |
-| `small_talk` | 你好 | **boundary** |
-| `knowledge_query`（默认） | 蛋白、减脂 | **rag** |
+中间件注入 `request_id`；Agent 路径 sanitize→Application 建任务→同步或 Streams 入队→进度/`agent_task_events`→SSE；计划确认与子图 `interrupt` 对齐，approve 幂等。
 
-### 8.2 状态图（含 interrupt）
+#### 6.1.6 异常与失败行为
 
-```text
-classify ──► safety | boundary | rag | personal | log_hint
-                │
-plan ──► plan_preview ──► plan_confirm ──interrupt()──► plan_commit | plan_reject ──► END
-```
+`fail(...)` 统一错误体；`TokenBudgetExceeded`→429；sanitize 拒绝计 `SANITIZE_REJECT`。
 
-| 节点 | 行为 |
-|------|------|
-| plan_preview | `preview_and_stage_plans`；`requires_confirmation=true` |
-| plan_confirm | `interrupt()` 等待人工；SSE `approval_required` |
-| plan_commit | `commit_plans` 写库 |
-| plan_reject | 丢弃 pending，返回说明 |
+#### 6.1.7 修改与扩展注意事项
 
-### 8.3 任务 API 与 SSE
+新路由注册到 `__init__.py`；admin 能力必须 `require_role`；改 SSE 协议同步前端；复杂事务放 Application/UoW。
 
-| 接口 | 说明 |
-|------|------|
-| `POST /agent/chat` | 同步一轮 |
-| `POST /agent/tasks` | 异步；支持 `Idempotency-Key` |
-| `GET /agent/tasks/{id}` | 任务详情 |
-| `GET /agent/tasks/{id}/stream` | SSE（约 3 分钟） |
-| `POST /agent/tasks/{id}/approve` | interrupt 恢复：`{"approve": true/false}` |
-| `POST /agent/tasks/{id}/resume` | Checkpointer 断点续跑 |
-| `GET /agent/tasks/{id}/checkpoint` | 检查点信息 |
-| `GET /agent/traces` | 本地 Trace 列表 |
+### 6.2 Core（`backend/app/core/`）
 
-SSE 事件：`task_started`、`node_started`、`completed`、`approval_required`、`failed`、`error` 等。
+#### 6.2.1 模块职责与定位
 
----
+配置、安全、日志、指标、追踪、输入防护、上传安全、Token 预算、进度事件。
 
-## 9. 业务域工具与确定性计算
+#### 6.2.2 内部文件分工
 
-白名单：`backend/app/tools/domain.py`（**禁止** LLM 直接写库或算热量）。
+`config.py`、`security.py`、`input_sanitizer.py`、`upload_security.py`、`logging.py`、`metrics.py`、`tracing.py`、`token_monitor.py`、`progress.py`。
 
-| 工具 | 作用 |
-|------|------|
-| `check_risk` | 高风险词检测 |
-| `get_user_profile_data` | 档案 + TDEE/宏量 |
-| `recent_logs` | 近 7 天训练/饮食汇总 |
-| `query_foods` | 食物库查询 |
-| `preview_and_stage_plans` | 训练+饮食预览 |
-| `commit_plans` / `rollback_plan` | 确认写入 / 回滚 |
-| `weekly_adjust_preview` | 周联合调整诊断+预览 |
-| `swap_meal_item` | 单餐换菜重优化 |
-| `weekly_volume` | 训练容量（`training_load.py`） |
+#### 6.2.3 核心类
 
-**营养**：`services/nutrition.py` — Mifflin-St Jeor TDEE、宏量分配。  
-**食谱优化**：`services/meal_optimizer.py` — OR-Tools SCIP；`MEAL_USE_ORTOOLS=false` 时纯贪心。
-
----
-
-## 10. 安全、合规与输入防护
-
-| 措施 | 实现 |
-|------|------|
-| 产品边界 | 健身饮食辅助；**不提供**诊断/治疗 |
-| 高风险拦截 | `safety` 节点 + `block_plan_upgrade` |
-| 计划写库 | 必须用户 **approve**；Agent 仅 stage |
-| 热量/宏量 | 食物库 per_100g × 克数，代码计算 |
-| Prompt Injection | `InputSanitizer`；`UNSAFE_INPUT` 400 |
-| Token 熔断 | 超预算 50% → 429 |
-| JWT + Refresh | 生产更换 `JWT_SECRET`；`REFRESH_TOKEN_EXPIRE_DAYS` |
-| RBAC | 知识入库、评估 API 需 `admin` |
-| CORS | 开发 `*`；生产应收紧 |
-
----
-
-## 11. 可观测性、Trace 与 Token 预算
-
-| 能力 | 位置 |
-|------|------|
-| HTTP 指标 | `/metrics` |
-| RAG / LLM 指标 | `fitpilot_retrieval_*`、`fitpilot_llm_*` |
-| Token 快照 | `GET /metrics/tokens` |
-| Trace | `GET /agent/traces`、`/agent/traces/{id}` |
-| 就绪探测 | `GET /health/ready`（Postgres/Redis/Qdrant/Ollama/GPU） |
-| CLI | `fitpilot status` / `status --local` |
-| 生产监控 | Prometheus `:9090`、Grafana `:3000`（prod compose） |
-
----
-
-## 12. 知识库与数据导入管线
-
-### 12.1 语料目录
-
-见 [`knowledge_base/SOURCES.md`](knowledge_base/SOURCES.md)。
-
-### 12.2 导入命令（完整顺序）
-
-```powershell
-cd D:\FitPilot\backend
-
-# 1. 确保 schema 最新
-uv run python main.py migrate
-
-# 2. 动作库 → Postgres（可选写入 Qdrant）
-uv run python main.py seed-exercises
-# uv run python main.py seed-exercises --to-qdrant --limit 100
-
-# 3. 食物库（默认先 prepare_fdc_kb）
-uv run python main.py seed-foods
-# uv run python main.py seed-foods --no-prepare
-
-# 4. 知识库 → Qdrant + BM25
-uv run python main.py ingest
-# 换语料 / 换 Embedding 模型时重建向量库（不动 Postgres 用户数据）：
-uv run python main.py ingest --reset
-# 指定目录：
-uv run python main.py ingest --path D:\FitPilot\knowledge_base\raw\curated
-```
-
-### 12.3 清库原则
-
-| 库 | 清理 | 场景 |
+| 类 | 路径 | 要点 |
 |----|------|------|
-| Postgres 业务 | **否** | 账号、计划、打卡 |
-| Qdrant | **是**（`ingest --reset`） | 换语料 / Embedding |
-| BM25 索引 | 随 `--reset` | 自动重建 |
+| `Settings` | `config.py` | 全量运行配置 |
+| `InputSanitizer` | `input_sanitizer.py` | `max_length=5000`；注入/危险词；去零宽字符 |
 
-### 12.4 API 入库（需 admin Token）
+#### 6.2.4 核心函数
 
-- `GET /knowledge/formats`、`GET /knowledge/status`
-- `POST /knowledge/ingest`、`/ingest/text`、`/ingest/upload`
-- `POST /knowledge/search`（调试检索）
-- `POST /knowledge/collections/ensure`
+| 函数或方法 | 文件位置 | 入参 | 返回值 | 核心逻辑 | 副作用 | 异常 | 调用位置 |
+|---|---|---|---|---|---|---|---|
+| `create_access_token` | `security.py` | subject, extra | JWT | HS256 | 无 | — | auth |
+| `hash_refresh_token` | `security.py` | raw | hex | SHA256 | 无 | — | auth |
+| `InputSanitizer.sanitize` | `input_sanitizer.py` | text | `(clean, err)` | 校验过滤 | 无 | 返回错误串 | agent |
+| `get_settings` | `config.py` | — | Settings | 缓存单例 | 读 env | — | 全局 |
 
----
+#### 6.2.5 关键实现原理
 
-## 13. 外部数据集与参考项目
+Access JWT + 不透明 refresh（仅存 hash）。CORS 由 `CORS_ORIGINS` 配置；production 禁止裸 `*` 与弱 `JWT_SECRET`。
 
-目录：`例子或数据/` — 详见 [`例子或数据/README.md`](例子或数据/README.md)。
+#### 6.2.6 异常与失败行为
 
-| 路径 | 用途 |
-|------|------|
-| `workout-cool-main/` | 产品理念参考 |
-| `exercises-dataset-main/` | 动作库 JSON |
-| `FoodData_Central_*中文翻译包/` | `prepare_fdc_kb.py` |
-| `FoodData_Central_foundation_food_json_*.json` | USDA 英文回退 |
+Token 熔断全局处理；上传超限由 `upload_security` 拒绝。
 
----
+#### 6.2.7 修改与扩展注意事项
 
-## 14. 环境变量与配置
+生产更换 `JWT_SECRET` 并收紧 CORS；同步 `tests/test_input_sanitizer.py`。
 
-```powershell
-cd D:\FitPilot
-Copy-Item .env.example .env
-# 编辑 .env：JWT_SECRET、模型路径、设备选型等
+### 6.3 Graphs（`backend/app/graphs/`）与 Agents（`backend/app/agents/`）
+
+#### 6.3.1 模块职责与定位
+
+主图只负责 classify 与组装；领域逻辑在 `agents/workflows/` 与可编译子图 `agents/workflows/graphs/`。含结构化路由、PEV、受控记忆、统一审批策略。
+
+#### 6.3.2 内部文件分工
+
+`graphs/fitness_graph.py`、`state.py`、`checkpointer.py`；`agents/routing.py`、`agents/runtime/*`、`agents/workflows/*`、`agents/memory/*`。
+
+#### 6.3.3 核心类
+
+`FitnessAgentState`；`RoutingDecision`；`ExecutionPlan` / `AgentRunResult`；`PostgresCheckpointSaver`。
+
+#### 6.3.4 核心函数
+
+| 函数或方法 | 文件位置 | 入参 | 返回值 | 核心逻辑 | 副作用 | 异常 | 调用位置 |
+|---|---|---|---|---|---|---|---|
+| `route_intent` | `agents/routing.py` | text | RoutingDecision | 风险→规则→低置信 clarify | 无 | — | 图/评测/PEV |
+| `classify_intent` | `fitness_graph.py` | text | Intent | 委托 `route_intent` | 无 | — | 兼容评测 |
+| `run_fitness_agent` | `fitness_graph.py` | 用户请求等 | dict | 主图 + 子图 + checkpoint | DB/LLM/RAG | finalize | API/worker |
+| `build_approval_payload` | `agents/runtime/policies.py` | pending | 审批展示 | Diff/依据/风险/回滚 | 无 | — | 计划确认 |
+
+主图节点：`classify`、`safety`、`boundary`、`clarify`、`rag`、`personal`、`plan_preview`、`complex_preview`、`plan_approval`、`log_hint`（后几项为编译子图）。
+
+#### 6.3.5 关键实现原理
+
+未知意图进入 `clarify`（不再默认 RAG）；计划写库经 interrupt + 人审；resume 使用 `Command(resume=...)`，`thread_id=task_id`。
+
+#### 6.3.6 异常与失败行为
+
+Dense 失败返回空列表；图失败经 `finalize_agent_result` 落库；Worker 失败可重试或死信。
+
+#### 6.3.7 修改与扩展注意事项
+
+改 Intent 同步评测与测试；新领域优先加子图而非膨胀主图；勿绕过 safety。
+
+### 6.4 RAG（`backend/app/rag/`）
+
+#### 6.4.1 模块职责与定位
+
+多格式解析、类型感知分块、向量化、Query Understanding、动态检索、Evidence Gate、Citation、增量入库与索引版本。
+
+#### 6.4.2 内部文件分工
+
+`parsing/*`、`chunking.py`、`chunk_strategies.py`、`parent_child.py`、`embeddings.py`、`bm25.py`、`retrieve.py`、`retrieval_plan.py`、`rerank.py`、`context.py`、`citations.py`、`evidence_gate.py`、`ingest.py`、`knowledge_lifecycle.py`、`query_understanding.py`。
+
+#### 6.4.3 核心类
+
+`DocumentChunk`、`RetrievedChunk`、`RetrievalPlan`；BM25；`QdrantService`（含 snapshot API）。
+
+#### 6.4.4 核心函数
+
+| 函数或方法 | 文件位置 | 入参 | 返回值 | 核心逻辑 | 副作用 | 异常 | 调用位置 |
+|---|---|---|---|---|---|---|---|
+| `split_with_strategy` | `chunk_strategies.py` | text, strategy | chunks | auto 按文档类型选策略 | 无 | — | ingest |
+| `build_retrieval_plan` | `retrieval_plan.py` | query | plan | query_type 驱动 top_k/权威阈值 | 无 | — | knowledge 子图 |
+| `hybrid_retrieve` | `retrieve.py` | query, top_k | chunks | dense+bm25→RRF→rerank | 外部 IO | dense→[] | plan 执行 |
+| `assess_evidence` | `evidence_gate.py` | chunks | assessment | 拒答门控 | 无 | — | knowledge 子图 |
+| `map_citations` | `citations.py` | chunks, answer | citations | 覆盖率/index_version | 无 | — | context/知识回答 |
+| `ingest_incremental` / `rollback_index_version` | `knowledge_lifecycle.py` | 路径/版本 | 结果 | manifest + index_versions | DB/Qdrant | — | CLI |
+
+#### 6.4.5 关键实现原理
+
+```text
+parse → detect_doc_type → chunk(strategy) → embed → Qdrant + BM25 + knowledge_sources
+query → analyze_query → RetrievalPlan → retrieve_with_plan → Evidence Gate → citations
 ```
 
-| 分类 | 变量 | 说明 |
-|------|------|------|
-| 应用 | `APP_ENV`, `APP_PORT`, `APP_DEBUG` | development / 8000 |
-| JWT | `JWT_SECRET`, `JWT_EXPIRE_MINUTES` | 生产必改 |
-| Refresh | `REFRESH_TOKEN_EXPIRE_DAYS` | 默认 14 天 |
-| Worker | `AGENT_USE_WORKER` | `true` 时 API 入队 Redis |
-| 食谱 | `MEAL_USE_ORTOOLS` | `true` 启用 SCIP |
-| Postgres | `DATABASE_URL` | asyncpg 连接串 |
-| Redis | `REDIS_URL` | |
-| Qdrant | `QDRANT_URL`, `QDRANT_COLLECTION` | 6333 / fitpilot_knowledge |
-| Ollama | `OLLAMA_BASE_URL`, `OLLAMA_MODEL`, `OLLAMA_MODEL_RAG`, `OLLAMA_MODEL_JUDGE`, `OLLAMA_KEEP_ALIVE` | 按环节分模型，见下表 |
-| Ollama 可选 | `OLLAMA_MODEL_REWRITE`, `OLLAMA_MODEL_CLASSIFY`, `OLLAMA_USE_LLM_*` | 默认关 LLM 改写/分类 |
-| RAG | `EMBEDDING_*`, `RERANKER_*`, `RAG_TOP_K`, `RAG_SKIP_RERANK` | Embedding 建议 `cpu` 错峰 |
-| 离线 | `RAG_OFFLINE=1` | 哈希向量 + BM25 |
-| 入库截断 | `RAG_PDF_MAX_PAGES`, `RAG_CSV_MAX_ROWS`, `RAG_ENABLE_OCR`… | 见 INGEST_FORMATS |
-| Token | `TOKEN_BUDGET`, `TOKEN_STOP_RATIO` | 100k / 50% 熔断 |
-| 可观测 | `LOG_LEVEL`, `LANGFUSE_*` | 可选 Langfuse |
-| HF | `HF_ENDPOINT` | 如 https://hf-mirror.com |
+#### 6.4.6 异常与失败行为
 
-完整模板：`.env.example`。代码：`backend/app/core/config.py`。
+检索失败降级空证据；解析截断由环境变量控制；回滚前尽量打 Qdrant 快照。
 
-前端：`frontend/.env` → `VITE_API_BASE=http://127.0.0.1:8000/api/v1`
+#### 6.4.7 修改与扩展注意事项
 
-**质量优先（显存允许）** 时可将 RAG 升到 4B，并保持 Embedding 在 CPU：
+改 embedding 或分块策略后建议 `knowledge-ingest --full` 或 `--reset`；可用 `chunk-compare` 做离线 A/B。
 
-```env
-OLLAMA_MODEL_RAG=qwen3.5:4b
-EMBEDDING_DEVICE=cpu
-OLLAMA_KEEP_ALIVE=30s
-```
+### 6.5 Services（`backend/app/services/`）
+
+#### 6.5.1 模块职责与定位
+
+营养、食谱优化、训练模板/负荷/校验、周调整、计划 diff、Agent 持久化、Ollama/Qdrant、种子。
+
+#### 6.5.2 内部文件分工
+
+见目录内 `nutrition.py`、`meal_optimizer.py`、`training_*.py`、`diet_plan_validator.py`、`weekly_adjustment.py`、`plan_diff.py`、`progressive_load.py`、`agent_*.py`、`ollama_client.py`、`qdrant_client.py`、`food_*.py`、`exercise_seed.py`。
+
+#### 6.5.3–6.5.5 核心逻辑摘要
+
+- `mifflin_bmr` / `estimate_tdee` / `target_macros_for_goal`：确定性营养。  
+- `optimize_meals`：`MEAL_SLOTS=["早餐","午餐","晚餐"]`，克重 `MIN_GRAM=30`、`MAX_GRAM=350`、`GRAM_STEP=10`；OR-Tools 失败则 `_optimize_greedy`；贪分含蛋白项与早餐燕麦偏好。  
+- Agent 持久化写入 `agent_task_*` 表。
+
+#### 6.5.6 异常与失败行为
+
+OR-Tools 异常→日志→贪心；Ollama 受超时配置约束。
+
+#### 6.5.7 修改与扩展注意事项
+
+改槽位/克重同步 `meal_cases.json` 与相关测试。
+
+### 6.6 Models 与迁移（`backend/app/models/`、`migrations/`）
+
+#### 6.6.1–6.6.5
+
+主要表：`users`、`user_profiles`、`refresh_tokens`、`food_items`、`exercises`、`workout_plans`/`diet_plans` 及 versions、`workout_logs`/`diet_logs`、`body_metrics`、`agent_tasks` 与 events/steps/tool_calls/checkpoints、`lg_checkpoints`/`lg_channel_blobs`/`lg_checkpoint_writes`、`evaluation_*`、`audit_logs`、`data_sources`、`plan_adjustments`。迁移链 `0001`→`0007`。通过 `fitpilot migrate` 升级。
+
+#### 6.6.7
+
+只追加新 revision，勿改写已发布迁移。
+
+### 6.7 Worker（`backend/app/worker/`）
+
+Redis Streams：`fitpilot:agent:tasks` + Consumer Group；ACK、`XAUTOCLAIM`、死信 `fitpilot:agent:dead_letter`、最大重试 `AGENT_QUEUE_MAX_RETRIES`；`agent_runner` 支持优雅退出。开关 `AGENT_USE_WORKER`。
+
+### 6.8 Tools（`backend/app/tools/`）
+
+`registry.py` 声明 operation_type / requires_approval；`domain.py` 白名单工具。读档案/日志经 `SqlUserRepository`；计划提交经 Application + UoW。禁止 LLM 直接写库或编造热量。
+
+### 6.9 Eval（`backend/app/eval/`、`evals/`）
+
+`full_eval.LAYER_ORDER`：parsing → retrieval → no_answer → generation → generation_online → agent → plan → meal → safety。离线门禁 `ci_gate.py` / `eval-gate`（parsing/agent/plan/meal/safety）。阈值在 `evals/eval_config.json`。
+
+### 6.10 Frontend（`frontend/src/`）
+
+路由：`/login`、`/`、`/profile`、`/logs`、`/foods`、`/exercises`、`/chat`、`/plans`。`ChatView`：Agent 执行轨迹、RAG 证据面板、审批 Diff/依据/风险提示。`stores/chat.ts` 消费 SSE 与 approve。
 
 ---
 
-## 15. 从零部署（完整命令步骤）
+## 7. 核心功能亮点与技术关键点
 
-以下按 **推荐顺序** 列出从零到可验收的全部命令。
+1. **主图 + 领域子图 + PEV + interrupt 人审**：计划写库前强制确认，审批载荷含 Diff/依据/风险。  
+2. **混合检索 + RetrievalPlan + Evidence Gate + Citation**：类型感知分块、动态策略、拒答与引用覆盖率。  
+3. **食谱 OR-Tools + 贪心回退**（`meal_optimizer.py`）：约束失败不阻断。  
+4. **营养确定性计算**（`nutrition.py`）：禁止模型编数值。  
+5. **结构化路由 + clarify**：低置信不再默认进入 RAG。  
+6. **Redis Streams Worker**：ACK / 重试 / 死信 / 优雅退出。  
+7. **九层评估 + 离线 CI 门禁**（`eval-gate`）：与 GitHub Actions 联动。  
+8. **受控记忆**：会话摘要 + 长期偏好确认写回档案。  
+9. **知识生命周期**：增量入库、index_version、回滚、Qdrant 快照。  
+10. **CLI 语义分离**：根 `web`=前端，后端 `api`。
 
-### 15.1 前置依赖
+---
 
-| 依赖 | 版本建议 | 用途 |
-|------|----------|------|
-| Python | 3.11+ | 后端 |
-| uv | 最新 | Python 包管理 |
-| Node.js + pnpm | LTS | 前端 |
-| Docker Desktop | 最新 | Postgres + Redis |
-| Ollama | 最新 | 本地 LLM |
-| Qdrant | Docker 或本机 | 向量库 |
+## 8. 项目启动、部署、运行完整流程
+
+### 8.1 环境准备
+
+操作系统任意主流桌面/服务器；Python 3.11–3.12；`uv`；Node.js + `pnpm`；Docker；Ollama；Qdrant（本机或容器）。可选 NVIDIA 驱动。
+
+### 8.2 获取和进入项目
+
+以包含 `main.py`、`backend/`、`frontend/`、`docker-compose.dev.yml` 的目录为根。用 `git status` / `git branch` 确认工作区。命令均在该根或其子目录执行。
+
+### 8.3 创建隔离环境
+
+```bash
+cd backend
+uv sync --extra dev
+cd ../frontend
+pnpm install
+```
+
+### 8.4 安装依赖
+
+后端：`backend/pyproject.toml` + `uv.lock`（含 torch cu126 索引配置）。前端：`pnpm install`。常见失败：Python 版本越界、无 pnpm、GPU 轮子与驱动不匹配（改用 CPU 设备变量）。
+
+### 8.5 准备配置
+
+```bash
+cp .env.example .env
+```
+
+设置 `DATABASE_URL`、`REDIS_URL`、`QDRANT_URL`、`OLLAMA_*`、`JWT_SECRET`。前端可选创建 `frontend/.env` 设置 `VITE_API_BASE`。
+
+### 8.6 准备数据、模型或数据库
+
+```bash
+docker compose -f docker-compose.dev.yml up -d
+# 确保本机 Qdrant、Ollama 可用；按 docs/MODEL_DOWNLOAD.md 准备 models/
+cd backend
+uv run python main.py migrate
+uv run python main.py seed-exercises
+uv run python main.py seed-foods
+uv run python main.py seed-demo
+uv run python main.py knowledge-ingest --incremental
+# 或全量：uv run python main.py ingest --reset
+```
+
+无权重时可设 `RAG_OFFLINE=1` 联调（检索质量下降）。演示账号见 `docs/DEMO.md`。
+
+### 8.7 启动命令
+
+```bash
+# 后端 API（仓库根）
+python main.py api
+
+# 或
+cd backend
+uv run python main.py api
+
+# 前端（仓库根）
+python main.py web
+
+# Worker（仅 AGENT_USE_WORKER=true）
+cd backend
+uv run python main.py worker
+```
+
+成功：API 文档大致在 `http://127.0.0.1:8000/docs`；`GET /health` 返回正常；前端 Vite 端口以终端为准。
+
+### 8.8 关闭方式
+
+对 API/前端/Worker 使用 Ctrl+C；`docker compose -f docker-compose.dev.yml down` 停止基础设施。强制杀进程可能导致队列残留或未 finalize 任务。
+
+### 8.9 运行验证
+
+- `GET /health`、`GET /health/ready`、`GET /metrics`、`GET /metrics/tokens`  
+- `cd backend && uv run python main.py status --local`  
+- `cd backend && uv run python main.py eval-gate`  
+- `cd backend && uv run python -m pytest -q`（或见文末命令手册）  
+- 登录 `demo@fitpilot.local` / `demo123456`，按 `docs/DEMO.md` 走一遍对话/审批  
+
+主 CI：`.github/workflows/ci.yml`（单测子集 + `eval-gate`）。可选在线评测：`.github/workflows/online-eval.yml`。
+
+### 8.10 生产部署
+
+基于 `docker-compose.prod.yml`：构建 `backend/Dockerfile`，启动 postgres/redis/qdrant/backend/worker/prometheus/grafana；`AGENT_USE_WORKER=true`；Ollama 常指向 `host.docker.internal`。备份：`fitpilot backup` / `restore`。无独立完整 K8s 清单于仓库中——现有项目文件中未发现除 Compose 外的编排清单。
+
+### 8.11 常见启动故障排查
+
+| 现象 | 可能原因 | 检查位置 | 解决方式 |
+|---|---|---|---|
+| 数据库连接失败 | 未启动 postgres / URL 错误 | `.env`、`docker-compose.dev.yml` | compose up；核对 URL |
+| ready 依赖为 false | Redis/Qdrant/Ollama 未起 | `api/health.py` | 启动对应服务 |
+| 任务一直排队 | 开了 Worker 未起消费者 | `AGENT_USE_WORKER`、`worker/` | 启动 worker 或改 false |
+| 前端 401 | token 过期/密钥变更 | auth store、`JWT_SECRET` | 重新登录 |
+| 检索为空 | 未 ingest / 集合空 | `ingest`、Qdrant | 重新入库 |
+| `web` 与 `api` 混淆 | 旧习惯 | 根 `main.py`、`cli.py` | 前端用 web，后端用 api |
+| 推送/拉模型失败 | 网络 | Ollama/HF | 镜像或离线包 |
+
+---
+
+## 9. 项目已知逻辑、限制、边界条件
+
+### 9.1 隐式业务规则
+
+- 高风险医疗意图优先拦截；越界话题（写代码/炒股等）→ `unsupported`/`boundary`。  
+- 含「调整」→ `plan_adjust`，其他计划话术→ `plan_create`。  
+- **规则低置信 → `clarify`，不再默认 `knowledge_query`。**  
+- 计划必须确认后 commit；approve 幂等。  
+- 知识入库与评估查询需 `admin`。  
+- 长期记忆未确认不得写回档案。  
+- 食谱贪分偏好早餐含「燕麦」文本。
+
+### 9.2 输入边界
+
+- Sanitizer：非空、≤5000 字符、注入/危险关键字、去零宽。  
+- 餐重 30–350g、步长 10g。  
+- 上传大小由 `upload_security` 限制。  
+- RAG 解析截断环境变量见 `.env.example` 注释。
+
+### 9.3 输出边界
+
+- 统一 JSON 包与 `X-Request-ID`。  
+- RAG 带 citations 或拒答。  
+- SSE 事件类型由 agent 实现定义（如 task_started、approval_required、completed、failed）。  
+- 评估可写 `evaluation_*` 表。
+
+### 9.4 状态与一致性
+
+- JWT 无状态；refresh 存 hash。  
+- Agent 事件内存 + DB；多 worker 时内存缓冲不一致风险见第 10 章。  
+- Checkpointer 支持续跑；Redis 队列无完整 ack/死信语义。  
+- 计划版本支持 rollback。
+
+### 9.5 性能边界
+
+主要耗时：Embedding、Rerank、Ollama。同卡建议 Embedding/Reranker 用 CPU，缩短 `OLLAMA_KEEP_ALIVE`。RRF+精排随 top_k 增长。
+
+### 9.6 兼容性限制
+
+- Python 仅 3.11–3.12。  
+- API 双前缀兼容。  
+- 后端 CLI `web` 废弃。  
+- `JWT_EXPIRE_MINUTES` 在 example 与代码默认值不一致，以环境为准。
+
+### 9.7 异常处理机制
+
+- Token 预算→429。  
+- ready 记录依赖失败但不退出进程。  
+- Dense 失败→空检索。  
+- OR-Tools 失败→贪心。  
+- sanitizer 拒绝返回错误响应。
+
+---
+
+## 10. 项目缺陷、可优化点、迭代扩展方向
+
+### 10.1 已确认缺陷（含已修复项）
+
+| 优先级 | 类型 | 问题 | 状态 | 说明 |
+|---|---|---|---|---|
+| P0 | 安全 | CORS `*` + credentials | **已加固** | `CORS_ORIGINS`；production 禁止裸 `*` |
+| P0 | 可靠 | SSE 进程内存事件 | **已修复** | `agent_task_events` + `Last-Event-ID` |
+| P1 | 队列 | LPUSH/BRPOP 无 ACK/死信 | **已升级** | Redis Streams + DLQ + 重试 |
+| P1 | 路由 | 未知意图默认 RAG | **已修复** | 低置信 `clarify` |
+| P2 | JWT 弱密钥 | 默认 secret | **生产拦截** | production 启动校验 |
+| P3 | 文档 | 旧 README2 绝对路径 | 保留归档 | 以本 README 相对路径为准 |
+
+仍可改进：默认强制 Worker 入队、偏好记忆产品化 UI、自托管在线 RAG CI secrets、演示视频。
+
+### 10.2–10.8 优化方向（摘要）
+
+架构上可进一步默认入队、全量工具经 Repository；性能上可做查询向量缓存；测试上可补 interrupt/resume 集成测；可观测性上可加队列深度告警。功能扩展仍建议克制：不强行多 Agent/微服务，优先评估与可演示闭环。
+
+### 10.9 推荐迭代顺序（更新后）
+
+1. 运维：生产 CORS/JWT/compose 实机演练与 backup/restore。  
+2. 演示：按 `docs/DEMO.md` 录制视频。  
+3. 体验：记忆管理页；偏好确认写回更多字段的 UX。  
+4. 评测：配置 online-eval secrets，沉淀检索基线。  
+5. 可选：默认 Worker、更多集成测试。
+
+---
+
+## 11. 全环节命令手册（执行速查）
+
+以下命令默认在 **仓库根目录** `D:\FitPilot`（或你的克隆路径）执行；标注 `backend` 的请先 `cd backend`。Windows PowerShell 与 bash 均可，注意路径分隔符。
+
+建议先设置：
 
 ```powershell
-# 可选：检查环境
 cd D:\FitPilot
 $env:PYTHONPATH = "D:\FitPilot\backend"
 $env:NO_PROXY = "127.0.0.1,localhost"
 ```
 
-### 15.2 克隆与配置
+根目录 `python main.py <子命令>` 会转发到后端 CLI（`web` 除外，专指前端）。后端目录也可用：
 
 ```powershell
-cd D:\FitPilot
-Copy-Item .env.example .env
-# 编辑 .env：确认 DATABASE_URL、QDRANT_URL、OLLAMA_MODEL 等
+cd backend
+uv run python main.py <子命令>
+# 或
+uv run fitpilot <子命令>
 ```
 
-### 15.3 拉取 LLM 与模型权重
+---
+
+### 11.1 环境与依赖
 
 ```powershell
-ollama pull qwen2.5:0.5b
-ollama pull qwen2.5:1.5b
-# 可选质量优先：ollama pull qwen3.5:4b
-# Embedding / Reranker 见 docs/MODEL_DOWNLOAD.md
-# 或开发期设 RAG_OFFLINE=1 跳过 GPU 权重
-```
-
-### 15.4 启动基础设施
-
-```powershell
-cd D:\FitPilot
+# 基础设施（Postgres / Redis；按 compose 文件实际服务为准）
 docker compose -f docker-compose.dev.yml up -d
-docker ps
-# 确认 fitpilot-postgres、fitpilot-redis 为 healthy
-# Qdrant：使用本机已有容器，或取消 compose.dev 内 qdrant 注释后 up -d
+docker compose -f docker-compose.dev.yml ps
+docker compose -f docker-compose.dev.yml down
+
+# 后端 Python 依赖
+cd backend
+uv sync --extra dev
+
+# 前端依赖
+cd ..\frontend
+pnpm install
+
+# 配置
+cd ..
+copy .env.example .env
+# 编辑 .env：DATABASE_URL / REDIS_URL / QDRANT_URL / OLLAMA_* / JWT_SECRET / CORS_ORIGINS
 ```
 
-### 15.5 安装后端依赖
+模型权重准备见 [`docs/MODEL_DOWNLOAD.md`](docs/MODEL_DOWNLOAD.md)。无权重联调可设 `RAG_OFFLINE=1`。
+
+---
+
+### 11.2 数据库迁移与种子数据
 
 ```powershell
-cd D:\FitPilot\backend
-uv sync
-```
+cd backend
 
-### 15.6 数据库迁移
-
-```powershell
+# 迁移到最新（含 knowledge_sources、受控记忆等）
 uv run python main.py migrate
-# 等价：uv run fitpilot migrate
-# 根目录：cd D:\FitPilot && python main.py migrate
-```
 
-### 15.7 灌库（动作 + 食物 + 知识）
-
-```powershell
+# 动作库 / 食物库
 uv run python main.py seed-exercises
 uv run python main.py seed-foods
+# uv run python main.py seed-foods 的脚本参数见 scripts/seed_foods.py（如 --usda-only）
+
+# 一键演示账号 + 档案 + 近两周打卡
+uv run python main.py seed-demo
+# 账号：demo@fitpilot.local / demo123456
+```
+
+---
+
+### 11.3 知识库：入库 / 增量 / 版本 / 回滚 / 快照 / 分块对比
+
+```powershell
+cd backend
+
+# 传统全量入库脚本（可 --reset 重建向量集合）
 uv run python main.py ingest
+uv run python main.py ingest --reset
+uv run python main.py ingest --path ..\knowledge_base\raw
+
+# 增量知识生命周期（推荐）
+uv run python main.py knowledge-diff
+uv run python main.py knowledge-diff --path ..\knowledge_base\raw
+uv run python main.py knowledge-ingest --incremental
+uv run python main.py knowledge-ingest --full
+uv run python main.py knowledge-ingest --reset
+uv run python main.py knowledge-index-version
+uv run python main.py knowledge-index-version --list
+uv run python main.py knowledge-rollback --version idx_xxxxxxxx
+uv run python main.py knowledge-rollback --version idx_xxxxxxxx --no-reset
+
+# Qdrant 集合快照（需 Qdrant 可用）
+uv run python main.py knowledge-snapshot create
+uv run python main.py knowledge-snapshot list
+uv run python main.py knowledge-snapshot restore --name <snapshot_name>
+
+# 离线分块策略 A/B（不依赖向量库）
+uv run python main.py chunk-compare --path ..\knowledge_base\raw\protein_basics.md
+uv run python main.py chunk-compare --path ..\knowledge_base\raw\safety_boundary.md
 ```
 
-### 15.8 安装前端依赖
+环境变量（可选）：`RAG_CHUNK_STRATEGY=auto|fixed|heading|parent_child|faq_qa|clause|table_row`。
+
+---
+
+### 11.4 启动服务（开发）
 
 ```powershell
-cd D:\FitPilot\frontend
-pnpm install
-```
-
-### 15.9 启动服务（开发双终端）
-
-```powershell
-# 终端 1 — 后端 API
+# 终端 1：后端 API（文档默认 http://127.0.0.1:8000/docs）
 cd D:\FitPilot
 python main.py api
-# 或：cd backend && uv run python main.py api --reload
+# 或
+cd backend
+uv run python main.py api --host 0.0.0.0 --port 8000
 
-# 终端 2 — 前端
+# 终端 2：前端（Vite，端口以终端输出为准，常见 5173）
 cd D:\FitPilot
 python main.py web
-# 或：cd frontend && pnpm start
+# 或
+cd frontend
+pnpm start
+# / pnpm dev（以 package.json scripts 为准）
+
+# 终端 3（可选）：Agent Worker
+# .env 中 AGENT_USE_WORKER=true
+cd backend
+uv run python main.py worker
 ```
 
-| 服务 | URL |
-|------|-----|
-| 前端 | http://127.0.0.1:5173 |
-| Swagger | http://127.0.0.1:8000/docs |
-| API（推荐） | http://127.0.0.1:8000/api/v1 |
-| 指标 | http://127.0.0.1:8000/metrics |
-| 就绪 | http://127.0.0.1:8000/api/v1/health/ready |
-
-### 15.10 验收命令
+生产 Compose 示例：
 
 ```powershell
-cd D:\FitPilot\backend
+docker compose -f docker-compose.prod.yml up -d --build
+docker compose -f docker-compose.prod.yml logs -f backend
+docker compose -f docker-compose.prod.yml down
+```
 
-# 依赖就绪（可不启 API）
+---
+
+### 11.5 健康检查、状态与备份
+
+```powershell
+# HTTP（API 已启动时）
+curl http://127.0.0.1:8000/health
+curl http://127.0.0.1:8000/health/ready
+curl http://127.0.0.1:8000/metrics
+curl http://127.0.0.1:8000/metrics/tokens
+
+# 进程内探测依赖（可不经 HTTP）
+cd backend
 uv run python main.py status --local
-
-# 或通过 HTTP（需 API 已启动）
 uv run python main.py status --base-url http://127.0.0.1:8000
 
-# 单元测试（37+ 项）
-uv run python main.py test
-uv run python main.py test -v
-
-# RAG 黄金集评估（需已 ingest）
-uv run python main.py eval
-
-# 七层全量评估
-uv run python main.py eval-all
-
-# 写入评估库 + LLM judge
-uv run python main.py eval-all --persist --online
-```
-
-### 15.11 浏览器验收流程
-
-1. 打开 http://127.0.0.1:5173 → **注册 / 登录**
-2. **档案** 页填写身高体重、目标、器械
-3. **对话** 页提问「减脂期每天吃多少蛋白」→ 观察 SSE 进度与引用
-4. **对话** 页说「帮我生成一周训练和饮食计划」→ 出现确认 → **批准**
-5. **计划** 页查看当前计划、Diff、回滚
-6. **打卡** 页记录训练/饮食
-7. **动作库 / 食物库** 浏览与 shuffle
-
----
-
-## 16. Worker 异步任务模式
-
-当 `AGENT_USE_WORKER=true` 时，API 将 Agent 任务入队 Redis，由独立 Worker 消费。
-
-### 16.1 配置
-
-```powershell
-# .env
-AGENT_USE_WORKER=true
-REDIS_URL=redis://127.0.0.1:6379/0
-```
-
-### 16.2 启动（三进程）
-
-```powershell
-# 终端 1 — API
-cd D:\FitPilot
-python main.py api
-
-# 终端 2 — Worker
-cd D:\FitPilot
-python main.py worker
-# 或：cd backend && uv run python main.py worker --poll-timeout 5
-
-# 终端 3 — 前端
-python main.py web
-```
-
-生产 Compose 已内置 `worker` 服务（`docker-compose.prod.yml`）。
-
----
-
-## 17. 生产环境部署
-
-```powershell
-cd D:\FitPilot
-
-# 1. 配置生产 .env（JWT_SECRET、密码、CORS 等）
-Copy-Item .env.example .env
-
-# 2. 构建并启动全栈
-docker compose -f docker-compose.prod.yml up -d --build
-
-# 3. 容器内迁移与灌库（首次）
-docker compose -f docker-compose.prod.yml exec backend python main.py migrate
-docker compose -f docker-compose.prod.yml exec backend python main.py seed-exercises
-docker compose -f docker-compose.prod.yml exec backend python main.py seed-foods
-docker compose -f docker-compose.prod.yml exec backend python main.py ingest
-
-# 4. 查看日志
-docker compose -f docker-compose.prod.yml logs -f backend worker
-```
-
-| 服务 | 端口 | 说明 |
-|------|------|------|
-| backend | 8000 | FastAPI |
-| worker | — | Agent 队列消费 |
-| prometheus | 9090 | 指标采集 |
-| grafana | 3000 | 默认密码 `fitpilot` |
-| qdrant | 6333 | 向量库 |
-
-> Ollama 默认通过 `host.docker.internal:11434` 连宿主机；请确保宿主机 Ollama 已启动且模型已 pull。
-
----
-
-## 18. 备份与恢复
-
-```powershell
-cd D:\FitPilot\backend
-
-# 备份 Postgres + BM25 索引到默认目录
+# Postgres 备份 / 恢复
 uv run python main.py backup
-# 指定输出目录
-uv run python main.py backup --out D:\FitPilot\backups\2026-07-15
-
-# 从备份恢复
-uv run python main.py restore D:\FitPilot\backups\2026-07-15
-
-# 根目录等价
-cd D:\FitPilot
-python main.py backup
-python main.py restore D:\FitPilot\backups\2026-07-15
-```
-
-> Qdrant 向量库需单独备份 volume 或通过 `ingest` 重建。
-
----
-
-## 19. CLI 命令大全
-
-### 19.1 根目录 `python main.py`
-
-```powershell
-cd D:\FitPilot
-
-# 前端
-python main.py web          # Vite :5173
-python main.py ui           # web 别名
-python main.py dev          # web 别名
-
-# 后端
-python main.py api          # FastAPI :8000
-python main.py api --port 8080 --no-reload
-
-# 数据库
-python main.py migrate
-
-# 种子与入库
-python main.py seed-exercises
-python main.py seed-foods
-python main.py ingest
-python main.py ingest --reset
-
-# Worker
-python main.py worker
-
-# 备份恢复
-python main.py backup
-python main.py restore <备份目录>
-
-# 评估
-python main.py eval
-python main.py eval-all
-python main.py eval-all --persist --online
-python main.py eval-no-answer
-python main.py eval-agent
-
-# 运维
-python main.py status --local
-python main.py status --base-url http://127.0.0.1:8000
-python main.py test
-python main.py test tests/test_rag_basic.py -v
-
-python main.py --help
-```
-
-### 19.2 后端 `fitpilot` / `uv run python main.py`
-
-| 命令 | 作用 | 常用参数 |
-|------|------|----------|
-| **`api`** | 启动 FastAPI | `--host` `--port` `--reload` |
-| `web` | **已废弃**（请用 `api`） | |
-| `migrate` | `alembic upgrade head` | |
-| `worker` | Agent Worker | `--poll-timeout` |
-| `backup` | 备份 | `--out` |
-| `restore` | 恢复 | `<备份目录>` |
-| `seed-exercises` | 动作库 | `--to-qdrant` `--limit` |
-| `seed-foods` | 食物库 | `--no-prepare` |
-| `ingest` | 知识入库 | `--reset` `--path` |
-| `eval` | RAG 评估 | `--suite` `--top-k` `--out` `--config` |
-| `eval-all` | 七层评估 | `--config` `--out` `--md` `--persist` `--online` |
-| `eval-no-answer` | 拒答评估 | `--suite` |
-| `eval-agent` | Agent 路由评估 | `--suite` |
-| `status` | 依赖探测 | `--local` 或 `--base-url` |
-| `test` | pytest | 透传 pytest 参数 |
-
-```powershell
-cd D:\FitPilot\backend
-uv run fitpilot api
-uv run python main.py eval --out ..\evals\reports\rag_$(Get-Date -Format yyyyMMdd).json
-uv run python main.py eval-all --persist --online --out ..\evals\reports\full_eval.json
+uv run python main.py restore --file <path-to-dump>
 ```
 
 ---
 
-## 20. REST API 参考
-
-> 前缀：**`/api/v1`**（根路径无版本前缀仍兼容）。  
-> 除注册/登录/health 外，多数接口需 `Authorization: Bearer <access_token>`。
-
-### 20.1 鉴权
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | `/auth/register` | 注册 |
-| POST | `/auth/login` | 登录，返回 access + refresh |
-| POST | `/auth/refresh` | 刷新 access token |
-| POST | `/auth/logout` | 吊销 refresh token |
+### 11.6 单元测试与离线门禁
 
 ```powershell
-# 注册
-Invoke-RestMethod -Method POST -Uri http://127.0.0.1:8000/api/v1/auth/register `
-  -ContentType "application/json" `
-  -Body '{"email":"demo@fitpilot.local","password":"Demo1234!","display_name":"Demo"}'
+cd backend
 
-# 登录
-$r = Invoke-RestMethod -Method POST -Uri http://127.0.0.1:8000/api/v1/auth/login `
-  -ContentType "application/json" `
-  -Body '{"email":"demo@fitpilot.local","password":"Demo1234!"}'
-$token = $r.data.access_token
-```
-
-### 20.2 用户档案
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/users/me/profile` | 读取档案 |
-| PUT | `/users/me/profile` | 更新档案 |
-
-### 20.3 食物与动作
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/foods` | 列表/搜索 |
-| POST | `/foods` | 新增食物 |
-| GET | `/exercises` | 动作列表（query 筛选） |
-| GET | `/exercises/facets` | 器械/部位聚合 |
-| POST | `/exercises/shuffle` | 换一组动作 |
-| GET | `/exercises/{id}` | 动作详情 |
-
-### 20.4 打卡日志
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET/POST | `/workouts/logs` | 训练记录 |
-| DELETE | `/workouts/logs/{id}` | 删除 |
-| GET/POST | `/diet/logs` | 饮食记录 |
-| GET/POST | `/body-metrics` | 体测记录 |
-
-### 20.5 计划
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/plans/current` | 当前生效计划 |
-| POST | `/plans/preview` | 预览（不经 Agent） |
-| POST | `/plans/{id}/approve` | 确认写入（支持 pending 字段） |
-| POST | `/plans/{id}/rollback` | 回滚版本 |
-| POST | `/plans/weekly-adjust` | 周联合调整预览 |
-| POST | `/plans/meals/swap` | 单餐换菜重优化 |
-
-`POST /plans/meals/swap` 请求体示例：
-
-```json
-{
-  "diet_plan_id": 1,
-  "day_index": 0,
-  "meal_index": 1,
-  "exclude_food_ids": [12, 34]
-}
-```
-
-### 20.6 Agent
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| POST | `/agent/chat` | 同步对话 |
-| POST | `/agent/tasks` | 创建异步任务 |
-| GET | `/agent/tasks/{id}` | 任务状态 |
-| GET | `/agent/tasks/{id}/stream` | SSE |
-| POST | `/agent/tasks/{id}/approve` | `{"approve": true, "comment": "..."}` |
-| POST | `/agent/tasks/{id}/resume` | Checkpointer 续跑 |
-| GET | `/agent/tasks/{id}/checkpoint` | 检查点 |
-| GET | `/agent/traces` | Trace 列表 |
-| GET | `/agent/traces/{id}` | Trace 详情 |
-
-### 20.7 知识库（入库需 admin）
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/knowledge/formats` | 支持格式 |
-| GET | `/knowledge/status` | 向量库状态 |
-| POST | `/knowledge/collections/ensure` | 确保集合 |
-| POST | `/knowledge/ingest` | 目录入库 |
-| POST | `/knowledge/ingest/text` | 内联文本 |
-| POST | `/knowledge/ingest/upload` | 上传文件 |
-| POST | `/knowledge/search` | 调试检索 |
-
-### 20.8 评估（admin）
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/eval/runs` | 评估运行列表 |
-| GET | `/eval/runs/{id}` | 单次运行详情 |
-
-### 20.9 健康与指标
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| GET | `/health` | 存活 |
-| GET | `/health/ready` | 全依赖就绪 |
-| GET | `/metrics` | Prometheus |
-| GET | `/metrics/tokens` | Token 用量 |
-
----
-
-## 21. 前端页面与交互
-
-路由：`frontend/src/router/index.ts`
-
-| 路径 | 页面 | 功能 |
-|------|------|------|
-| `/login` | LoginView | 注册/登录 |
-| `/` | DashboardView | 仪表盘 |
-| `/profile` | ProfileView | 档案编辑 |
-| `/logs` | LogsView | 训练/饮食/体测打卡 |
-| `/foods` | FoodsView | 食物库 |
-| `/exercises` | ExercisesView | 动作库、shuffle |
-| `/chat` | ChatView | Agent 对话 + SSE + 计划批准 |
-| `/plans` | PlansView | 计划预览、Diff、确认、回滚 |
-
-**状态管理**：
-
-- `stores/auth.ts`：JWT + Refresh Token 持久化；401 自动 refresh
-- `stores/chat.ts`：SSE 订阅；`approval_required` 时优先 `POST /agent/tasks/{id}/approve`
-
-**构建与预览**：
-
-```powershell
-cd D:\FitPilot\frontend
-pnpm install
-pnpm start          # 开发
-pnpm build          # 生产构建
-pnpm preview        # 预览 dist
-```
-
----
-
-## 22. 测试、七层评估与 CI
-
-### 22.1 单元测试
-
-```powershell
-cd D:\FitPilot\backend
+# 全部 pytest（默认 -q）
 uv run python main.py test
-uv run python main.py test -v
-uv run python main.py test tests/test_meal_optimizer.py -v
+uv run python -m pytest -q
+
+# 增强方案相关子集（与 CI 接近）
+uv run python -m pytest -q `
+  tests/test_input_sanitizer.py `
+  tests/test_rag_basic.py `
+  tests/test_agent_routing.py `
+  tests/test_nutrition.py `
+  tests/test_token_monitor.py `
+  tests/test_parsers_multiformat.py `
+  tests/test_plan_validator.py `
+  tests/test_upload_security.py `
+  tests/test_rag_eval_metrics.py `
+  tests/test_enhancement_plan.py `
+  tests/test_agent_runtime.py `
+  tests/test_phase3_engineering.py `
+  tests/test_rag_phase4.py `
+  tests/test_memory_and_approval.py
+
+# CI 离线评测门禁（parsing / agent / plan / meal / safety）
+uv run python main.py eval-gate
+uv run python main.py eval-gate --out ..\evals\reports\ci_gate.json
 ```
 
-覆盖：BM25/切分、解析器、Agent 路由、营养、Token、消毒、计划硬约束、食谱优化、Checkpointer 等。
+---
 
-### 22.2 RAG 单层评估
-
-```powershell
-uv run python main.py eval
-uv run python main.py eval --suite ..\evals\golden_rag.json --top-k 4 `
-  --out ..\evals\reports\last.json --config ..\evals\eval_config.json
-```
-
-指标：`hit_rate`、`hit@K`、`mrr`、`citation_rate`、`avg_latency_ms`。
-
-### 22.3 多层评估（eval-all，9 模块）
-
-配置：[`evals/eval_config.json`](evals/eval_config.json)（与 `eval_config.yaml` 同步）。详解见 [`docs/EVAL.md`](docs/EVAL.md)。
-
-| 层 | 模块 | 评测集 | 指标 |
-|----|------|--------|------|
-| 1 | parsing | `parsing_cases.json` | 解析成功率（txt/md/csv/json/html…） |
-| 2 | retrieval | `golden_rag.json`（≥20 条） | Hit@K / MRR |
-| 2b | no_answer | `no_answer_cases.json`（正负样本） | Recall / Precision |
-| 3 | generation | `generation_cases.json` | 静态引用规则 + e2e 检索 |
-| 3b | generation_online | `generation_online_cases.json` | LLM-as-judge（`--online`） |
-| 4 | agent | `agent_routing_cases.json`（全意图） | 意图准确率 / F1 |
-| 5 | plan | `plan_cases.json` | 训练硬约束 |
-| 6 | meal | `meal_cases.json` | 宏量误差 / 忌口 |
-| 7 | safety | `safety_cases.json` | 风险识别 / 周调整 |
+### 11.7 评估体系（九层 + 分项）
 
 ```powershell
-# 全量多层
-uv run python main.py eval-all
+cd backend
 
-# 指定输出
-uv run python main.py eval-all --out ..\evals\reports\full_eval.json --md ..\evals\reports\full_eval.md
-
-# 持久化到 evaluation_runs + 在线 judge
-uv run python main.py eval-all --persist --online
-
-# 分项
-uv run python main.py eval-no-answer
+# Agent 路由层
 uv run python main.py eval-agent
+uv run python main.py eval-agent --suite ..\evals\agent_routing_cases.json
+
+# 拒答层
+uv run python main.py eval-no-answer
+
+# RAG 检索单层（通常需已 ingest + Qdrant）
+uv run python main.py eval
+uv run python main.py eval --suite ..\evals\golden_rag.json --top-k 5 `
+  --out ..\evals\reports\rag_last.json `
+  --md ..\evals\reports\rag_last.md `
+  --config ..\evals\eval_config.json
+
+# 多层全量
+uv run python main.py eval-all
+uv run python main.py eval-all --out ..\evals\reports\full_eval.json --md ..\evals\reports\full_eval.md
+uv run python main.py eval-all --persist
+uv run python main.py eval-all --online --persist
 ```
 
-报告默认：`evals/reports/full_eval_latest.json` / `.md`。`--persist` 会写入各层 `cases` 明细。
-
-### 22.4 CI
-
-GitHub Actions：`.github/workflows/ci.yml` — push/PR 运行核心 pytest（不依赖外部 Ollama/Qdrant）。
+阈值与模块开关：`evals/eval_config.json`（与 `eval_config.yaml` 同步维护）。说明见 [`docs/EVAL.md`](docs/EVAL.md)。
 
 ---
 
-## 23. 管理员与 RBAC
+### 11.8 Agent / 记忆 / 计划相关 HTTP 示例
 
-默认注册用户角色为 `user`。知识库入库与评估 API 需要 `admin`。
+先登录拿 Token（示例用 curl；也可在前端操作）：
 
 ```powershell
-# 将首个用户提升为 admin（在 Postgres 中执行）
-docker exec -it fitpilot-postgres psql -U fitpilot -d fitpilot -c `
-  "UPDATE users SET role='admin' WHERE id=1;"
+# 注册/登录后拿到 access_token，以下用 $TOKEN 表示
+$TOKEN = "<access_token>"
+$H = @{ Authorization = "Bearer $TOKEN"; "Content-Type" = "application/json" }
+
+# 创建 Agent 任务
+Invoke-RestMethod -Method POST -Uri http://127.0.0.1:8000/api/v1/agent/tasks `
+  -Headers $H -Body '{"message":"减脂期蛋白质怎么安排？","session_id":"demo"}'
+
+# 查询任务 / SSE（浏览器或支持 SSE 的客户端）
+# GET /api/v1/agent/tasks/{task_id}
+# GET /api/v1/agent/tasks/{task_id}/stream   Header: Last-Event-ID
+
+# 批准 / 拒绝计划
+Invoke-RestMethod -Method POST -Uri http://127.0.0.1:8000/api/v1/agent/tasks/{task_id}/approve `
+  -Headers $H -Body '{"approve":true,"comment":"ok"}'
+
+# 取消 / 从检查点恢复
+Invoke-RestMethod -Method POST -Uri http://127.0.0.1:8000/api/v1/agent/tasks/{task_id}/cancel -Headers $H
+Invoke-RestMethod -Method POST -Uri http://127.0.0.1:8000/api/v1/agent/tasks/{task_id}/resume `
+  -Headers $H -Body '{}'
+
+# 受控记忆：提出 → 确认写回档案
+Invoke-RestMethod -Method POST -Uri http://127.0.0.1:8000/api/v1/memories `
+  -Headers $H -Body '{"key":"weekly_sessions","value":4,"source":"user","confidence":0.95}'
+Invoke-RestMethod -Method POST -Uri http://127.0.0.1:8000/api/v1/memories/{id}/confirm `
+  -Headers $H -Body '{"apply_to_profile":true}'
+Invoke-RestMethod -Method GET -Uri "http://127.0.0.1:8000/api/v1/memories?confirmed_only=true" -Headers $H
 ```
 
-`require_role("admin")` 用于：`/knowledge/ingest*`、`/eval/runs*`。
+同步兼容接口：`POST /api/v1/agent/chat`（一轮同步跑图）。
 
 ---
 
-## 24. 性能与延迟优化
+### 11.9 推荐演示路径（端到端）
 
-典型对话 **~1 分钟** 时，耗时多在 **Ollama 生成**。
+```powershell
+cd backend
+uv run python main.py migrate
+uv run python main.py seed-demo
+uv run python main.py knowledge-ingest --incremental
+uv run python main.py api
+# 另开终端：根目录 python main.py web
+```
 
-| 手段 | 配置/操作 |
-|------|-----------|
-| 跳过精排 | `RAG_SKIP_RERANK=true` |
-| 更小 LLM | 换 Ollama 模型 |
-| 显存错峰 | `EMBEDDING_DEVICE=cpu` |
-| 降低召回 | 调小 `RAG_TOP_K` / `RAG_RERANK_TOP_K` |
-| 离线开发 | `RAG_OFFLINE=1` |
-| Worker 解耦 | `AGENT_USE_WORKER=true` 避免 API 阻塞 |
-| 食谱求解 | `MEAL_USE_ORTOOLS=false` 可略快但精度下降 |
+浏览器登录 `demo@fitpilot.local` / `demo123456`，按 [`docs/DEMO.md`](docs/DEMO.md)：
 
----
-
-## 25. 路线图与未实现项
-
-| 阶段 | 状态 | 说明 |
-|------|------|------|
-| 阶段 1：业务基础 | ✅ | 鉴权、CRUD、Vue 全页面 |
-| 阶段 2：RAG 基线 | ✅ | 多格式、混合检索、引用/拒答 |
-| 阶段 3：Agent 闭环 | ✅ | LangGraph、SSE、计划确认 |
-| 工程 P0 | ✅ | Agent 持久化、硬约束、Diff、`/api/v1` |
-| 工程 P1 | ✅ | RBAC、Refresh、Worker、备份、周调整 |
-| LangGraph Checkpointer | ✅ | interrupt + resume + Postgres 全状态 |
-| OR-Tools 食谱 | ✅ | SCIP + 贪心回退 + meals/swap |
-| 七层评估 | ✅ | eval-all + DB 持久化 + LLM judge |
-| 生产 Compose | ✅ | backend + worker + Prometheus/Grafana |
-| 前端 meals/swap UI | ⏳ | API 已就绪，PlansView 待接 |
-| 评估看板前端 | ⏳ | `/eval/runs` API 已就绪 |
-| Parent-Child 检索 | ⏳ | P2 |
-| LLM 流式输出 | ⏳ | P2 |
-| Langfuse 默认接入 | ⏳ | 配置项已有 |
+1. 档案 / 今日记录  
+2. 知识问答 → 看证据面板  
+3. 「根据我最近两周的训练记录调整饮食和训练」→ 审批 Diff → 批准  
+4. 计划页查看版本 / 可选回滚  
 
 ---
 
-## 26. 相关文档索引
+### 11.10 常用环境变量速查
+
+| 变量 | 作用 |
+|------|------|
+| `DATABASE_URL` | Postgres 异步连接串 |
+| `REDIS_URL` | Redis |
+| `QDRANT_URL` / `QDRANT_COLLECTION` | 向量库 |
+| `OLLAMA_*` / 各角色模型名 | LLM |
+| `JWT_SECRET` | 生产必须强密钥 |
+| `CORS_ORIGINS` | 逗号分隔前端源 |
+| `AGENT_USE_WORKER` | 任务入 Streams |
+| `AGENT_QUEUE_MAX_RETRIES` / `AGENT_QUEUE_CLAIM_IDLE_MS` | 队列重试与认领 |
+| `RAG_CHUNK_STRATEGY` | 入库分块策略 |
+| `RAG_SKIP_RERANK` / `RAG_TOP_K` / `RAG_OFFLINE` | 检索行为 |
+| `APP_ENV` / `APP_DEBUG` | development/test/production |
+
+完整列表见 `.env.example` 与 `backend/app/core/config.py`。
+
+---
+
+### 11.11 文档索引
 
 | 文档 | 内容 |
 |------|------|
-| [`docs/MODEL_DOWNLOAD.md`](docs/MODEL_DOWNLOAD.md) | Embedding / Reranker / Ollama |
-| [`docs/INGEST_FORMATS.md`](docs/INGEST_FORMATS.md) | 多格式解析与 OCR |
-| [`docs/EVAL.md`](docs/EVAL.md) | RAG 评估详解 |
-| [`docs/ENGINEERING_REVIEW.md`](docs/ENGINEERING_REVIEW.md) | 工程审查落地对照 |
-| [`docs/MIGRATION_FROM_LLM_KB.md`](docs/MIGRATION_FROM_LLM_KB.md) | llm-kb 迁入能力 |
-| [`knowledge_base/SOURCES.md`](knowledge_base/SOURCES.md) | 知识库出处与清库 |
-| [`例子或数据/README.md`](例子或数据/README.md) | 外部数据集 |
-| [`backend/README.md`](backend/README.md) | 后端短命令 |
-| [`frontend/README.md`](frontend/README.md) | 前端短命令 |
-| [`models/README.md`](models/README.md) | 本地模型目录 |
-| `.env.example` | 全量环境变量 |
-
----
-
-**FitPilot** — 结构化健身数据 + 可引用知识 + interrupt 可确认计划 + 七层可验收评估 + 可观测可运维的本地 AI Agent MVP。
+| [`docs/ENGINEERING_ENHANCEMENT.md`](docs/ENGINEERING_ENHANCEMENT.md) | 工程化与 Agent/RAG 增强落地 |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | 架构图 |
+| [`docs/DEMO.md`](docs/DEMO.md) | 演示清单 |
+| [`docs/EVAL.md`](docs/EVAL.md) | 评估说明 |
+| [`docs/MODEL_DOWNLOAD.md`](docs/MODEL_DOWNLOAD.md) | 模型下载 |
+| `.github/workflows/ci.yml` | 主 CI |
+| `.github/workflows/online-eval.yml` | 可选在线评测 |

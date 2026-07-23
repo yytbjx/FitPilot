@@ -146,6 +146,28 @@ def eval_agent(
     raise SystemExit(0 if result.ok else 1)
 
 
+@cli.command("eval-gate")
+def eval_gate(
+    config: Path = typer.Option(
+        REPO_ROOT / "evals" / "eval_config.json",
+        "--config",
+        help="评估配置（使用 thresholds 做门禁）",
+    ),
+    out: Path | None = typer.Option(None, help="JSON 报告路径"),
+) -> None:
+    """CI 离线门禁：parsing / agent / plan / meal / safety（不依赖 Qdrant）。"""
+    import json as _json
+
+    from app.eval.ci_gate import run_ci_gates
+
+    report = run_ci_gates(config)
+    typer.echo(report.summary_text())
+    if out:
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(_json.dumps(report.to_dict(), ensure_ascii=False, indent=2), encoding="utf-8")
+    raise SystemExit(0 if report.ok else 1)
+
+
 @cli.command("eval-all")
 def eval_all(
     config: Path = typer.Option(
@@ -253,6 +275,145 @@ def ingest(
     if path:
         args.extend(["--path", path])
     raise SystemExit(_run_py("scripts/ingest_kb.py", *args))
+
+
+@cli.command("knowledge-diff")
+def knowledge_diff(
+    path: Path = typer.Option(
+        REPO_ROOT / "knowledge_base" / "raw",
+        "--path",
+        help="语料目录",
+    ),
+) -> None:
+    """比较磁盘语料与 knowledge_sources，列出新增/变更/未变。"""
+    import asyncio
+    import json as _json
+
+    from app.rag.knowledge_lifecycle import diff_knowledge_dir
+
+    result = asyncio.run(diff_knowledge_dir(path))
+    typer.echo(_json.dumps(result, ensure_ascii=False, indent=2))
+
+
+@cli.command("knowledge-ingest")
+def knowledge_ingest(
+    incremental: bool = typer.Option(True, "--incremental/--full", help="增量或全量刷新 manifest"),
+    reset: bool = typer.Option(False, "--reset", help="重建向量集合后再全量入库"),
+    path: Path = typer.Option(
+        REPO_ROOT / "knowledge_base" / "raw",
+        "--path",
+        help="语料目录",
+    ),
+) -> None:
+    """知识入库（默认增量）；写入 knowledge_sources 与 index_versions.jsonl。"""
+    import asyncio
+    import json as _json
+
+    from app.rag.knowledge_lifecycle import ingest_incremental
+    from app.services.qdrant_client import get_qdrant_service
+
+    if reset:
+        get_qdrant_service().reset_collection()
+    result = asyncio.run(ingest_incremental(path, reset=reset or not incremental))
+    typer.echo(_json.dumps(result, ensure_ascii=False, indent=2, default=str))
+
+
+@cli.command("knowledge-index-version")
+def knowledge_index_version(
+    list_all: bool = typer.Option(False, "--list", help="列出全部 index_version"),
+) -> None:
+    """查看当前 / 最近索引版本元数据。"""
+    import json as _json
+
+    from app.rag.knowledge_lifecycle import get_active_index_version, list_index_versions
+
+    if list_all:
+        vers = list_index_versions()
+        typer.echo(_json.dumps(vers, ensure_ascii=False, indent=2))
+        raise SystemExit(0 if vers else 1)
+    ver = get_active_index_version()
+    if not ver:
+        typer.echo("尚无 index_version 记录")
+        raise SystemExit(1)
+    typer.echo(_json.dumps(ver, ensure_ascii=False, indent=2))
+
+
+@cli.command("knowledge-rollback")
+def knowledge_rollback(
+    version: str = typer.Option(..., "--version", help="目标 index_version，如 idx_abcdef"),
+    path: Path = typer.Option(
+        REPO_ROOT / "knowledge_base" / "raw",
+        "--path",
+        help="语料目录",
+    ),
+    no_reset: bool = typer.Option(False, "--no-reset", help="不重建 Qdrant 集合"),
+) -> None:
+    """回滚到历史索引版本（按版本清单重入库）。"""
+    import asyncio
+    import json as _json
+
+    from app.rag.knowledge_lifecycle import rollback_index_version
+
+    result = asyncio.run(
+        rollback_index_version(version, raw_dir=path, reset_collection=not no_reset)
+    )
+    typer.echo(_json.dumps(result, ensure_ascii=False, indent=2, default=str))
+    raise SystemExit(0 if result.get("ok") else 1)
+
+
+@cli.command("knowledge-snapshot")
+def knowledge_snapshot(
+    action: str = typer.Argument("list", help="create | list | restore"),
+    name: str | None = typer.Option(None, "--name", help="restore 时快照名"),
+) -> None:
+    """Qdrant 知识集合快照：create / list / restore。"""
+    import json as _json
+
+    from app.services.qdrant_client import get_qdrant_service
+
+    svc = get_qdrant_service()
+    if action == "create":
+        typer.echo(_json.dumps(svc.create_snapshot(), ensure_ascii=False, indent=2))
+        raise SystemExit(0)
+    if action == "list":
+        typer.echo(_json.dumps(svc.list_snapshots(), ensure_ascii=False, indent=2))
+        raise SystemExit(0)
+    if action == "restore":
+        if not name:
+            typer.echo("--name 必填")
+            raise SystemExit(2)
+        result = svc.recover_snapshot(name)
+        typer.echo(_json.dumps(result, ensure_ascii=False, indent=2))
+        raise SystemExit(0 if result.get("ok") else 1)
+    typer.echo("action 应为 create|list|restore")
+    raise SystemExit(2)
+
+
+@cli.command("seed-demo")
+def seed_demo() -> None:
+    """写入演示账号、档案与近两周打卡数据。"""
+    raise SystemExit(_run_py("scripts/seed_demo.py"))
+
+
+@cli.command("chunk-compare")
+def chunk_compare(
+    path: Path = typer.Option(..., "--path", help="语料文件路径"),
+) -> None:
+    """离线对比分块策略（fixed / heading / parent_child / faq_qa / clause）。"""
+    import json as _json
+
+    from app.rag.chunk_strategies import compare_chunk_strategies
+    from app.rag.parsing import parse_file_rich
+
+    parsed = parse_file_rich(path)
+    report = compare_chunk_strategies(
+        parsed.text,
+        document_id=path.stem,
+        title=parsed.title,
+        source_path=str(path),
+    )
+    report["parse_format"] = parsed.format
+    typer.echo(_json.dumps(report, ensure_ascii=False, indent=2))
 
 
 @cli.command("eval")

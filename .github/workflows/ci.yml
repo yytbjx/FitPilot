@@ -36,4 +36,15 @@ jobs:
             tests/test_parsers_multiformat.py \
             tests/test_plan_validator.py \
             tests/test_upload_security.py \
-            tests/test_rag_eval_metrics.py
+            tests/test_rag_eval_metrics.py \
+            tests/test_enhancement_plan.py \
+            tests/test_agent_runtime.py \
+            tests/test_phase3_engineering.py \
+            tests/test_rag_phase4.py \
+            tests/test_memory_and_approval.py
+      - name: Offline eval gates
+        env:
+          PYTHONPATH: ${{ github.workspace }}/backend
+          NO_PROXY: 127.0.0.1,localhost
+        run: |
+          uv run python main.py eval-gate --out ../evals/reports/ci_gate.json
