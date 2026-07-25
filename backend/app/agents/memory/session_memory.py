@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import cast, func, select
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.memory import SessionMemory
@@ -13,10 +15,11 @@ from app.models.memory import SessionMemory
 async def load_session_memory(
     db: AsyncSession, *, user_id: int, session_id: str
 ) -> dict[str, Any] | None:
+    # (user_id, session_id) 已有唯一约束，最多一行，无需再按 id 排序取最新
     row = await db.scalar(
-        select(SessionMemory)
-        .where(SessionMemory.user_id == user_id, SessionMemory.session_id == session_id)
-        .order_by(SessionMemory.id.desc())
+        select(SessionMemory).where(
+            SessionMemory.user_id == user_id, SessionMemory.session_id == session_id
+        )
     )
     if not row:
         return None
@@ -38,31 +41,34 @@ async def save_session_memory(
     payload: dict[str, Any] | None = None,
     summary: str | None = None,
 ) -> SessionMemory:
+    """insert ... on conflict upsert：并发安全（S4 修复），payload 按键合并。"""
+    data = payload or {}
+    stmt = pg_insert(SessionMemory).values(
+        user_id=user_id,
+        session_id=session_id,
+        task_id=task_id,
+        payload=data,
+        summary=summary,
+    )
+    stmt = stmt.on_conflict_do_update(
+        index_elements=["user_id", "session_id"],
+        set_={
+            # 仅在调用方提供新值时覆盖，否则保留原值
+            "task_id": func.coalesce(stmt.excluded.task_id, SessionMemory.task_id),
+            "summary": func.coalesce(stmt.excluded.summary, SessionMemory.summary),
+            # jsonb || 顶层键合并（新值覆盖同名旧键），与原 read-merge-write 语义一致
+            "payload": cast(SessionMemory.payload, JSONB).concat(cast(data, JSONB)),
+            "updated_at": func.now(),
+        },
+    )
+    await db.execute(stmt)
     row = await db.scalar(
         select(SessionMemory).where(
             SessionMemory.user_id == user_id, SessionMemory.session_id == session_id
         )
     )
-    data = payload or {}
-    if row is None:
-        row = SessionMemory(
-            user_id=user_id,
-            session_id=session_id,
-            task_id=task_id,
-            payload=data,
-            summary=summary,
-        )
-        db.add(row)
-    else:
-        merged = dict(row.payload or {})
-        merged.update(data)
-        row.payload = merged
-        if task_id:
-            row.task_id = task_id
-        if summary is not None:
-            row.summary = summary
     await db.commit()
-    await db.refresh(row)
+    assert row is not None  # upsert 成功后必存在
     return row
 
 

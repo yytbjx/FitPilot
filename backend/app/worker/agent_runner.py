@@ -10,7 +10,6 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
-from app.core.config import get_settings
 from app.core.progress import reset_progress_sink, set_progress_sink
 from app.core.token_monitor import TokenBudgetExceeded
 from app.core.tracing import end_trace, start_trace

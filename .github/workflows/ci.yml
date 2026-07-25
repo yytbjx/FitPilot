@@ -22,26 +22,16 @@ jobs:
       - name: Install deps
         run: |
           uv sync --extra dev
+      - name: Ruff lint (fatal errors only)
+        working-directory: ${{ github.workspace }}
+        run: |
+          uvx ruff check backend/app backend/main.py main.py migrations --select E9,F63,F7,F82
       - name: Unit tests (no external services)
         env:
           PYTHONPATH: ${{ github.workspace }}/backend
           NO_PROXY: 127.0.0.1,localhost
         run: |
-          uv run python -m pytest -q \
-            tests/test_input_sanitizer.py \
-            tests/test_rag_basic.py \
-            tests/test_agent_routing.py \
-            tests/test_nutrition.py \
-            tests/test_token_monitor.py \
-            tests/test_parsers_multiformat.py \
-            tests/test_plan_validator.py \
-            tests/test_upload_security.py \
-            tests/test_rag_eval_metrics.py \
-            tests/test_enhancement_plan.py \
-            tests/test_agent_runtime.py \
-            tests/test_phase3_engineering.py \
-            tests/test_rag_phase4.py \
-            tests/test_memory_and_approval.py
+          uv run python -m pytest -q tests/
       - name: Offline eval gates
         env:
           PYTHONPATH: ${{ github.workspace }}/backend

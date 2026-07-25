@@ -23,8 +23,6 @@ logger = logging.getLogger(__name__)
 STREAM_KEY = "fitpilot:agent:tasks"
 DLQ_KEY = "fitpilot:agent:dead_letter"
 GROUP_NAME = "fitpilot-workers"
-# 兼容旧 LPUSH 队列（升级过渡期可排空）
-LEGACY_QUEUE_KEY = "fitpilot:agent:queue"
 
 
 def _redis() -> Redis:

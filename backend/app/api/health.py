@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-import httpx
 from fastapi import APIRouter, Request
 from redis.asyncio import Redis
 from sqlalchemy import text
@@ -13,6 +12,8 @@ from app.api.deps import get_request_id, ok
 from app.core.config import get_settings
 from app.core.token_monitor import get_token_monitor
 from app.db.session import get_engine
+from app.rag.embeddings import embedding_status
+from app.rag.rerank import reranker_status
 from app.services.ollama_client import get_ollama_client
 from app.services.qdrant_client import get_qdrant_service
 
@@ -99,6 +100,16 @@ async def readiness(request: Request) -> dict[str, Any]:
 
     # GPU / PyTorch
     checks["gpu"] = _gpu_info()
+
+    # RAG 模型可用性（loaded / not_loaded / failed 三态；不触发加载，不参与 ready 判定）
+    try:
+        checks["embedding"] = embedding_status()
+    except Exception as exc:  # noqa: BLE001
+        checks["embedding"] = {"ok": False, "status": "failed", "error": str(exc)}
+    try:
+        checks["reranker"] = reranker_status()
+    except Exception as exc:  # noqa: BLE001
+        checks["reranker"] = {"ok": False, "status": "failed", "error": str(exc)}
 
     # Token 监控状态
     checks["token_monitor"] = get_token_monitor().snapshot().to_dict()

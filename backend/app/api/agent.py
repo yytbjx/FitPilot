@@ -19,7 +19,6 @@ from app.application.agent import (
     resume_agent_task,
 )
 from app.api.deps import fail, get_current_user, get_request_id, ok
-from app.core.config import get_settings
 from app.core.input_sanitizer import get_sanitizer
 from app.core.metrics import SANITIZE_REJECT
 from app.core.token_monitor import TokenBudgetExceeded
@@ -30,8 +29,7 @@ from app.graphs.fitness_graph import run_fitness_agent
 from app.models.agent_task import AgentTask
 from app.models.user import User
 from app.schemas.auth_biz import AgentApproveRequest, AgentResumeRequest, AgentTaskCreate
-from app.services.agent_persistence import append_task_event, list_task_events
-from app.services.agent_runner_service import enqueue_or_run, run_agent_with_persistence
+from app.services.agent_persistence import list_task_events
 from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/agent", tags=["agent"])

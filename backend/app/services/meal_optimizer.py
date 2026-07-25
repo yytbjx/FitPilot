@@ -440,8 +440,6 @@ def meal_macro_totals(meals: list[dict[str, Any]]) -> dict[str, float]:
 
         for item in meal.get("items") or []:
 
-            grams = float(item.get("amount_g") or 0)
-
             # items may not have carb/fat - estimate from food if missing
 
             kcal += float(item.get("kcal_est") or 0)

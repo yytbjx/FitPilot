@@ -80,8 +80,11 @@ def build_retrieval_plan(query: str) -> RetrievalPlan:
 
 
 async def retrieve_with_plan(plan: RetrievalPlan) -> list[RetrievedChunk]:
-    """按 RetrievalPlan 执行检索（内部仍复用 hybrid_retrieve，并临时覆盖开关）。"""
-    settings = get_settings()
+    """按 RetrievalPlan 执行检索。
+
+    top_k / rerank_top_k / skip_rerank 作为显式参数传入 hybrid_retrieve，
+    不再临时修改全局 settings 单例（并发请求互污染的隐患已消除）。
+    """
     query = plan.queries[0] if plan.queries else ""
     qinfo = await analyze_query_async(query)
     plan.query_understanding = {**(plan.query_understanding or {}), **qinfo}
@@ -89,18 +92,12 @@ async def retrieve_with_plan(plan: RetrievalPlan) -> list[RetrievedChunk]:
         plan.queries = list(qinfo["variants"])[:3]
         query = plan.queries[0]
 
-    old_skip = settings.rag_skip_rerank
-    old_top = settings.rag_top_k
-    old_rerank = settings.rag_rerank_top_k
-    try:
-        object.__setattr__(settings, "rag_skip_rerank", plan.skip_rerank)
-        object.__setattr__(settings, "rag_top_k", plan.top_k_dense)
-        object.__setattr__(settings, "rag_rerank_top_k", plan.rerank_top_k)
-        chunks = await hybrid_retrieve(query, top_k=plan.top_k_dense)
-    finally:
-        object.__setattr__(settings, "rag_skip_rerank", old_skip)
-        object.__setattr__(settings, "rag_top_k", old_top)
-        object.__setattr__(settings, "rag_rerank_top_k", old_rerank)
+    chunks = await hybrid_retrieve(
+        query,
+        top_k=plan.top_k_dense,
+        rerank_top_k=plan.rerank_top_k,
+        skip_rerank=plan.skip_rerank,
+    )
 
     if plan.authority_threshold is not None:
         filtered = [

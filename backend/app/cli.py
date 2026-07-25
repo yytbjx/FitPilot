@@ -209,7 +209,7 @@ def eval_all(
     typer.echo(f"report: {out_path}")
     if persist:
         async def _save() -> int:
-            from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
+            from sqlalchemy.ext.asyncio import async_sessionmaker
 
             from app.db.session import get_engine
             from app.eval.eval_persistence import persist_eval_report

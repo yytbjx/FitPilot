@@ -111,10 +111,22 @@ def bm25_search(query: str, top_k: int) -> list[tuple[str, float, dict]]:
     return out
 
 
-async def hybrid_retrieve(query: str, top_k: int | None = None) -> list[RetrievedChunk]:
+async def hybrid_retrieve(
+    query: str,
+    top_k: int | None = None,
+    *,
+    rerank_top_k: int | None = None,
+    skip_rerank: bool | None = None,
+) -> list[RetrievedChunk]:
+    """混合检索入口。
+
+    top_k / rerank_top_k / skip_rerank 均为显式参数；传 None 时回退到全局 settings。
+    调用方不得再临时修改全局 settings 单例（并发污染）。
+    """
     settings = get_settings()
     top_k = top_k or settings.rag_top_k
-    rerank_k = settings.rag_rerank_top_k
+    rerank_k = rerank_top_k or settings.rag_rerank_top_k
+    skip_rerank = settings.rag_skip_rerank if skip_rerank is None else skip_rerank
     qinfo = await analyze_query_async(query)
     queries = qinfo["variants"] if qinfo.get("use_multi_query") else [qinfo["rewritten"]]
     step = add_step("hybrid_retrieve", "混合检索", detail=" | ".join(queries)[:120])
@@ -184,11 +196,11 @@ async def hybrid_retrieve(query: str, top_k: int | None = None) -> list[Retrieve
                 dedup[key] = c
         candidates = sorted(dedup.values(), key=lambda x: x.score, reverse=True)[: top_k * 2]
 
-        if settings.rag_skip_rerank:
+        if skip_rerank:
             emit_progress(
                 stage="rag_rerank",
                 title="跳过 Reranker",
-                detail=f"RAG_SKIP_RERANK=true；直接取 RRF 前 {rerank_k} 条",
+                detail=f"skip_rerank=true；直接取 RRF 前 {rerank_k} 条",
                 tool="rerank",
                 status="done",
             )

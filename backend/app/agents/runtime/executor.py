@@ -187,8 +187,6 @@ async def _run_step(
         return await weekly_adjust_preview(db, user_id, profile, request_id=request_id)
     if step.tool == "log_hint":
         return {"hint": "请在记录页打卡"}
-    if step.tool in {"hybrid_retrieve", "assess_evidence", "generate_answer"}:
-        return {"delegated": True, "tool": step.tool}
     raise ToolExecutionError(step.tool, "未注册或未实现的执行器")
 
 

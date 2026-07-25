@@ -1,16 +1,23 @@
-"""Embedding 懒加载（支持 cuda/cpu 错峰；无权重时可哈希回退）。"""
+"""Embedding 懒加载（失败即硬失败；并发首次加载由锁保护）。"""
 
 from __future__ import annotations
 
 import os
+import threading
 from functools import lru_cache
-from typing import Sequence
+from typing import Any, Sequence
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
 
 logger = get_logger(__name__)
 _model = None
+_model_lock = threading.Lock()
+_load_error: str | None = None
+
+
+class EmbeddingUnavailableError(RuntimeError):
+    """Embedding 模型不可用（加载失败或被 RAG_OFFLINE 禁用），不再回退哈希向量。"""
 
 
 def _offline_mode() -> bool:
@@ -18,52 +25,53 @@ def _offline_mode() -> bool:
 
 
 def get_embedding_model():
-    """加载 SentenceTransformer；离线模式直接失败以触发哈希回退。"""
-    global _model
+    """加载 SentenceTransformer；失败即抛 EmbeddingUnavailableError（fail-fast）。"""
+    global _model, _load_error
     if _offline_mode():
-        raise RuntimeError("RAG_OFFLINE=1，跳过加载 Embedding 权重")
-    if _model is None:
-        os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
-        from sentence_transformers import SentenceTransformer
+        _load_error = "RAG_OFFLINE=1，Embedding 权重加载被禁用"
+        raise EmbeddingUnavailableError(_load_error)
+    if _model is not None:
+        return _model
+    with _model_lock:
+        if _model is None:
+            os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
+            settings = get_settings()
+            device = settings.embedding_device
+            model_name = settings.resolved_embedding_model
+            logger.info("loading_embedding_model", model=model_name, device=device)
+            try:
+                from sentence_transformers import SentenceTransformer
 
-        settings = get_settings()
-        device = settings.embedding_device
-        model_name = settings.resolved_embedding_model
-        logger.info("loading_embedding_model", model=model_name, device=device)
-        try:
-            _model = SentenceTransformer(model_name, device=device)
-        except Exception:
-            logger.warning("embedding_cuda_fallback_cpu", model=model_name)
-            _model = SentenceTransformer(model_name, device="cpu")
+                try:
+                    _model = SentenceTransformer(model_name, device=device)
+                except Exception:
+                    logger.warning("embedding_cuda_fallback_cpu", model=model_name)
+                    _model = SentenceTransformer(model_name, device="cpu")
+                _load_error = None
+            except Exception as exc:
+                _load_error = str(exc)
+                logger.error("embedding_model_load_failed", model=model_name, error=str(exc))
+                raise EmbeddingUnavailableError(
+                    f"Embedding 模型加载失败（{model_name}）：{exc}"
+                ) from exc
     return _model
 
 
+def embedding_status() -> dict[str, Any]:
+    """健康检查三态：loaded / failed / not_loaded（不触发加载）。"""
+    model_name = get_settings().resolved_embedding_model
+    if _model is not None:
+        return {"ok": True, "status": "loaded", "model": model_name}
+    if _load_error:
+        return {"ok": False, "status": "failed", "model": model_name, "error": _load_error}
+    return {"ok": True, "status": "not_loaded", "model": model_name}
+
+
 def embed_texts(texts: Sequence[str]) -> list[list[float]]:
-    """编码文本；无模型权重时回退为确定性哈希向量（便于先联调 BM25/流程）。"""
-    try:
-        model = get_embedding_model()
-        vectors = model.encode(list(texts), normalize_embeddings=True, show_progress_bar=False)
-        return [v.tolist() for v in vectors]
-    except Exception as exc:
-        logger.warning("embed_fallback_hash", error=str(exc))
-        return [_hash_vec(t) for t in texts]
-
-
-def _hash_vec(text: str, dim: int = 512) -> list[float]:
-    import hashlib
-    import math
-
-    seed = hashlib.sha256(text.encode("utf-8")).digest()
-    vals: list[float] = []
-    buf = seed
-    while len(vals) < dim:
-        buf = hashlib.sha256(buf).digest()
-        for b in buf:
-            vals.append((b / 255.0) * 2 - 1)
-            if len(vals) >= dim:
-                break
-    norm = math.sqrt(sum(v * v for v in vals)) or 1.0
-    return [v / norm for v in vals]
+    """编码文本；模型不可用即抛 EmbeddingUnavailableError。"""
+    model = get_embedding_model()
+    vectors = model.encode(list(texts), normalize_embeddings=True, show_progress_bar=False)
+    return [v.tolist() for v in vectors]
 
 
 def embed_query(text: str) -> list[float]:

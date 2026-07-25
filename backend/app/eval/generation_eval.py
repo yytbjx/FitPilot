@@ -86,6 +86,14 @@ async def _eval_e2e_retrieve(case: dict[str, Any]) -> dict[str, Any]:
     min_cite = float(case.get("min_citation_precision") or 0.5)
     allow_no_answer = bool(case.get("allow_no_answer", False))
     try:
+        # 依赖 Qdrant 的用例：服务不可用时直接返回 error，交由上层按 skip_on_error 跳过。
+        # 注意 dense_search 内部会吞连接异常，因此必须先显式探测。
+        from app.services.qdrant_client import get_qdrant_service
+
+        try:
+            get_qdrant_service().client.get_collections()
+        except Exception as probe_exc:  # noqa: BLE001
+            raise RuntimeError(f"qdrant_unavailable: {probe_exc}") from probe_exc
         chunks = await hybrid_retrieve(query, top_k=4)
         packed = build_context(chunks)
         citations: list[str] = []

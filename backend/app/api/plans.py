@@ -13,7 +13,7 @@ from app.db.session import get_db
 from app.models.plans import DietPlan, WorkoutPlan
 from app.models.user import User
 from app.schemas.auth_biz import MealSwapRequest, PlanApproveRequest, PlanPreviewRequest
-from app.services.meal_optimizer import meal_macro_totals, swap_meal_item
+from app.services.meal_optimizer import swap_meal_item
 from app.tools.domain import (
     commit_plans,
     get_user_profile_data,

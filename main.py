@@ -70,10 +70,6 @@ def main() -> None:
         warnings.warn("请使用 `python main.py api` 启动后端", DeprecationWarning)
         raise SystemExit(_run_backend_cli(["api", *rest]))
 
-    # 兼容：若有人仍用根目录 python main.py 传后端子命令
-    if cmd == "web" and os.environ.get("FITPILOT_CLI_LEGACY_API") == "1":
-        raise SystemExit(_run_backend_cli(["api", *rest]))
-
     raise SystemExit(_run_backend_cli([cmd, *rest]))
 
 

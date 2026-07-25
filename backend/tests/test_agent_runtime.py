@@ -15,8 +15,10 @@ def test_execution_plan_for_complex_adjust():
 
 
 def test_execution_plan_knowledge():
+    # 知识问答不再生成 Executor 步骤（委派给 knowledge_workflow / RAG 子图）
     plan = build_execution_plan("减脂期蛋白质怎么安排")
-    assert any(s.tool == "hybrid_retrieve" for s in plan.steps)
+    assert plan.steps == []
+    assert plan.goal == "知识问答"
 
 
 def test_validator_blocks_write_tool_success():

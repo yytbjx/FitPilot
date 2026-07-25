@@ -1,8 +1,0 @@
-__pycache__/
-*.pyc
-.DS_Store
-.venv/
-*.zip
-
-# Claude Code local settings (do not publish)
-.claude/

@@ -9,9 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.agents.runtime.executor import execute_plan
 from app.agents.runtime.planner import build_execution_plan
 from app.agents.routing import route_intent
-from app.core.progress import emit_progress
 from app.graphs.state import FitnessAgentState
-from app.tools.domain import check_risk, get_user_profile_data, preview_and_stage_plans
+from app.tools.domain import check_risk
 
 
 async def run_plan_preview_workflow(state: FitnessAgentState, *, db: AsyncSession) -> dict[str, Any]:
@@ -139,35 +138,4 @@ async def run_plan_reject_workflow(state: FitnessAgentState) -> dict[str, Any]:
         "final_status": "rejected",
         "pending_actions": None,
         "events": [{"event": "completed", "status": "plan_rejected"}],
-    }
-
-
-# 保留简易预览供兼容
-async def legacy_simple_preview(state: FitnessAgentState, *, db: AsyncSession) -> dict[str, Any]:
-    profile = state.get("user_profile") or await get_user_profile_data(db, state["user_id"])
-    staged = await preview_and_stage_plans(db, state["user_id"], profile, request_id=state.get("trace_id"))
-    emit_progress(stage="plan", title="兼容预览", tool="preview_and_stage_plans", status="done")
-    if not staged.get("ok"):
-        return {
-            "reply": "计划未通过约束校验：" + "；".join(staged.get("validation", {}).get("errors") or []),
-            "final_status": "validation_failed",
-            "user_profile": profile,
-            "events": [{"event": "failed", "status": "validation_failed"}],
-        }
-    pending = staged["pending"]
-    return {
-        "user_profile": profile,
-        "pending_actions": pending,
-        "reply": "已生成训练+饮食计划预览，请确认后再写入正式版本。",
-        "events": [
-            {
-                "event": "approval_required",
-                "plan_id": pending["workout_plan_id"],
-                "workout_plan_id": pending["workout_plan_id"],
-                "diet_plan_id": pending["diet_plan_id"],
-                "preview": pending["preview"],
-                "diff": pending.get("diff"),
-                "task_id": state.get("task_id"),
-            }
-        ],
     }

@@ -5,7 +5,6 @@ from __future__ import annotations
 import os
 from typing import Any
 
-import httpx
 from qdrant_client import QdrantClient
 from qdrant_client.http import models as qmodels
 
@@ -31,8 +30,6 @@ class QdrantService:
         settings = get_settings()
         self.collection = settings.qdrant_collection
         _bypass_local_proxy()
-        # trust_env=False：不走系统 HTTP(S)_PROXY
-        self._http = httpx.Client(timeout=30.0, trust_env=False)
         self.client = QdrantClient(
             url=settings.qdrant_url,
             api_key=settings.qdrant_api_key or None,

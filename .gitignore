@@ -51,4 +51,18 @@ models/
 # 知识索引版本元数据（本地生成）
 knowledge_base/index_versions.jsonl
 knowledge_base/active_index_version.json
+knowledge_base/bm25_index.json
 evals/reports/
+
+# 第三方参考项目与数据集（体积大，本地保留但不入库）
+_refs/
+例子或数据/
+
+# 前端构建缓存
+*.tsbuildinfo
+
+# docx 提取中间产物
+_enhancement_plan_extract.txt
+
+# 空壳评估数据目录（已废弃）
+eval_datasets/

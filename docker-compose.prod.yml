@@ -2,6 +2,13 @@
 
 # 阶段后期使用：后端/前端与基础设施一起交付；开发期优先 docker-compose.dev.yml
 
+# 必须的环境变量（无默认值，缺失即报错启动失败）：
+#   POSTGRES_PASSWORD            Postgres 超级用户密码（同时用于 worker 的 DATABASE_URL 拼接）
+#   GF_SECURITY_ADMIN_PASSWORD   Grafana 管理员密码
+# 在仓库根目录创建生产环境文件（参考 .env.example，勿提交真实密钥），
+# 通过 `docker compose --env-file <file> -f docker-compose.prod.yml up` 注入，
+# 或在 shell 中 export 后运行。backend/worker 的其余密钥经 env_file: .env 注入。
+
 
 
 services:
@@ -14,7 +21,7 @@ services:
 
       POSTGRES_USER: fitpilot
 
-      POSTGRES_PASSWORD: fitpilot
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
 
       POSTGRES_DB: fitpilot
 
@@ -126,7 +133,7 @@ services:
 
       REDIS_URL: redis://redis:6379/0
 
-      DATABASE_URL: postgresql+asyncpg://fitpilot:fitpilot@postgres:5432/fitpilot
+      DATABASE_URL: postgresql+asyncpg://fitpilot:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@postgres:5432/fitpilot
 
       QDRANT_URL: http://qdrant:6333
 
@@ -178,7 +185,7 @@ services:
 
     environment:
 
-      GF_SECURITY_ADMIN_PASSWORD: fitpilot
+      GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:?GF_SECURITY_ADMIN_PASSWORD must be set}
 
     depends_on:
 

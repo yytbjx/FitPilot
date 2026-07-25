@@ -1,3 +1,0 @@
-export const SUCCESS_MESSAGES = {
-  DELETE_SUCCESS: "DELETE_SUCCESS",
-};

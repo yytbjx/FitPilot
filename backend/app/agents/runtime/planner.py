@@ -35,12 +35,9 @@ def build_execution_plan(message: str, *, routing: RoutingDecision | None = None
     if intent == "clarify":
         return ExecutionPlan(goal="澄清意图", steps=[], routing=decision.model_dump())
 
-    if intent == "knowledge_query" or decision.requires_knowledge:
-        steps.append(PlanStep(step_id="s1", tool="hybrid_retrieve", arguments={"query": message}))
-        steps.append(
-            PlanStep(step_id="s2", tool="assess_evidence", arguments={}, depends_on=["s1"])
-        )
-        steps.append(PlanStep(step_id="s3", tool="generate_answer", arguments={}, depends_on=["s2"]))
+    # 知识问答不在 Planner-Executor 中展开：由 knowledge_workflow（RAG 子图）专用处理，
+    # 因此 knowledge_query 意图下 steps 保持为空（此前 s1/s2/s3 在 Executor 中仅返回
+    # {"delegated": True}，属无效步骤，已移除）。
 
     if intent == "personal_data_query" or decision.requires_personal_data:
         steps.append(PlanStep(step_id="p1", tool="get_user_profile_data", arguments={}))

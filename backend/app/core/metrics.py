@@ -50,6 +50,11 @@ SANITIZE_REJECT = Counter(
     ["reason"],
 )
 
+RERANK_FALLBACK = Counter(
+    "fitpilot_rerank_fallback_total",
+    "Reranker 运行期降级次数（按原序截断）",
+)
+
 
 @contextmanager
 def timed_histogram(histogram: Histogram, **labels: str) -> Generator[None, None, None]:

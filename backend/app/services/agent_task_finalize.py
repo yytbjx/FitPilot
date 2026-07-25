@@ -7,7 +7,7 @@ from typing import Any, Awaitable, Callable
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.graphs.runner_utils import approval_events_from_result
-from app.services.agent_persistence import mark_task_finished, save_checkpoint
+from app.services.agent_persistence import mark_task_finished
 
 
 PersistFn = Callable[[AsyncSession, str, dict[str, Any]], Awaitable[None]]
@@ -21,7 +21,7 @@ async def finalize_agent_result(
     persist_event: PersistFn,
     buffer_events: list[dict[str, Any]] | None = None,
 ) -> str:
-    """持久化事件、检查点并更新任务状态。返回最终 status。"""
+    """持久化事件并更新任务状态。返回最终 status。"""
     buf = buffer_events if buffer_events is not None else []
 
     for ev in approval_events_from_result(result):
@@ -45,17 +45,8 @@ async def finalize_agent_result(
                 buf.append(ev)
             await persist_event(session, task_id, ev)
 
-    await save_checkpoint(
-        session,
-        task_id=task_id,
-        node_name="graph_end" if not result.get("interrupted") else "graph_interrupt",
-        state={
-            "final_status": result.get("final_status"),
-            "reply": result.get("reply"),
-            "interrupted": result.get("interrupted"),
-            "pending_actions": result.get("pending_actions"),
-        },
-    )
+    # 检查点由 LangGraph PostgresCheckpointSaver（graphs/checkpointer.py）负责；
+    # 此处不再写自研 agent_checkpoints 冗余表。
     await session.commit()
 
     if result.get("interrupted"):

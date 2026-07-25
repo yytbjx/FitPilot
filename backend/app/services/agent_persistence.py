@@ -1,4 +1,4 @@
-"""Agent 任务事件与检查点持久化（P0：替代纯内存 SSE 缓冲）。"""
+"""Agent 任务事件持久化（P0：替代纯内存 SSE 缓冲）。"""
 
 from __future__ import annotations
 
@@ -8,8 +8,12 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.agent_runtime import AgentCheckpoint, AgentTaskEvent, AgentTaskStep, AgentToolCall
+from app.models.agent_runtime import AgentTaskEvent
 from app.models.agent_task import AgentTask
+
+# 哨兵：区分“调用方未传（不更新该字段）”与“显式传 None（清空该字段）”。
+# 用于 S2 修复：commit/reject 后必须能显式清空 DB 中残留的 pending_actions。
+_UNSET: Any = object()
 
 
 async def _next_event_seq(db: AsyncSession, task_id: str) -> int:
@@ -74,9 +78,16 @@ async def mark_task_finished(
     *,
     status: str,
     result: dict[str, Any] | None = None,
-    pending_actions: dict[str, Any] | None = None,
+    pending_actions: dict[str, Any] | None | object = _UNSET,
     error_code: str | None = None,
 ) -> None:
+    """收尾任务状态。
+
+    pending_actions 语义：
+    - 不传（默认 _UNSET）：保持 DB 原值；
+    - 传 None：显式清空（commit/reject 后清除残留待确认计划）；
+    - 传 dict：覆盖写入。
+    """
     row = await db.get(AgentTask, task_id)
     if not row:
         return
@@ -84,78 +95,8 @@ async def mark_task_finished(
     row.completed_at = datetime.now(timezone.utc)
     if result is not None:
         row.result = result
-    if pending_actions is not None:
-        row.pending_actions = pending_actions
+    if pending_actions is not _UNSET:
+        row.pending_actions = pending_actions  # type: ignore[assignment]
     if error_code:
         row.error_code = error_code
-    await db.flush()
-
-
-async def upsert_task_step(
-    db: AsyncSession,
-    *,
-    task_id: str,
-    step_name: str,
-    title: str,
-    status: str,
-    detail: str | None = None,
-    ended: bool = False,
-) -> None:
-    row = await db.scalar(
-        select(AgentTaskStep)
-        .where(AgentTaskStep.task_id == task_id, AgentTaskStep.step_name == step_name)
-        .order_by(AgentTaskStep.id.desc())
-        .limit(1)
-    )
-    if row is None or ended:
-        row = AgentTaskStep(
-            task_id=task_id,
-            step_name=step_name,
-            title=title,
-            status=status,
-            detail=detail,
-        )
-        db.add(row)
-    else:
-        row.status = status
-        row.detail = detail
-        if ended:
-            row.ended_at = datetime.now(timezone.utc)
-    task = await db.get(AgentTask, task_id)
-    if task:
-        task.current_step = step_name
-    await db.flush()
-
-
-async def record_tool_call(
-    db: AsyncSession,
-    *,
-    task_id: str,
-    tool_name: str,
-    input_json: dict[str, Any] | None,
-    output_json: dict[str, Any] | None,
-    status: str = "ok",
-    error_code: str | None = None,
-) -> None:
-    db.add(
-        AgentToolCall(
-            task_id=task_id,
-            tool_name=tool_name,
-            input_json=input_json,
-            output_json=output_json,
-            status=status,
-            error_code=error_code,
-        )
-    )
-    await db.flush()
-
-
-async def save_checkpoint(
-    db: AsyncSession,
-    *,
-    task_id: str,
-    node_name: str,
-    state: dict[str, Any],
-) -> None:
-    db.add(AgentCheckpoint(task_id=task_id, node_name=node_name, state_json=state))
     await db.flush()

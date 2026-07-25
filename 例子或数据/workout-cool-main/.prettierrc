@@ -1,6 +1,0 @@
-{
-  "plugins": ["prettier-plugin-sort-json"],
-  "printWidth": 140,
-  "proseWrap": "always",
-  "singleQuote": false
-}

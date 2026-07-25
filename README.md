@@ -196,13 +196,13 @@ FitPilot 解决的问题是：在个人健身场景中，把 **结构化业务�
 ├── docker-compose.dev.yml               # 开发：Postgres + Redis（Qdrant 注释可选）
 ├── docker-compose.prod.yml              # 生产：全栈 + worker + prometheus + grafana
 ├── README.md                            # 本归档文档
-├── README2.md                           # 旧版说明文档（结构不同；以代码与本 README 为准）
-├── 项目README全量归档生成提示词.md      # README 归档生成指令（非业务源码）
-├── FitPilot Engineering Review and Improvement Plan.docx
-├── FitPilot_AI_Agent_标准开发文档_v1.0.docx
+├── docs/archive/README-v1.md            # 旧版说明文档（原 README2.md，已归档）
+├── docs/archive/项目README全量归档生成提示词.md  # README 归档生成指令（非业务源码）
+├── docs/FitPilot Engineering Review and Improvement Plan.docx
+├── docs/FitPilot Engineering and Agent-RAG Enhancement Plan.docx
+├── docs/FitPilot_AI_Agent_标准开发文档_v1.0.docx
 ├── .github/workflows/ci.yml             # CI：backend 子集 pytest
-├── deploy/prometheus.yml                # 生产 Prometheus 配置
-├── monitoring/prometheus/prometheus.yml # 监控目录副本
+├── deploy/prometheus.yml                # 生产 Prometheus 配置（compose 挂载的权威配置）
 ├── migrations/                          # Alembic 版本 0001–0007
 │   ├── env.py
 │   └── versions/
@@ -227,7 +227,6 @@ FitPilot 解决的问题是：在个人健身场景中，把 **结构化业务�
 │   └── raw/                             # 原文：curated/external/uploads 等
 ├── models/                              # Embedding/Reranker 权重（gitignore，本地下载）
 ├── evals/                               # 评测用例 JSON/YAML 与配置
-├── eval_datasets/                       # 评估数据集占位/附属
 ├── docs/                                # MODEL_DOWNLOAD、INGEST_FORMATS、EVAL、ENGINEERING_REVIEW 等
 ├── backend/
 │   ├── main.py                          # 转发 app.cli:main
@@ -262,10 +261,8 @@ FitPilot 解决的问题是：在个人健身场景中，把 **结构化业务�
 │       ├── api/client.ts
 │       ├── stores/auth.ts / chat.ts
 │       └── views/*.vue                  # login/dashboard/profile/logs/foods/exercises/chat/plans
-├── _refs/                               # 外部参考工程副本（exercises-dataset、workout-cool）
-├── 例子或数据/                           # 数据集与参考项目副本（种子/对照）
-├── FitPilot/                            # GitHub Desktop 误建嵌套目录（应忽略，勿提交）
-├── _docx_extract/ / _doc*.txt / _doc.zip # 文档提取临时（gitignore 部分）
+├── _refs/                               # 外部参考工程副本（本地保留，已 gitignore 不入库）
+├── 例子或数据/                           # 数据集与参考项目副本（本地保留，已 gitignore 不入库）
 └── .git/                                # 版本控制（不解析内部对象）
 ```
 
@@ -280,7 +277,7 @@ FitPilot 解决的问题是：在个人健身场景中，把 **结构化业务�
 - 构建产物：`frontend/dist/`、`backend/.venv/`（忽略）。
 - 运行时生成：BM25 索引、Qdrant 集合、Postgres 数据、Agent 事件。
 - 不应手改：已发布迁移文件内容；勿提交 `.env` 与 `models/` 权重。
-- `项目README全量归档生成提示词.md` 仅用于指导生成本文档，不是运行时模块。
+- `docs/archive/项目README全量归档生成提示词.md` 仅用于指导生成本文档，不是运行时模块。
 
 对 `_refs/`、`例子或数据/` 中第三方仓库的海量图片/JSON：**按数据集用途归纳**，不逐文件展开；动作库种子读取 exercises JSON，食物种子读取 FDC 相关文件（见 `scripts/seed_*.py`、`prepare_fdc_kb.py`）。
 
@@ -877,7 +874,7 @@ uv run python main.py worker
 | P1 | 队列 | LPUSH/BRPOP 无 ACK/死信 | **已升级** | Redis Streams + DLQ + 重试 |
 | P1 | 路由 | 未知意图默认 RAG | **已修复** | 低置信 `clarify` |
 | P2 | JWT 弱密钥 | 默认 secret | **生产拦截** | production 启动校验 |
-| P3 | 文档 | 旧 README2 绝对路径 | 保留归档 | 以本 README 相对路径为准 |
+| P3 | 文档 | 旧 README2 绝对路径 | 已归档至 `docs/archive/README-v1.md` | 以本 README 相对路径为准 |
 
 仍可改进：默认强制 Worker 入队、偏好记忆产品化 UI、自托管在线 RAG CI secrets、演示视频。
 
