@@ -3,7 +3,6 @@
 from app.rag.bm25 import BM25Index, tokenize
 from app.rag.chunking import split_text
 from app.rag.context import build_context
-from app.rag import RetrievedChunk
 
 
 def test_tokenize_chinese():

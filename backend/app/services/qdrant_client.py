@@ -117,6 +117,33 @@ class QdrantService:
         except Exception:
             return None
 
+    def document_id_set(self, *, page_limit: int = 256) -> set[str]:
+        """滚动扫描集合 payload，返回 document_id 集合（用于 BM25/Qdrant 一致性校验）。
+
+        只取 payload 不取向量；集合不存在时返回空集。
+        """
+        existing = {c.name for c in self.client.get_collections().collections}
+        if self.collection not in existing:
+            return set()
+        docs: set[str] = set()
+        offset = None
+        while True:
+            points, offset = self.client.scroll(
+                collection_name=self.collection,
+                limit=page_limit,
+                offset=offset,
+                with_payload=True,
+                with_vectors=False,
+            )
+            for p in points:
+                payload = p.payload or {}
+                doc = str(payload.get("document_id") or "")
+                if doc:
+                    docs.add(doc)
+            if offset is None:
+                break
+        return docs
+
     def create_snapshot(self) -> dict[str, Any]:
         """创建当前知识集合快照（存储于 Qdrant 服务端）。"""
         snap = self.client.create_snapshot(collection_name=self.collection)

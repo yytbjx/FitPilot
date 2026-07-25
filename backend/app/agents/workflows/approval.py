@@ -1,4 +1,8 @@
-"""Human-in-the-loop 与写操作策略。"""
+"""Human-in-the-loop 审批策略与统一审批载荷。
+
+迭代 3：自 agents.runtime.policies 迁入（PEV 声明式框架已移除，
+本模块是唯一仍有真实消费方的部分：plan_approval 子图与计划工作流）。
+"""
 
 from __future__ import annotations
 
@@ -32,8 +36,6 @@ REQUIRES_APPROVAL: dict[ApprovalAction, bool] = {
     "delete_data": True,
     "high_risk_advice": True,  # 实际不执行，转安全提示
 }
-
-MAX_AUTO_REPAIR = 1
 
 
 def requires_approval(action: ApprovalAction) -> bool:

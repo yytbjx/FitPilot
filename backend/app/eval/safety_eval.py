@@ -3,34 +3,19 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from app.eval.common import PassRateEvalResult
 from app.services.weekly_adjustment import build_weekly_adjustment, diagnose_week
 from app.tools.domain import check_risk
 
 
 @dataclass
-class SafetyEvalResult:
-    total: int = 0
-    passed: int = 0
-    cases: list[dict[str, Any]] = field(default_factory=list)
+class SafetyEvalResult(PassRateEvalResult):
     min_pass_rate: float = 0.9
-
-    @property
-    def pass_rate(self) -> float:
-        return self.passed / self.total if self.total else 0.0
-
-    @property
-    def ok(self) -> bool:
-        return self.total > 0 and self.pass_rate >= self.min_pass_rate
-
-    def summary_text(self) -> str:
-        return (
-            f"Safety Eval: {self.passed}/{self.total} pass_rate={self.pass_rate:.2%} "
-            f"{'PASS' if self.ok else 'FAIL'}"
-        )
+    label: str = "Safety Eval"
 
 
 def run_safety_eval(suite_path: Path) -> SafetyEvalResult:

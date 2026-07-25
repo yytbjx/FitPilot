@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from pathlib import Path
 from typing import Iterable
 from uuid import NAMESPACE_URL, uuid5
@@ -14,7 +15,7 @@ from app.core.metrics import INGEST_CHUNKS
 from app.rag import DocumentChunk
 from app.rag.bm25 import BM25Index, get_bm25_index, persist_bm25
 from app.rag.chunking import chunks_from_file, split_text
-from app.rag.embeddings import embed_texts
+from app.rag.embeddings import embed_texts, embedding_dim
 from app.rag.parsing import describe_formats, iter_source_files
 from app.services.qdrant_client import get_qdrant_service
 
@@ -43,12 +44,54 @@ def _purge_document(svc, document_id: str, bm25_payloads: dict[str, dict]) -> in
     return removed
 
 
+def delete_document(document_id: str) -> dict:
+    """删除某文档的全部索引数据：Qdrant 向量 + BM25 条目，并持久化 bm25_index.json。
+
+    与 ingest 的幂等重入库共用 _purge_document 清理逻辑，保证删除/重入库口径一致。
+    """
+    svc = get_qdrant_service()
+    qdrant_ok = True
+    qdrant_error: str | None = None
+    try:
+        svc.delete_by_payload("document_id", document_id)
+    except Exception as exc:  # noqa: BLE001
+        qdrant_ok = False
+        qdrant_error = str(exc)
+        logger.warning("qdrant_purge_failed", document_id=document_id, error=str(exc))
+    bm25 = get_bm25_index()
+    merged: dict[str, dict] = dict(bm25.payloads)
+    drop_ids = [
+        cid
+        for cid, p in merged.items()
+        if str(p.get("document_id") or "") == document_id
+    ]
+    for cid in drop_ids:
+        merged.pop(cid, None)
+    new_index = BM25Index()
+    new_index.build(
+        (cid, payload.get("text", ""), payload) for cid, payload in merged.items()
+    )
+    persist_bm25(new_index)
+    logger.info(
+        "knowledge_document_deleted",
+        document_id=document_id,
+        bm25_removed=len(drop_ids),
+    )
+    return {
+        "document_id": document_id,
+        "bm25_removed": len(drop_ids),
+        "bm25_remaining": len(merged),
+        "qdrant_purged": qdrant_ok,
+        "qdrant_error": qdrant_error,
+    }
+
+
 async def ingest_paths(
     paths: Iterable[Path], *, version_id: str = "v1", batch_size: int = 32
 ) -> dict:
     settings = get_settings()
     svc = get_qdrant_service()
-    svc.ensure_collection(vector_size=512)
+    svc.ensure_collection(vector_size=embedding_dim())
 
     all_chunks: list[DocumentChunk] = []
     skipped: list[str] = []
@@ -91,7 +134,8 @@ async def ingest_paths(
 
     for i in range(0, len(all_chunks), batch_size):
         batch = all_chunks[i : i + batch_size]
-        vectors = embed_texts([c.text for c in batch])
+        # model.encode 为同步阻塞调用，放线程池避免阻塞事件循环
+        vectors = await asyncio.to_thread(embed_texts, [c.text for c in batch])
         points = [
             qm.PointStruct(
                 id=_point_id(c),
@@ -145,13 +189,13 @@ async def ingest_text_document(
     )
     settings = get_settings()
     svc = get_qdrant_service()
-    svc.ensure_collection(vector_size=512)
+    svc.ensure_collection(vector_size=embedding_dim())
     if not chunks:
         return {"ingested_chunks": 0, "documents": 0}
     bm25 = get_bm25_index()
     merged = dict(bm25.payloads)
     _purge_document(svc, document_id, merged)
-    vectors = embed_texts([c.text for c in chunks])
+    vectors = await asyncio.to_thread(embed_texts, [c.text for c in chunks])
     points = [
         qm.PointStruct(id=_point_id(c), vector=vectors[i], payload=c.to_payload())
         for i, c in enumerate(chunks)

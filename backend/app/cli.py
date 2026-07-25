@@ -149,13 +149,13 @@ def eval_agent(
 @cli.command("eval-gate")
 def eval_gate(
     config: Path = typer.Option(
-        REPO_ROOT / "evals" / "eval_config.json",
+        REPO_ROOT / "evals" / "eval_config.yaml",
         "--config",
         help="评估配置（使用 thresholds 做门禁）",
     ),
     out: Path | None = typer.Option(None, help="JSON 报告路径"),
 ) -> None:
-    """CI 离线门禁：parsing / agent / plan / meal / safety（不依赖 Qdrant）。"""
+    """CI 离线门禁：parsing / retrieval_offline / no_answer_offline / agent / plan / meal / safety。"""
     import json as _json
 
     from app.eval.ci_gate import run_ci_gates
@@ -171,29 +171,30 @@ def eval_gate(
 @cli.command("eval-all")
 def eval_all(
     config: Path = typer.Option(
-        REPO_ROOT / "evals" / "eval_config.json",
+        REPO_ROOT / "evals" / "eval_config.yaml",
         "--config",
-        help="七层评估配置",
+        help="多层评估配置（YAML）",
     ),
     out: Path | None = typer.Option(None, help="JSON 报告路径"),
     md: Path | None = typer.Option(None, help="Markdown 报告路径"),
     persist: bool = typer.Option(False, "--persist", help="写入 evaluation_runs 表"),
     online: bool = typer.Option(False, "--online", help="启用 LLM-as-judge 在线评估"),
 ) -> None:
-    """运行七层评估编排（解析/检索/拒答/生成/Agent/计划/食谱/安全）。"""
+    """运行多层评估编排（解析/检索/拒答/生成/Agent/计划/食谱/安全）。"""
     import asyncio
 
     from app.eval.full_eval import run_full_eval
 
     if online:
-        import json as _json
+        import yaml as _yaml
 
-        cfg_path = config
-        cfg = _json.loads(cfg_path.read_text(encoding="utf-8")) if cfg_path.exists() else {}
+        from app.eval.rag_eval import load_eval_config
+
+        cfg = load_eval_config(config) if config.exists() else {}
         cfg.setdefault("modules", {})["generation_online"] = {"enabled": True}
-        tmp = REPO_ROOT / "evals" / "reports" / "_eval_config_online.json"
+        tmp = REPO_ROOT / "evals" / "reports" / "_eval_config_online.yaml"
         tmp.parent.mkdir(parents=True, exist_ok=True)
-        tmp.write_text(_json.dumps(cfg, ensure_ascii=False, indent=2), encoding="utf-8")
+        tmp.write_text(_yaml.safe_dump(cfg, allow_unicode=True), encoding="utf-8")
         config = tmp
 
     out_dir = REPO_ROOT / "evals" / "reports"
@@ -285,7 +286,7 @@ def knowledge_diff(
         help="语料目录",
     ),
 ) -> None:
-    """比较磁盘语料与 knowledge_sources，列出新增/变更/未变。"""
+    """比较磁盘语料与 knowledge_sources，列出新增/变更/未变/已删除。"""
     import asyncio
     import json as _json
 
@@ -295,10 +296,38 @@ def knowledge_diff(
     typer.echo(_json.dumps(result, ensure_ascii=False, indent=2))
 
 
+@cli.command("knowledge-delete")
+def knowledge_delete(
+    source_id: str = typer.Option(..., "--source-id", help="knowledge_sources.source_id"),
+) -> None:
+    """删除知识源：manifest + Qdrant chunks + BM25 条目（持久化 bm25_index.json）。"""
+    import asyncio
+    import json as _json
+
+    from app.rag.knowledge_lifecycle import delete_source
+
+    result = asyncio.run(delete_source(source_id))
+    typer.echo(_json.dumps(result, ensure_ascii=False, indent=2))
+    raise SystemExit(0 if result.get("ok") else 1)
+
+
+@cli.command("knowledge-consistency")
+def knowledge_consistency() -> None:
+    """BM25 / Qdrant 两侧 document_id 集合差异计数（一致性校验）。"""
+    import json as _json
+
+    from app.rag.knowledge_lifecycle import index_consistency_report
+
+    report = index_consistency_report()
+    typer.echo(_json.dumps(report, ensure_ascii=False, indent=2))
+    raise SystemExit(0 if not report.get("diff_count") else 1)
+
+
 @cli.command("knowledge-ingest")
 def knowledge_ingest(
     incremental: bool = typer.Option(True, "--incremental/--full", help="增量或全量刷新 manifest"),
     reset: bool = typer.Option(False, "--reset", help="重建向量集合后再全量入库"),
+    prune: bool = typer.Option(True, "--prune/--no-prune", help="对 raw/ 已消失的文件执行删除传播"),
     path: Path = typer.Option(
         REPO_ROOT / "knowledge_base" / "raw",
         "--path",
@@ -314,7 +343,9 @@ def knowledge_ingest(
 
     if reset:
         get_qdrant_service().reset_collection()
-    result = asyncio.run(ingest_incremental(path, reset=reset or not incremental))
+    result = asyncio.run(
+        ingest_incremental(path, reset=reset or not incremental, prune_deleted=prune)
+    )
     typer.echo(_json.dumps(result, ensure_ascii=False, indent=2, default=str))
 
 
@@ -427,12 +458,12 @@ def eval_cmd(
     out: Path | None = typer.Option(None, help="结果输出 JSON 路径"),
     md: Path | None = typer.Option(None, help="Markdown 报告路径"),
     config: Path = typer.Option(
-        REPO_ROOT / "evals" / "eval_config.json",
+        REPO_ROOT / "evals" / "eval_config.yaml",
         "--config",
-        help="评估配置 JSON/YAML",
+        help="评估配置 YAML",
     ),
 ) -> None:
-    """运行 RAG 评估（Hit@K / MRR / 引用 / 时延）。"""
+    """运行 RAG 评估（Hit@K / MRR / nDCG / 引用 / 时延）。"""
     from app.eval.rag_eval import run_rag_eval
 
     result = run_rag_eval(

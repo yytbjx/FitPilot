@@ -4,31 +4,17 @@ from __future__ import annotations
 
 import asyncio
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from app.eval.common import PassRateEvalResult
+
 
 @dataclass
-class GenerationEvalResult:
-    total: int = 0
-    passed: int = 0
-    cases: list[dict[str, Any]] = field(default_factory=list)
+class GenerationEvalResult(PassRateEvalResult):
     min_pass_rate: float = 0.8
-
-    @property
-    def pass_rate(self) -> float:
-        return self.passed / self.total if self.total else 0.0
-
-    @property
-    def ok(self) -> bool:
-        return self.total > 0 and self.pass_rate >= self.min_pass_rate
-
-    def summary_text(self) -> str:
-        return (
-            f"Generation Eval: {self.passed}/{self.total} pass_rate={self.pass_rate:.2%} "
-            f"{'PASS' if self.ok else 'FAIL'}"
-        )
+    label: str = "Generation Eval"
 
 
 def _citation_precision(citations: list[str], expect_keywords: list[str]) -> float:

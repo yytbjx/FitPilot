@@ -195,6 +195,21 @@ class Settings(BaseSettings):
         default=False,
         description="为 True 时跳过 Reranker，直接取 RRF 前 N 条（显著提速，略降精准度）",
     )
+    embedding_dim_override: int | None = Field(
+        default=None,
+        description="Embedding 向量维度覆盖；默认从已加载模型动态获取（get_sentence_embedding_dimension）",
+        ge=1,
+    )
+    rag_evidence_min_confidence: float = Field(
+        default=0.35,
+        description="Evidence Gate 判定可答的最低置信度（build_context 与 assess_evidence 共用）",
+        ge=0.0,
+        le=1.0,
+    )
+    rag_rerank_min_score: float = Field(
+        default=-2.0,
+        description="CrossEncoder 精排分数低于该值视为弱证据拒答（仅对 rerank 分体系生效，RRF 分跳过）",
+    )
 
     # ---------- Token 预算监控 ----------
     token_budget: int = Field(

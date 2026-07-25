@@ -1,20 +1,35 @@
-"""CI 离线评测门禁：不依赖 Qdrant/Ollama 的层。"""
+"""CI 离线评测门禁：不依赖 Qdrant/Ollama/Embedding 模型的层。
+
+迭代 3 新增 retrieval_offline / no_answer_offline：基于 evals/rag_fixture
+固定语料 + 确定性哈希向量 + 真实 BM25/RRF/build_context 路径，确定性通过/失败。
+配置唯一权威：evals/eval_config.yaml（JSON 版已删除）。
+"""
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
 from app.eval.agent_eval import run_agent_eval
 from app.eval.meal_eval import run_meal_eval
+from app.eval.offline_rag_eval import OfflineRagEvalResult, run_offline_rag_eval
 from app.eval.parsing_eval import run_parsing_eval
 from app.eval.plan_eval import run_plan_eval
+from app.eval.rag_eval import load_eval_config
 from app.eval.safety_eval import run_safety_eval
 
-# 仅离线可跑的模块（retrieval / generation e2e / no_answer 依赖索引，排除）
-OFFLINE_LAYERS = ("parsing", "agent", "plan", "meal", "safety")
+# 仅离线可跑的模块（在线 retrieval / generation e2e / no_answer 依赖索引，排除；
+# 离线检索层 retrieval_offline / no_answer_offline 在 CI 中确定性地覆盖 RAG 检索与拒答）
+OFFLINE_LAYERS = (
+    "parsing",
+    "retrieval_offline",
+    "no_answer_offline",
+    "agent",
+    "plan",
+    "meal",
+    "safety",
+)
 
 
 @dataclass
@@ -57,13 +72,36 @@ def _repo_root() -> Path:
 def run_ci_gates(config_path: Path | None = None) -> CiGateReport:
     """按 eval_config 阈值跑离线层；任一失败则 overall FAIL。"""
     root = _repo_root()
-    cfg_path = config_path or (root / "evals" / "eval_config.json")
-    cfg = json.loads(cfg_path.read_text(encoding="utf-8")) if cfg_path.exists() else {}
+    cfg_path = config_path or (root / "evals" / "eval_config.yaml")
+    cfg = load_eval_config(cfg_path) if cfg_path.exists() else {}
     suites = cfg.get("suites") or {}
     thresholds = cfg.get("thresholds") or {}
     modules = cfg.get("modules") or {}
 
     report = CiGateReport(config_path=str(cfg_path))
+
+    # 离线检索层只跑一次，retrieval_offline / no_answer_offline 共享结果
+    offline_rag: OfflineRagEvalResult | None = None
+    offline_rag_error: str | None = None
+
+    def _run_offline_rag(suite: Path) -> OfflineRagEvalResult | None:
+        nonlocal offline_rag, offline_rag_error
+        if offline_rag is not None or offline_rag_error is not None:
+            return offline_rag
+        try:
+            params = cfg.get("parameters") or {}
+            fixture = params.get("offline_fixture_dir") or "evals/rag_fixture"
+            fixture_path = Path(fixture)
+            if not fixture_path.is_absolute():
+                fixture_path = root / fixture
+            offline_rag = run_offline_rag_eval(
+                fixture_path,
+                suite,
+                k_list=list(params.get("top_k_list") or [1, 3, 5]),
+            )
+        except Exception as exc:  # noqa: BLE001
+            offline_rag_error = str(exc)
+        return offline_rag
 
     for layer in OFFLINE_LAYERS:
         mod = modules.get(layer) or {}
@@ -140,6 +178,70 @@ def run_ci_gates(config_path: Path | None = None) -> CiGateReport:
                     ok=r.ok,
                     summary=r.summary_text(),
                     metrics={"pass_rate": r.pass_rate},
+                )
+            )
+        elif layer == "retrieval_offline":
+            r = _run_offline_rag(path)
+            if r is None:
+                report.layers.append(
+                    GateLayerResult(
+                        layer=layer, ok=False, summary=f"offline rag eval failed: {offline_rag_error}"
+                    )
+                )
+                continue
+            min_hit = float(th.get("hit_rate", 0.7))
+            min_mrr = float(th.get("mrr", 0.3))
+            ok = (
+                r.retrieval_cases > 0
+                and r.hit_rate >= min_hit
+                and r.mrr >= min_mrr
+            )
+            report.layers.append(
+                GateLayerResult(
+                    layer=layer,
+                    ok=ok,
+                    summary=(
+                        f"Offline Retrieval: hit_rate={r.hit_rate:.2%}(>={min_hit:.0%}) "
+                        f"mrr={r.mrr:.4f}(>={min_mrr}) "
+                        f"{'PASS' if ok else 'FAIL'}"
+                    ),
+                    metrics={
+                        "hit_rate": r.hit_rate,
+                        "mrr": r.mrr,
+                        "hit_at_k": r.hit_at_k,
+                        "ndcg_at_k": r.ndcg_at_k,
+                    },
+                )
+            )
+        elif layer == "no_answer_offline":
+            r = _run_offline_rag(path)
+            if r is None:
+                report.layers.append(
+                    GateLayerResult(
+                        layer=layer, ok=False, summary=f"offline rag eval failed: {offline_rag_error}"
+                    )
+                )
+                continue
+            min_recall = float(th.get("min_no_answer_recall", 0.7))
+            min_precision = float(th.get("min_no_answer_precision", 0.6))
+            ok = (
+                r.no_answer_total > 0
+                and r.no_answer_recall >= min_recall
+                and r.no_answer_precision >= min_precision
+            )
+            report.layers.append(
+                GateLayerResult(
+                    layer=layer,
+                    ok=ok,
+                    summary=(
+                        f"Offline No-Answer: recall={r.no_answer_recall:.2%}(>={min_recall:.0%}) "
+                        f"precision={r.no_answer_precision:.2%}(>={min_precision:.0%}) "
+                        f"{'PASS' if ok else 'FAIL'}"
+                    ),
+                    metrics={
+                        "no_answer_recall": r.no_answer_recall,
+                        "no_answer_precision": r.no_answer_precision,
+                    },
                 )
             )
 

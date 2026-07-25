@@ -17,7 +17,8 @@ def test_route_unknown_goes_to_clarify_not_rag():
 def test_route_multi_intent_plan_adjust():
     d = route_intent("根据我最近两周的训练记录调整饮食和训练")
     assert d.primary_intent == "plan_adjust"
-    assert "personal_data_query" in d.secondary_intents or d.requires_personal_data
+    # 多意图（分析+调整）消息仍应高置信落到计划调整路径
+    assert d.confidence >= 0.55
 
 
 def test_evidence_gate_empty():

@@ -1,0 +1,134 @@
+{
+  "name": "fitpilot-offline-rag-fixture-v1",
+  "description": "离线确定性检索门禁套件：基于 evals/rag_fixture 小型固定语料；expect_any / relevance 关键词均来自语料真实内容；expect_no_answer 用例使用与语料几乎无字符重叠的查询",
+  "cases": [
+    {
+      "id": "off_protein_intake",
+      "query": "减脂期蛋白质按体重怎么吃？",
+      "expect_any": ["蛋白", "1.6", "2.2", "protein_basics"],
+      "relevance": [
+        {"match": "1.6", "grade": 2},
+        {"match": "蛋白", "grade": 1}
+      ]
+    },
+    {
+      "id": "off_protein_sources",
+      "query": "蛋白质来源有哪些？",
+      "expect_any": ["鸡胸", "鸡蛋", "豆制品", "蛋白"],
+      "relevance": [
+        {"match": "鸡胸", "grade": 2},
+        {"match": "豆制品", "grade": 1}
+      ]
+    },
+    {
+      "id": "off_strength_frequency",
+      "query": "力量训练新手每周练几次？",
+      "expect_any": ["2", "3", "力量", "strength_training"],
+      "relevance": [
+        {"match": "每周 2–3 次", "grade": 2},
+        {"match": "力量", "grade": 1}
+      ]
+    },
+    {
+      "id": "off_progressive_overload",
+      "query": "什么是渐进超负荷？",
+      "expect_any": ["渐进", "超负荷", "负荷"],
+      "relevance": [
+        {"match": "渐进超负荷", "grade": 2},
+        {"match": "负荷", "grade": 1}
+      ]
+    },
+    {
+      "id": "off_weekly_aerobic",
+      "query": "成年人每周应做多少中等强度有氧活动？",
+      "expect_any": ["150", "300", "有氧", "分钟"],
+      "relevance": [
+        {"match": "150", "grade": 2},
+        {"match": "有氧", "grade": 1}
+      ]
+    },
+    {
+      "id": "off_electrolyte",
+      "query": "出汗多时要不要补充电解质？",
+      "expect_any": ["电解质", "钠", "出汗", "hydration"],
+      "relevance": [
+        {"match": "电解质", "grade": 2},
+        {"match": "钠", "grade": 1}
+      ]
+    },
+    {
+      "id": "off_sports_drink",
+      "query": "每次训练都必须喝运动饮料吗？",
+      "expect_any": ["运动饮料", "清水", "hydration"],
+      "relevance": [
+        {"match": "运动饮料", "grade": 2},
+        {"match": "清水", "grade": 1}
+      ]
+    },
+    {
+      "id": "off_safety_diagnosis",
+      "query": "FitPilot 能帮我诊断伤病或开药吗？",
+      "expect_any": ["诊断", "开药", "医", "safety_boundary"],
+      "relevance": [
+        {"match": "诊断", "grade": 2},
+        {"match": "医", "grade": 1}
+      ]
+    },
+    {
+      "id": "off_chest_pain",
+      "query": "训练时胸痛应该怎么办？",
+      "expect_any": ["胸痛", "就医", "停止"],
+      "relevance": [
+        {"match": "胸痛", "grade": 2},
+        {"match": "就医", "grade": 1}
+      ]
+    },
+    {
+      "id": "off_dietary_principles",
+      "query": "中国居民膳食指南八准则有哪些要点？",
+      "expect_any": ["膳食", "准则", "食物多样", "dietary_guidelines"],
+      "relevance": [
+        {"match": "食物多样", "grade": 2},
+        {"match": "准则", "grade": 1}
+      ]
+    },
+    {
+      "id": "off_alcohol",
+      "query": "健身期间为什么要限制酒精？",
+      "expect_any": ["酒精", "控糖限酒", "恢复"],
+      "relevance": [
+        {"match": "酒精", "grade": 2},
+        {"match": "恢复", "grade": 1}
+      ]
+    },
+    {
+      "id": "off_sedentary",
+      "query": "为什么要减少久坐？",
+      "expect_any": ["久坐", "活动", "strength_training"],
+      "relevance": [
+        {"match": "久坐", "grade": 2},
+        {"match": "活动", "grade": 1}
+      ]
+    },
+    {
+      "id": "off_na_quantum",
+      "query": "量子纠缠能否实现超光速通信？",
+      "expect_no_answer": true
+    },
+    {
+      "id": "off_na_mars",
+      "query": "火星土壤适合种植土豆吗？",
+      "expect_no_answer": true
+    },
+    {
+      "id": "off_na_stock",
+      "query": "纳斯达克指数下周走势预测？",
+      "expect_no_answer": true
+    },
+    {
+      "id": "off_na_recipe",
+      "query": "红烧肉怎么做才软糯？",
+      "expect_no_answer": true
+    }
+  ]
+}

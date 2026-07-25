@@ -23,7 +23,7 @@ async function loadFacets() {
 }
 
 async function load() {
-  const data = unwrap(
+  const data = unwrap<{ items?: any[]; total?: number; count?: number }>(
     await api.get('/exercises', {
       params: {
         q: q.value || undefined,
@@ -41,7 +41,7 @@ async function load() {
 async function shuffle() {
   shuffling.value = true
   try {
-    const data = unwrap(
+    const data = unwrap<{ items?: any[]; count?: number }>(
       await api.post('/exercises/shuffle', {
         body_parts: bodyPart.value ? [bodyPart.value] : [],
         equipments: equipment.value ? [equipment.value] : [],

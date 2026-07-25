@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections import defaultdict
+from functools import partial
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
@@ -38,7 +40,8 @@ async def dense_search(query: str, top_k: int) -> list[tuple[str, float, dict]]:
         detail=f"Embedding 设备={settings.embedding_device}，模型={settings.embedding_model}",
         tool="embed_query",
     )
-    vector = embed_query(query)
+    # model.encode 为同步阻塞调用，放线程池避免阻塞事件循环
+    vector = await asyncio.to_thread(embed_query, query)
     emit_progress(
         stage="rag_dense_search",
         title="Qdrant Dense 检索",
@@ -219,7 +222,10 @@ async def hybrid_retrieve(
             ),
             tool="rerank",
         )
-        ranked = rerank(query, [c.text for c in candidates], top_k=rerank_k)
+        # CrossEncoder.predict 为同步阻塞调用，放线程池执行
+        ranked = await asyncio.to_thread(
+            partial(rerank, query, [c.text for c in candidates], top_k=rerank_k)
+        )
         final = []
         for idx, score in ranked:
             c = candidates[idx]

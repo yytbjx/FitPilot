@@ -3,36 +3,25 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
+from app.eval.common import PassRateEvalResult
 from app.services.diet_plan_validator import validate_diet_plan
 from app.services.meal_optimizer import meal_macro_totals, optimize_meals
 
 
 @dataclass
-class MealEvalResult:
-    total: int = 0
-    passed: int = 0
-    cases: list[dict[str, Any]] = field(default_factory=list)
+class MealEvalResult(PassRateEvalResult):
+    min_pass_rate: float = 0.8
+    label: str = "Meal Eval"
     max_kcal_error_pct: float = 0.15
     max_protein_error_pct: float = 0.15
-    min_pass_rate: float = 0.8
 
-    @property
-    def pass_rate(self) -> float:
-        return self.passed / self.total if self.total else 0.0
-
-    @property
-    def ok(self) -> bool:
-        return self.total > 0 and self.pass_rate >= self.min_pass_rate
-
-    def summary_text(self) -> str:
+    def _extra_summary(self) -> str:
         return (
-            f"Meal Eval: {self.passed}/{self.total} pass_rate={self.pass_rate:.2%} "
-            f"kcal_err<={self.max_kcal_error_pct:.0%} protein_err<={self.max_protein_error_pct:.0%} "
-            f"{'PASS' if self.ok else 'FAIL'}"
+            f"kcal_err<={self.max_kcal_error_pct:.0%} "
+            f"protein_err<={self.max_protein_error_pct:.0%}"
         )
 
 

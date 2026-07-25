@@ -1,7 +1,7 @@
 {
-  "name": "fitpilot-golden-rag-v1",
-  "description": "RAG 黄金集：expect_any 为检索上下文中应出现的关键词（中/英/文档名片段均可）",
-  "min_hit_rate": 0.5,
+  "name": "fitpilot-golden-rag-v2",
+  "description": "RAG 黄金集：expect_any 为检索上下文中应出现的关键词（中/英/文档名片段均可）；部分用例带分级 relevance（grade 2=核心答案，grade 1=相关背景）供 nDCG@k 计算。迭代 3 由 20 条扩充至 51 条，全部题目来自 knowledge_base/raw 真实文档。",
+  "min_hit_rate": 0.7,
   "cases": [
     {
       "id": "protein_fatloss",
@@ -102,6 +102,203 @@
       "id": "protein_timing",
       "query": "力量训练日蛋白质是一天达标重要还是某一顿重要？",
       "expect_any": ["全天", "蛋白", "力量", "protein"]
+    },
+    {
+      "id": "protein_ratio_range",
+      "query": "健身人群蛋白质推荐按体重多少克每公斤？",
+      "expect_any": ["1.6", "2.2", "g/kg", "蛋白"],
+      "relevance": [
+        {"match": "1.6", "grade": 2},
+        {"match": "2.2", "grade": 2},
+        {"match": "蛋白", "grade": 1}
+      ]
+    },
+    {
+      "id": "protein_food_rotation",
+      "query": "减脂期蛋白质食材怎么轮换？",
+      "expect_any": ["鸡胸", "鱼虾", "蛋", "大豆", "轮换"],
+      "relevance": [
+        {"match": "轮换", "grade": 2},
+        {"match": "鸡胸", "grade": 1}
+      ]
+    },
+    {
+      "id": "myth_cardio",
+      "query": "减脂期有氧是不是越多越好？",
+      "expect_any": ["有氧", "恢复", "力量", "误区"],
+      "relevance": [
+        {"match": "有氧", "grade": 2},
+        {"match": "恢复", "grade": 1}
+      ]
+    },
+    {
+      "id": "myth_single_food",
+      "query": "减脂期是不是听到某个食物就不能吃？",
+      "expect_any": ["单一食物", "全日", "宏量", "可坚持"]
+    },
+    {
+      "id": "fatloss_principles",
+      "query": "减脂有哪些可执行原则？",
+      "expect_any": ["热量缺口", "蛋白", "力量", "睡眠"]
+    },
+    {
+      "id": "carb_rebound",
+      "query": "过度限制碳水有什么后果？",
+      "expect_any": ["碳水", "训练表现", "回弹", "误区"]
+    },
+    {
+      "id": "strength_split",
+      "query": "进阶力量训练可以怎么分化？",
+      "expect_any": ["上下肢", "推拉腿", "分化", "动作质量"]
+    },
+    {
+      "id": "strength_movements",
+      "query": "新手全身训练应涵盖哪些动作模式？",
+      "expect_any": ["蹲", "推", "拉", "铰链", "核心"],
+      "relevance": [
+        {"match": "铰链", "grade": 2},
+        {"match": "蹲", "grade": 1},
+        {"match": "核心", "grade": 1}
+      ]
+    },
+    {
+      "id": "sharp_pain_stop",
+      "query": "训练中出现锐痛或眩晕怎么办？",
+      "expect_any": ["锐痛", "眩晕", "停止", "评估"],
+      "relevance": [
+        {"match": "锐痛", "grade": 2},
+        {"match": "停止", "grade": 1}
+      ]
+    },
+    {
+      "id": "aerobic_range",
+      "query": "高强度有氧每周建议多少分钟？",
+      "expect_any": ["75", "150", "高强度", "有氧"],
+      "relevance": [
+        {"match": "75", "grade": 2},
+        {"match": "150", "grade": 2},
+        {"match": "有氧", "grade": 1}
+      ]
+    },
+    {
+      "id": "below_recommendation",
+      "query": "达不到推荐活动量还能获益吗？",
+      "expect_any": ["少量", "获益", "活动", "久坐"]
+    },
+    {
+      "id": "who_elderly",
+      "query": "老年人身体活动有什么额外建议？",
+      "expect_any": ["老年", "平衡", "跌倒", "多组分"],
+      "relevance": [
+        {"match": "跌倒", "grade": 2},
+        {"match": "平衡", "grade": 1}
+      ]
+    },
+    {
+      "id": "who_children",
+      "query": "儿童青少年每天应活动多久？",
+      "expect_any": ["60", "儿童", "青少年", "高强度"],
+      "relevance": [
+        {"match": "60", "grade": 2},
+        {"match": "青少年", "grade": 1}
+      ]
+    },
+    {
+      "id": "who_principle",
+      "query": "WHO 身体活动指南的核心原则是什么？",
+      "expect_any": ["任何身体活动", "久坐", "健康获益", "who"]
+    },
+    {
+      "id": "who_screen",
+      "query": "青少年娱乐性屏幕时间有什么建议？",
+      "expect_any": ["屏幕", "久坐", "青少年", "限制"]
+    },
+    {
+      "id": "cn_alcohol",
+      "query": "健身目标期为什么要限酒？",
+      "expect_any": ["酒精", "恢复", "睡眠", "控糖限酒"]
+    },
+    {
+      "id": "cn_salt_oil",
+      "query": "膳食指南对盐油糖酒有什么建议？",
+      "expect_any": ["少盐少油", "控糖限酒", "准则", "膳食"]
+    },
+    {
+      "id": "cn_labels",
+      "query": "膳食指南里会烹会选会看标签是指什么？",
+      "expect_any": ["会烹会选", "标签", "准则", "膳食"]
+    },
+    {
+      "id": "cn_protein_foods",
+      "query": "膳食指南推荐哪些优质蛋白来源？",
+      "expect_any": ["鱼", "禽", "蛋", "瘦肉", "大豆"],
+      "relevance": [
+        {"match": "瘦肉", "grade": 2},
+        {"match": "大豆", "grade": 1}
+      ]
+    },
+    {
+      "id": "urine_color",
+      "query": "训练前后怎么粗略判断要不要补水？",
+      "expect_any": ["口渴", "尿色", "饮水", "hydration"]
+    },
+    {
+      "id": "sports_drink_need",
+      "query": "短时中低强度训练需要运动饮料吗？",
+      "expect_any": ["运动饮料", "清水", "中低强度", "hydration"]
+    },
+    {
+      "id": "kidney_water",
+      "query": "医嘱限制饮水量的人训练时怎么办？",
+      "expect_any": ["肾脏", "医嘱", "饮水", "hydration"]
+    },
+    {
+      "id": "fainting",
+      "query": "训练中出现晕厥或呼吸困难怎么办？",
+      "expect_any": ["晕厥", "呼吸困难", "就医", "停止"],
+      "relevance": [
+        {"match": "晕厥", "grade": 2},
+        {"match": "就医", "grade": 1}
+      ]
+    },
+    {
+      "id": "what_we_can",
+      "query": "FitPilot 能提供哪些健身饮食方面的帮助？",
+      "expect_any": ["建议", "计划", "知识库", "安全"]
+    },
+    {
+      "id": "usda_broccoli",
+      "query": "西兰花每100克多少热量和蛋白质？",
+      "expect_any": ["西兰花", "31", "2.57"],
+      "relevance": [
+        {"match": "31", "grade": 2},
+        {"match": "西兰花", "grade": 1}
+      ]
+    },
+    {
+      "id": "usda_greek_yogurt",
+      "query": "脱脂希腊酸奶每100克蛋白质多少？",
+      "expect_any": ["希腊", "酸奶", "10.3", "61"]
+    },
+    {
+      "id": "usda_beef_loin",
+      "query": "烤牛里脊每100克蛋白质和热量是多少？",
+      "expect_any": ["牛肉", "里脊", "27.7", "176"]
+    },
+    {
+      "id": "usda_egg",
+      "query": "冷冻整蛋每100克含多少蛋白质？",
+      "expect_any": ["鸡蛋", "12.3", "150"]
+    },
+    {
+      "id": "usda_banana",
+      "query": "过熟香蕉每100克碳水多少克？",
+      "expect_any": ["香蕉", "20.1", "85"]
+    },
+    {
+      "id": "usda_scope",
+      "query": "FitPilot 收录了多少种 USDA 基础食品？",
+      "expect_any": ["363", "19", "分类", "foundation"]
     }
   ]
 }

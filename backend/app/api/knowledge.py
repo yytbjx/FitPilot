@@ -1,7 +1,8 @@
-"""知识库：集合、入库、检索。"""
+"""知识库：集合、入库、检索、生命周期删除。"""
 
 from __future__ import annotations
 
+import asyncio
 import re
 from pathlib import Path
 
@@ -16,6 +17,7 @@ from app.models.user import User
 from app.rag import describe_rag_stack
 from app.rag.context import build_context
 from app.rag.ingest import ingest_directory, ingest_paths, ingest_text_document
+from app.rag.knowledge_lifecycle import delete_source, index_consistency_report
 from app.rag.parsing import describe_formats, supported_suffixes
 from app.rag.retrieve import hybrid_retrieve
 from app.services.qdrant_client import get_qdrant_service
@@ -47,8 +49,11 @@ async def ensure_collection(
     request: Request,
     user: User = Depends(require_role("admin")),
 ) -> dict:
+    from app.rag.embeddings import embedding_dim
+
     svc = get_qdrant_service()
-    svc.ensure_collection()
+    # 向量维度从已加载模型动态获取（与 ingest 路径一致）
+    svc.ensure_collection(vector_size=embedding_dim())
     return ok(
         get_request_id(request),
         {
@@ -65,6 +70,8 @@ async def ensure_collection(
 async def knowledge_status(request: Request) -> dict:
     settings = get_settings()
     qdrant = get_qdrant_service().health()
+    # BM25/Qdrant document_id 集合差异计数（一致性可观测；Qdrant 不可用时降级为 error 字段）
+    consistency = await asyncio.to_thread(index_consistency_report)
     return ok(
         get_request_id(request),
         {
@@ -73,10 +80,28 @@ async def knowledge_status(request: Request) -> dict:
             "rag_top_k": settings.rag_top_k,
             "rag_rerank_top_k": settings.rag_rerank_top_k,
             "qdrant": qdrant,
+            "consistency": consistency,
             "stack": describe_rag_stack(),
             "supported_suffixes": supported_suffixes(),
         },
     )
+
+
+@router.delete("/sources/{source_id}")
+async def delete_knowledge_source(
+    source_id: str,
+    request: Request,
+    user: User = Depends(require_role("admin")),
+) -> JSONResponse:
+    """删除知识源：Postgres manifest + Qdrant chunks + BM25 条目（持久化 bm25_index.json）。"""
+    rid = get_request_id(request)
+    result = await delete_source(source_id)
+    if not result.get("ok"):
+        return JSONResponse(
+            status_code=404,
+            content=fail(rid, "SOURCE_NOT_FOUND", f"知识源不存在：{source_id}"),
+        )
+    return JSONResponse(ok(rid, result))
 
 
 @router.get("/formats")

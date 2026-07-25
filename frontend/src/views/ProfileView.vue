@@ -21,13 +21,13 @@ const form = reactive<any>({
 const estimate = ref<any>(null)
 
 async function load() {
-  const data = unwrap(await api.get('/users/me/profile'))
+  const data = unwrap<Record<string, any>>(await api.get('/users/me/profile'))
   Object.assign(form, data)
   estimate.value = data.nutrition_estimate
 }
 
 async function save() {
-  const data = unwrap(await api.put('/users/me/profile', form))
+  const data = unwrap<Record<string, any>>(await api.put('/users/me/profile', form))
   estimate.value = data.nutrition_estimate
   ElMessage.success('档案已保存')
 }

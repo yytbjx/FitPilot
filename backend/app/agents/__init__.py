@@ -1,4 +1,4 @@
-"""Agent 包：结构化路由与后续 Runtime 扩展入口。"""
+"""Agent 包：结构化意图路由与领域工作流。"""
 
 from app.agents.routing import RoutingDecision, route_intent
 

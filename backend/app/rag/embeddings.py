@@ -80,4 +80,17 @@ def embed_query(text: str) -> list[float]:
 
 @lru_cache(maxsize=1)
 def embedding_dim() -> int:
-    return 512
+    """从已加载模型动态获取向量维度（不再硬编码 512）。
+
+    优先使用配置项 embedding_dim_override（用于离线/测试场景）；
+    否则触发模型加载并调用 get_sentence_embedding_dimension()。
+    模型不可用时抛出 EmbeddingUnavailableError（与 embed_texts 口径一致，fail-fast）。
+    """
+    override = get_settings().embedding_dim_override
+    if override:
+        return int(override)
+    model = get_embedding_model()
+    dim = model.get_sentence_embedding_dimension()
+    if not dim:
+        raise EmbeddingUnavailableError("无法从 Embedding 模型获取向量维度")
+    return int(dim)

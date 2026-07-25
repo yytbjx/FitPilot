@@ -50,9 +50,13 @@ class RetrievedChunk:
 
 
 def describe_rag_stack() -> dict[str, str]:
+    """如实描述当前生效的 RAG 栈（模型名取自实际配置解析结果，而非写死）。"""
+    from app.core.config import get_settings
+
+    settings = get_settings()
     return {
-        "embedding": "BAAI/bge-small-zh-v1.5",
-        "reranker": "BAAI/bge-reranker-base",
+        "embedding": settings.resolved_embedding_model,
+        "reranker": settings.resolved_reranker_model,
         "dense_store": "Qdrant",
         "sparse": "BM25 in-process",
         "fusion": "RRF",

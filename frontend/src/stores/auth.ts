@@ -42,19 +42,23 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function login(addr: string, password: string) {
-    const data = unwrap(await api.post('/auth/login', { email: addr, password }))
+    const data = unwrap<Parameters<typeof applyTokens>[0]>(
+      await api.post('/auth/login', { email: addr, password }),
+    )
     applyTokens(data)
   }
 
   async function register(addr: string, password: string) {
-    const data = unwrap(await api.post('/auth/register', { email: addr, password }))
+    const data = unwrap<Parameters<typeof applyTokens>[0]>(
+      await api.post('/auth/register', { email: addr, password }),
+    )
     applyTokens(data)
   }
 
   async function refreshAccessToken(): Promise<boolean> {
     if (!refreshToken.value) return false
     try {
-      const data = unwrap(
+      const data = unwrap<Parameters<typeof applyTokens>[0]>(
         await api.post('/auth/refresh', { refresh_token: refreshToken.value }),
       )
       applyTokens(data)

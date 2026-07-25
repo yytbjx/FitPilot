@@ -22,16 +22,21 @@ jobs:
       - name: Install deps
         run: |
           uv sync --extra dev
-      - name: Ruff lint (fatal errors only)
+      - name: Ruff lint (fatal errors + unused imports/variables)
         working-directory: ${{ github.workspace }}
         run: |
-          uvx ruff check backend/app backend/main.py main.py migrations --select E9,F63,F7,F82
+          uvx ruff check backend/app backend/main.py main.py migrations --select E9,F63,F7,F82,F401,F841
       - name: Unit tests (no external services)
         env:
           PYTHONPATH: ${{ github.workspace }}/backend
           NO_PROXY: 127.0.0.1,localhost
         run: |
           uv run python -m pytest -q tests/
+      # 离线门禁覆盖层（eval_config.yaml 统一权威配置）：
+      # parsing / retrieval_offline / no_answer_offline / agent / plan / meal / safety
+      # retrieval_offline 与 no_answer_offline 为迭代 3 新增的离线确定性 RAG 检索/拒答门禁，
+      # 基于 evals/rag_fixture 固定语料 + 确定性哈希向量 + 真实 BM25/RRF/Evidence Gate，
+      # 不依赖 Qdrant / Ollama / Embedding 模型权重。
       - name: Offline eval gates
         env:
           PYTHONPATH: ${{ github.workspace }}/backend

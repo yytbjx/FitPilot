@@ -37,7 +37,7 @@ def build_plan_approval_subgraph(db: AsyncSession):
     """confirm → commit | reject（含 interrupt）。"""
 
     async def confirm(state: FitnessAgentState) -> dict[str, Any]:
-        from app.agents.runtime.policies import build_approval_payload
+        from app.agents.workflows.approval import build_approval_payload
 
         pending = state.get("pending_actions") or {}
         emit_progress(

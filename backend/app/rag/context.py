@@ -1,4 +1,10 @@
-"""检索上下文拼装与多信号拒答判定（工程审查 P0）。"""
+"""检索上下文拼装；拒答判定复用 Evidence Gate 单套逻辑（迭代 3 收敛）。
+
+历史说明：迭代 3 前本模块维护第二套拒答条件（top_score<-2.0 等），与
+`evidence_gate.assess_evidence`（confidence>=0.35）并存且口径不一致。现已收敛：
+build_context 的拒答判定委托给 assess_evidence，本模块只保留上下文拼装与
+多路召回一致性（require_source_agreement）附加检查。返回结构保持不变。
+"""
 
 from __future__ import annotations
 
@@ -6,6 +12,7 @@ from typing import Any
 
 from app.rag import RetrievedChunk
 from app.rag.citations import map_citations
+from app.rag.evidence_gate import assess_evidence, score_scale_of
 
 
 def _chunk_sources(chunks: list[RetrievedChunk]) -> set[str]:
@@ -27,7 +34,11 @@ def build_context(
     rerank_min_score: float = -2.0,
     require_source_agreement: bool = False,
 ) -> dict[str, Any]:
-    """组装生成上下文；证据不足时 no_answer=True，并返回细分 reason。"""
+    """组装生成上下文；证据不足时 no_answer=True，并返回细分 reason。
+
+    拒答判定复用 assess_evidence（min_score → min_top_score，rerank_min_score
+    仅对 rerank 分体系生效）；参数签名与返回字段保持兼容。
+    """
     usable = [c for c in chunks if c.text.strip()]
     if len(usable) < min_hits:
         return {
@@ -43,24 +54,32 @@ def build_context(
     top = usable[0]
     scores = [c.score for c in usable]
     dense_bm25_sources = _chunk_sources(usable)
+    scale = score_scale_of(scores)
 
-    # CrossEncoder 分可能为负数；RRF 为正
-    low_confidence = top.score < min_score and all(c.score <= 0 for c in usable)
-    rerank_weak = top.score < rerank_min_score
+    assessment = assess_evidence(
+        usable,
+        min_hits=1,
+        min_top_score=min_score,
+        rerank_min_score=rerank_min_score,
+    )
 
-    if low_confidence or rerank_weak:
+    if not assessment.answerable:
         return {
             "no_answer": True,
-            "reason": "knowledge_not_found",
-            "reason_detail": "LOW_CONFIDENCE",
+            "reason": (
+                "conflicting_evidence" if assessment.conflicts else "knowledge_not_found"
+            ),
+            "reason_detail": assessment.reason or "WEAK_EVIDENCE",
             "context": "",
             "citations": [],
             "chunks": [c.to_dict() for c in usable],
             "answerability": {
                 "signals": {
                     "top_score": top.score,
-                    "rerank_weak": rerank_weak,
+                    "rerank_weak": bool(scale == "rerank" and top.score < rerank_min_score),
                     "score_spread": max(scores) - min(scores) if scores else 0,
+                    "confidence": assessment.confidence,
+                    "score_scale": scale,
                 }
             },
         }
@@ -95,6 +114,8 @@ def build_context(
                 "top_score": top.score,
                 "hit_count": len(usable),
                 "sources": list(dense_bm25_sources),
+                "confidence": assessment.confidence,
+                "score_scale": scale,
             }
         },
     }

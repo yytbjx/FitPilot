@@ -104,7 +104,7 @@ export const useChatStore = defineStore('chat', () => {
     pushProgress({ event: 'progress', title: '已提交问题', detail: text.slice(0, 80), status: 'done' })
 
     try {
-      const created = unwrap(
+      const created = unwrap<{ task_id: string }>(
         await api.post(
           '/agent/tasks',
           { message: text },

@@ -1,4 +1,12 @@
-"""Evidence Gate：独立证据质量评估（增强方案 5.5）。"""
+"""Evidence Gate：全站唯一的证据质量/拒答判定（增强方案 5.5，迭代 3 收敛）。
+
+设计要点：
+- 拒答判定收敛到本模块单套逻辑；`rag.context.build_context` 复用本模块结果，
+  不再维护第二套阈值（迭代 3 前两者条件不一致：confidence>=0.35 vs top_score<-2.0）。
+- 分数体系显式区分：RRF 融合分（恒正、0.01 量级）与 CrossEncoder 精排原始分
+  （可正可负、量级大）。冲突检测与弱精排判定只在 rerank 分体系下生效；
+  RRF 分传入时跳过（迭代 3 前 (max-min)>5 的阈值对 RRF 分永不触发，形同虚设）。
+"""
 
 from __future__ import annotations
 
@@ -7,6 +15,12 @@ from typing import Any
 from pydantic import BaseModel, Field
 
 from app.rag import RetrievedChunk
+
+# RRF 融合分上限经验值：单路 RRF(k=60) 最大 1/61≈0.016，多查询变体叠加也很难超过 0.5；
+# CrossEncoder 原始分（logits）常见量级 ±10。超过该上限即视为 rerank 分体系。
+_RRF_SCORE_CEILING = 0.5
+# 冲突检测的分差阈值，仅对 CrossEncoder 原始分有意义
+_CONFLICT_SPREAD = 5.0
 
 
 class EvidenceAssessment(BaseModel):
@@ -18,6 +32,18 @@ class EvidenceAssessment(BaseModel):
     selected_evidence: list[dict[str, Any]] = Field(default_factory=list)
     reason: str | None = None
     authority_ok: bool = True
+    # 迭代 3 新增（带默认值，向后兼容）：分数体系 rrf / rerank / unknown
+    score_scale: str = "unknown"
+
+
+def score_scale_of(scores: list[float]) -> str:
+    """判别分数体系：rerank（CrossEncoder 原始分）/ rrf（融合分）/ unknown。"""
+    if not scores:
+        return "unknown"
+    lo, hi = min(scores), max(scores)
+    if lo < 0 or hi > _RRF_SCORE_CEILING:
+        return "rerank"
+    return "rrf"
 
 
 def assess_evidence(
@@ -27,8 +53,23 @@ def assess_evidence(
     min_hits: int = 1,
     min_top_score: float = 0.01,
     authority_threshold: int | None = None,
+    min_confidence: float | None = None,
+    rerank_min_score: float | None = None,
 ) -> EvidenceAssessment:
-    """评估检索证据是否足以回答。"""
+    """评估检索证据是否足以回答（全站唯一拒答判定入口）。
+
+    min_confidence / rerank_min_score 传 None 时读取全局 settings
+    （rag_evidence_min_confidence / rag_rerank_min_score）。
+    """
+    if min_confidence is None or rerank_min_score is None:
+        from app.core.config import get_settings
+
+        settings = get_settings()
+        if min_confidence is None:
+            min_confidence = float(settings.rag_evidence_min_confidence)
+        if rerank_min_score is None:
+            rerank_min_score = float(settings.rag_rerank_min_score)
+
     usable = [c for c in chunks if (c.text or "").strip()]
     if len(usable) < min_hits:
         return EvidenceAssessment(
@@ -40,6 +81,7 @@ def assess_evidence(
         )
 
     scores = [float(c.score or 0.0) for c in usable]
+    scale = score_scale_of(scores)
     top = max(scores) if scores else 0.0
     avg = sum(scores) / len(scores) if scores else 0.0
     # 简单覆盖：命中条数归一化到 4
@@ -61,6 +103,7 @@ def assess_evidence(
                 reason="LOW_AUTHORITY",
                 authority_ok=False,
                 selected_evidence=[_brief(c) for c in usable[:4]],
+                score_scale=scale,
             )
 
     if top < min_top_score and all(s <= 0 for s in scores):
@@ -70,22 +113,41 @@ def assess_evidence(
             coverage=coverage,
             reason="LOW_CONFIDENCE",
             selected_evidence=[_brief(c) for c in usable[:4]],
+            score_scale=scale,
+        )
+
+    # 弱精排：仅 rerank 分体系下，top 分低于阈值视为弱证据（RRF 分恒正，跳过）
+    if scale == "rerank" and top < rerank_min_score:
+        return EvidenceAssessment(
+            answerable=False,
+            confidence=confidence,
+            coverage=coverage,
+            reason="LOW_CONFIDENCE",
+            selected_evidence=[_brief(c) for c in usable[:4]],
+            score_scale=scale,
         )
 
     conflicts: list[str] = []
-    # 粗略冲突：同一查询下正负相关混杂且分差大
-    if len(scores) >= 2 and (max(scores) - min(scores)) > 5 and min(scores) < 0 < max(scores):
+    # 粗略冲突：同一查询下正负相关混杂且分差大。
+    # 仅对 CrossEncoder 原始分有意义；RRF 分恒正且量级小，显式跳过。
+    if (
+        scale == "rerank"
+        and len(scores) >= 2
+        and (max(scores) - min(scores)) > _CONFLICT_SPREAD
+        and min(scores) < 0 < max(scores)
+    ):
         conflicts.append("score_polarity_conflict")
 
-    answerable = confidence >= 0.35 and not conflicts
+    answerable = confidence >= min_confidence and not conflicts
     return EvidenceAssessment(
         answerable=answerable,
         confidence=round(confidence, 4),
         coverage=round(coverage, 4),
         conflicts=conflicts,
-        reason=None if answerable else "WEAK_EVIDENCE",
+        reason=None if answerable else ("CONFLICTING_EVIDENCE" if conflicts else "WEAK_EVIDENCE"),
         authority_ok=authority_ok,
         selected_evidence=[_brief(c) for c in usable[:6]],
+        score_scale=scale,
     )
 
 

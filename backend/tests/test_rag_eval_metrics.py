@@ -14,7 +14,7 @@ def test_first_relevant_rank():
     assert matched
 
 
-def test_load_eval_config_json():
-    cfg = load_eval_config(Path(__file__).resolve().parents[2] / "evals" / "eval_config.json")
+def test_load_eval_config_yaml():
+    cfg = load_eval_config(Path(__file__).resolve().parents[2] / "evals" / "eval_config.yaml")
     assert "parameters" in cfg
     assert 1 in cfg["parameters"]["top_k_list"] or cfg["parameters"]["top_k_list"][0] == 1

@@ -8,7 +8,7 @@ const items = ref<any[]>([])
 const total = ref(0)
 
 async function load() {
-  const data = unwrap(
+  const data = unwrap<{ items?: any[]; total?: number; count?: number }>(
     await api.get('/foods', {
       params: {
         q: q.value || undefined,

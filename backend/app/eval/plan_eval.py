@@ -3,33 +3,17 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
+from app.eval.common import PassRateEvalResult
 from app.services.training_plan_validator import validate_training_plan
 
 
 @dataclass
-class PlanEvalResult:
-    total: int = 0
-    passed: int = 0
-    cases: list[dict[str, Any]] = field(default_factory=list)
+class PlanEvalResult(PassRateEvalResult):
     min_pass_rate: float = 0.9
-
-    @property
-    def pass_rate(self) -> float:
-        return self.passed / self.total if self.total else 0.0
-
-    @property
-    def ok(self) -> bool:
-        return self.total > 0 and self.pass_rate >= self.min_pass_rate
-
-    def summary_text(self) -> str:
-        return (
-            f"Plan Eval: {self.passed}/{self.total} pass_rate={self.pass_rate:.2%} "
-            f"{'PASS' if self.ok else 'FAIL'}"
-        )
+    label: str = "Plan Eval"
 
 
 def run_plan_eval(suite_path: Path) -> PlanEvalResult:

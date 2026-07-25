@@ -13,10 +13,14 @@ const diets = ref<any[]>([])
 const bodies = ref<any[]>([])
 
 async function refresh() {
-  foods.value = unwrap(await api.get('/foods')).items || []
-  workouts.value = unwrap(await api.get('/workouts/logs', { params: { log_date: today } })).items || []
-  diets.value = unwrap(await api.get('/diet/logs', { params: { log_date: today } })).items || []
-  bodies.value = unwrap(await api.get('/body-metrics')).items || []
+  foods.value = unwrap<{ items?: any[] }>(await api.get('/foods')).items || []
+  workouts.value =
+    unwrap<{ items?: any[] }>(await api.get('/workouts/logs', { params: { log_date: today } }))
+      .items || []
+  diets.value =
+    unwrap<{ items?: any[] }>(await api.get('/diet/logs', { params: { log_date: today } })).items ||
+    []
+  bodies.value = unwrap<{ items?: any[] }>(await api.get('/body-metrics')).items || []
 }
 
 async function addWorkout() {

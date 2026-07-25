@@ -1,11 +1,17 @@
-"""结构化意图路由（增强方案 4.2）。"""
+"""结构化意图路由（增强方案 4.2）。
+
+迭代 3 精简：删除无消费方的 RoutingDecision 字段（secondary_intents /
+missing_fields / requires_* 系列，其唯一消费方是已移除的 PEV planner）。
+保留路由实际产出：primary_intent、confidence（fitness_graph 置信门使用）、
+risk_level、clarify_question（clarify 工作流使用）。
+"""
 
 from __future__ import annotations
 
 import re
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 from app.tools.domain import check_risk
 
@@ -25,13 +31,7 @@ Intent = Literal[
 
 class RoutingDecision(BaseModel):
     primary_intent: Intent
-    secondary_intents: list[Intent] = Field(default_factory=list)
     confidence: float = 0.0
-    requires_personal_data: bool = False
-    requires_knowledge: bool = False
-    requires_write: bool = False
-    requires_approval: bool = False
-    missing_fields: list[str] = Field(default_factory=list)
     risk_level: Literal["low", "medium", "high"] = "low"
     clarify_question: str | None = None
 
@@ -44,22 +44,14 @@ def route_intent(text: str) -> RoutingDecision:
     t = text or ""
     risk = check_risk(t)
     if risk["risk_level"] == "high":
-        return RoutingDecision(
-            primary_intent="risk_or_medical",
-            confidence=0.99,
-            risk_level="high",
-            requires_write=False,
-        )
+        return RoutingDecision(primary_intent="risk_or_medical", confidence=0.99, risk_level="high")
 
     if re.search(r"(写代码|写.*代码|股票|炒股|比特币|加密货币|算命|占卜)", t):
         return RoutingDecision(primary_intent="unsupported", confidence=0.95, risk_level="low")
 
-    secondary: list[Intent] = []
     primary: Intent | None = None
     confidence = 0.0
-    missing: list[str] = []
 
-    # 多意图：分析 + 调整
     has_analyze = bool(re.search(r"(分析|看看|最近|情况|趋势|完成率)", t))
     has_adjust = bool(re.search(r"(调整|改一下|优化).*(计划|训练|饮食)|(计划|训练|饮食).*(调整|改)", t))
     has_plan = bool(re.search(r"(计划|安排训练|生成计划|换个饮食|调整饮食|调整训练)", t))
@@ -91,22 +83,15 @@ def route_intent(text: str) -> RoutingDecision:
         primary = "small_talk"
         confidence = 0.92
 
-    if has_analyze and primary in {"plan_adjust", "plan_create", None}:
-        secondary.append("personal_data_query")
-        if primary is None:
-            primary = "plan_adjust" if has_adjust else "personal_data_query"
-            confidence = 0.7
-    if has_knowledge and primary in {"plan_create", "plan_adjust"}:
-        secondary.append("knowledge_query")
-    if has_analyze and primary == "knowledge_query":
-        secondary.append("personal_data_query")
+    if primary is None and has_analyze:
+        primary = "plan_adjust" if has_adjust else "personal_data_query"
+        confidence = 0.7
 
     if primary is None:
         # 不再默认无脑进入 RAG：低置信澄清
         return RoutingDecision(
             primary_intent="clarify",
             confidence=0.35,
-            missing_fields=["intent"],
             clarify_question="请补充你的目标：是知识问答、查看个人数据，还是生成/调整训练饮食计划？",
             risk_level="low",
         )
@@ -114,34 +99,9 @@ def route_intent(text: str) -> RoutingDecision:
     if confidence < _CONFIDENCE_GATE:
         return RoutingDecision(
             primary_intent="clarify",
-            secondary_intents=[primary, *secondary],
             confidence=confidence,
-            missing_fields=["intent_clarity"],
             clarify_question="我不太确定你的意图，请用更明确的一句话描述你想做的事。",
             risk_level="low",
         )
 
-    requires_write = primary in {"plan_create", "plan_adjust", "workout_log_write", "diet_log_write"}
-    requires_approval = primary in {"plan_create", "plan_adjust"}
-    requires_personal = primary in {
-        "personal_data_query",
-        "plan_create",
-        "plan_adjust",
-    } or "personal_data_query" in secondary
-    requires_knowledge = primary == "knowledge_query" or "knowledge_query" in secondary
-
-    if primary in {"plan_create", "plan_adjust"} and not re.search(r"(天|周|器械|目标|减脂|增肌)", t):
-        missing.append("goal_or_schedule")
-
-    return RoutingDecision(
-        primary_intent=primary,
-        secondary_intents=list(dict.fromkeys(secondary)),
-        confidence=confidence,
-        requires_personal_data=requires_personal,
-        requires_knowledge=requires_knowledge,
-        requires_write=requires_write,
-        requires_approval=requires_approval,
-        missing_fields=missing,
-        risk_level="low",
-        clarify_question=("请补充训练天数、目标或可用器械，以便生成更合适的计划。" if missing else None),
-    )
+    return RoutingDecision(primary_intent=primary, confidence=confidence, risk_level="low")

@@ -37,13 +37,14 @@ async def main() -> None:
 
     from app.core.config import get_settings
     from app.rag.bm25 import BM25Index, persist_bm25
+    from app.rag.embeddings import embedding_dim
     from app.rag.ingest import ingest_directory
     from app.services.qdrant_client import get_qdrant_service
 
     get_settings.cache_clear()
     if args.reset:
         svc = get_qdrant_service()
-        svc.reset_collection(vector_size=512)
+        svc.reset_collection(vector_size=embedding_dim())
         # 同步清空本地 BM25
         persist_bm25(BM25Index())
         print("qdrant_collection_reset_and_bm25_cleared")

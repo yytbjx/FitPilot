@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from app.agents.memory.session_memory import summarize_session
 from app.agents.memory.user_memory import ALLOWED_KEYS
-from app.agents.runtime.policies import build_approval_payload, requires_approval
+from app.agents.workflows.approval import build_approval_payload, requires_approval
 from app.application.memories.confirm_memory import (
     PROFILE_FIELD_MAP,
     _serialize_profile_value,

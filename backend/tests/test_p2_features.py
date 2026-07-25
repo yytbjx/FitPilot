@@ -80,9 +80,21 @@ def test_meal_swap_locked():
     assert len(swapped["meals"]) == 3
 
 
-def test_full_eval_config_smoke():
+def test_full_eval_config_smoke(tmp_path):
+    """编排冒烟：只验证各层能跑通出报告（检索质量门禁在 eval-gate / eval 命令）。
+
+    在线检索层逐条走 hybrid_retrieve（Qdrant 不可用时每条有连接开销），
+    golden 集扩充到 51 条后全量会拖慢单测数倍；冒烟用 dataset_limit 截断。
+    """
+    import yaml
+
+    from app.eval.rag_eval import load_eval_config
+
     root = Path(__file__).resolve().parents[2]
-    cfg = root / "evals" / "eval_config.json"
-    report = run_full_eval(config_path=cfg, repo_root=root)
+    cfg = load_eval_config(root / "evals" / "eval_config.yaml")
+    cfg.setdefault("parameters", {})["dataset_limit"] = 5
+    cfg_path = tmp_path / "eval_config_smoke.yaml"
+    cfg_path.write_text(yaml.safe_dump(cfg, allow_unicode=True), encoding="utf-8")
+    report = run_full_eval(config_path=cfg_path, repo_root=root)
     assert len(report.layers) >= 5
     assert report.summary_text().startswith("=== FitPilot")

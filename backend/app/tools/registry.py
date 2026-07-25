@@ -1,144 +1,67 @@
-"""Tool Registry：声明式工具契约（增强方案 4.4）。"""
+"""工具声明表（迭代 3 简化版）。
+
+原声明式 Tool Registry 的 handler/input_schema/output_schema/timeout_seconds
+等字段从未被任何消费方使用（执行侧是直接函数调用），已删除。仅保留两个
+被真实消费的字段：operation_type / requires_approval，用于固定安全不变量：
+"写工具必须经人工审批，不能在未审批路径上成功执行"。
+"""
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Callable, Literal
+from dataclasses import dataclass
+from typing import Literal
 
-from pydantic import BaseModel, Field
-
-
-class EmptyInput(BaseModel):
-    pass
+OperationType = Literal["read", "preview", "write"]
 
 
-class TextInput(BaseModel):
-    text: str = Field(..., min_length=1, max_length=5000)
-
-
-class DaysInput(BaseModel):
-    days: int = Field(default=7, ge=1, le=90)
-
-
-@dataclass
+@dataclass(frozen=True)
 class ToolDefinition:
     name: str
-    description: str
-    input_schema: type[BaseModel]
-    output_schema: type[BaseModel] | None
-    permission: str
-    operation_type: Literal["read", "preview", "write"]
-    timeout_seconds: int = 30
-    idempotent: bool = True
+    operation_type: OperationType
     requires_approval: bool = False
-    handler: Callable[..., Any] | None = None
-    tags: list[str] = field(default_factory=list)
 
 
-_REGISTRY: dict[str, ToolDefinition] = {}
+_TOOLS: dict[str, ToolDefinition] = {
+    "check_risk": ToolDefinition("check_risk", "read"),
+    "get_user_profile_data": ToolDefinition("get_user_profile_data", "read"),
+    "recent_logs": ToolDefinition("recent_logs", "read"),
+    "preview_and_stage_plans": ToolDefinition("preview_and_stage_plans", "preview"),
+    "weekly_adjust_preview": ToolDefinition("weekly_adjust_preview", "preview"),
+    # 唯一的写工具：只能经 plan_approval 子图 interrupt 确认后由 commit 工作流调用
+    "commit_plans": ToolDefinition("commit_plans", "write", requires_approval=True),
+}
 
 
-def register_tool(defn: ToolDefinition) -> ToolDefinition:
-    _REGISTRY[defn.name] = defn
-    return defn
+class UnapprovedWriteToolError(PermissionError):
+    """写工具在未审批上下文中被调用，或写工具丢失审批门声明。"""
 
 
 def get_tool(name: str) -> ToolDefinition | None:
-    return _REGISTRY.get(name)
+    return _TOOLS.get(name)
 
 
-def list_tools(*, operation_type: str | None = None) -> list[ToolDefinition]:
-    items = list(_REGISTRY.values())
+def list_tools(*, operation_type: OperationType | None = None) -> list[ToolDefinition]:
+    items = list(_TOOLS.values())
     if operation_type:
         items = [t for t in items if t.operation_type == operation_type]
     return items
 
 
-def ensure_default_tools() -> None:
-    """注册内置领域工具元数据（handler 仍走 domain 模块）。"""
-    if _REGISTRY:
-        return
-    from app.tools import domain
+def assert_allowed_without_approval(name: str) -> None:
+    """守卫：审批门内的写工具不得出现在免审批执行路径上。
 
-    register_tool(
-        ToolDefinition(
-            name="check_risk",
-            description="高风险医疗表述检测",
-            input_schema=TextInput,
-            output_schema=None,
-            permission="agent",
-            operation_type="read",
-            idempotent=True,
-            requires_approval=False,
-            handler=domain.check_risk,
-            tags=["safety"],
+    计划预览路径在调用每个领域函数前显式执行本检查；若未来有人把写工具
+    接进预览路径，会在调用现场立即失败，而不是悄悄写入。
+    """
+    meta = get_tool(name)
+    if meta is not None and meta.operation_type == "write" and meta.requires_approval:
+        raise UnapprovedWriteToolError(
+            f"写工具 {name} 必须经人工审批后才能执行，不能出现在免审批路径"
         )
-    )
-    register_tool(
-        ToolDefinition(
-            name="get_user_profile_data",
-            description="读取用户档案与营养目标",
-            input_schema=EmptyInput,
-            output_schema=None,
-            permission="user",
-            operation_type="read",
-            handler=domain.get_user_profile_data,
-            tags=["profile"],
-        )
-    )
-    register_tool(
-        ToolDefinition(
-            name="recent_logs",
-            description="读取近期训练/饮食日志摘要",
-            input_schema=DaysInput,
-            output_schema=None,
-            permission="user",
-            operation_type="read",
-            handler=domain.recent_logs,
-            tags=["log"],
-        )
-    )
-    register_tool(
-        ToolDefinition(
-            name="preview_and_stage_plans",
-            description="生成训练+饮食计划预览（不写生效版本）",
-            input_schema=EmptyInput,
-            output_schema=None,
-            permission="user",
-            operation_type="preview",
-            requires_approval=False,
-            idempotent=False,
-            handler=domain.preview_and_stage_plans,
-            tags=["plan"],
-        )
-    )
-    register_tool(
-        ToolDefinition(
-            name="commit_plans",
-            description="确认写入计划版本",
-            input_schema=EmptyInput,
-            output_schema=None,
-            permission="user",
-            operation_type="write",
-            requires_approval=True,
-            idempotent=True,
-            handler=domain.commit_plans,
-            tags=["plan", "write"],
-        )
-    )
-    register_tool(
-        ToolDefinition(
-            name="weekly_adjust_preview",
-            description="周联合调整诊断与预览",
-            input_schema=EmptyInput,
-            output_schema=None,
-            permission="user",
-            operation_type="preview",
-            handler=domain.weekly_adjust_preview,
-            tags=["plan"],
-        )
-    )
 
 
-# 模块导入时注册
-ensure_default_tools()
+def assert_write_requires_approval(name: str) -> None:
+    """配置漂移守卫：声明为 write 的工具必须带 requires_approval 审批门。"""
+    meta = get_tool(name)
+    if meta is not None and meta.operation_type == "write" and not meta.requires_approval:
+        raise UnapprovedWriteToolError(f"写工具 {name} 缺少 requires_approval 审批门声明")
