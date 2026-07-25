@@ -55,6 +55,24 @@ RERANK_FALLBACK = Counter(
     "Reranker 运行期降级次数（按原序截断）",
 )
 
+AGENT_TASK_TIMEOUT = Counter(
+    "fitpilot_agent_task_timeout_total",
+    "Agent 任务执行超时次数",
+    ["path"],  # inprocess | worker
+)
+
+AGENT_TASK_REAPED = Counter(
+    "fitpilot_agent_task_reaped_total",
+    "Stale 任务 reaper 标记 failed 的任务数",
+    ["reason"],  # queue_timeout | running_timeout
+)
+
+AGENT_CLEANUP_DELETED = Counter(
+    "fitpilot_agent_cleanup_deleted_total",
+    "TTL 清理任务删除的行数",
+    ["kind"],  # lg_checkpoints | agent_task_events | user_memories
+)
+
 
 @contextmanager
 def timed_histogram(histogram: Histogram, **labels: str) -> Generator[None, None, None]:

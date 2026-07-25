@@ -7,6 +7,7 @@ from typing import Any, Awaitable, Callable
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.graphs.runner_utils import approval_events_from_result
+from app.models.agent_task import AgentTask
 from app.services.agent_persistence import mark_task_finished
 
 
@@ -21,7 +22,15 @@ async def finalize_agent_result(
     persist_event: PersistFn,
     buffer_events: list[dict[str, Any]] | None = None,
 ) -> str:
-    """持久化事件并更新任务状态。返回最终 status。"""
+    """持久化事件并更新任务状态。返回最终 status。
+
+    若任务已被用户取消（DB 状态为 cancelled），直接短路返回，
+    不再补写 completed 事件、不覆盖 cancelled 终态。
+    """
+    row = await session.get(AgentTask, task_id)
+    if row is not None and row.status == "cancelled":
+        return "cancelled"
+
     buf = buffer_events if buffer_events is not None else []
 
     for ev in approval_events_from_result(result):

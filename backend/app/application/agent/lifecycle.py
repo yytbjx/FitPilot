@@ -10,6 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.db.session import get_engine
 from app.graphs.checkpointer import get_latest_checkpoint_info
 from app.infrastructure.persistence.uow import SqlAlchemyUnitOfWork
+from app.services.agent_cancellation import request_fast_cancel
 from app.services.agent_persistence import append_task_event
 from app.services.agent_runner_service import enqueue_or_run, run_agent_with_persistence
 
@@ -33,17 +34,21 @@ async def cancel_agent_task(
     reason: str | None = None,
 ) -> dict[str, Any]:
     uow = SqlAlchemyUnitOfWork(db)
-    task = await uow.agent_tasks.get(task_id, user_id=user_id)
+    # SELECT ... FOR UPDATE：并发 approve/cancel 串行化，后到请求读到最新状态
+    task = await uow.agent_tasks.get(task_id, user_id=user_id, for_update=True)
     if not task:
         return {"error": "NOT_FOUND"}
     if task.status in _TERMINAL:
-        return {
-            "task_id": task_id,
-            "status": task.status,
-            "cancelled": False,
-            "deduped": True,
-            "message": "任务已结束，无需取消",
-        }
+        if task.status == "cancelled":
+            # 幂等：重复取消返回相同结果
+            return {
+                "task_id": task_id,
+                "status": task.status,
+                "cancelled": True,
+                "deduped": True,
+                "message": "任务已取消",
+            }
+        return {"error": "ALREADY_FINISHED", "task_id": task_id, "status": task.status}
     if task.status == "awaiting_confirmation":
         # 取消确认中的任务：视为拒绝写库
         base = dict(task.result or {}) if isinstance(task.result, dict) else {}
@@ -86,6 +91,9 @@ async def cancel_agent_task(
         },
     )
     await uow.commit()
+    # 快速路径：进程内正在执行的 asyncio 任务立即中断；
+    # 跨进程（worker）由 CancellationChecker 协作式检查兜底
+    request_fast_cancel(task_id)
     return {"task_id": task_id, "status": "cancelled", "cancelled": True, "deduped": False}
 
 
@@ -99,9 +107,12 @@ async def resume_agent_task(
     trace_id: str,
 ) -> dict[str, Any]:
     uow = SqlAlchemyUnitOfWork(db)
-    task = await uow.agent_tasks.get(task_id, user_id=user_id)
+    task = await uow.agent_tasks.get(task_id, user_id=user_id, for_update=True)
     if not task:
         return {"error": "NOT_FOUND"}
+    # 已取消的任务不得恢复执行（awaiting_confirmation 取消后 resume 语义保护）
+    if task.status == "cancelled":
+        return {"error": "TASK_CANCELLED", "task_id": task_id, "status": "cancelled"}
 
     factory = async_sessionmaker(get_engine(), expire_on_commit=False)
     ckpt = await get_latest_checkpoint_info(factory, task_id)

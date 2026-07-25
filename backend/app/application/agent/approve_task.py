@@ -12,10 +12,13 @@ from app.services.agent_persistence import append_task_event, list_task_events
 from app.services.agent_runner_service import enqueue_or_run, run_agent_with_persistence
 
 
-async def get_agent_task(db: AsyncSession, *, user_id: int, task_id: str) -> AgentTask | None:
-    return await db.scalar(
-        select(AgentTask).where(AgentTask.id == task_id, AgentTask.user_id == user_id)
-    )
+async def get_agent_task(
+    db: AsyncSession, *, user_id: int, task_id: str, for_update: bool = False
+) -> AgentTask | None:
+    stmt = select(AgentTask).where(AgentTask.id == task_id, AgentTask.user_id == user_id)
+    if for_update:
+        stmt = stmt.with_for_update()
+    return await db.scalar(stmt)
 
 
 async def approve_agent_task(
@@ -27,7 +30,8 @@ async def approve_agent_task(
     comment: str | None,
     trace_id: str,
 ) -> dict[str, Any]:
-    task = await get_agent_task(db, user_id=user_id, task_id=task_id)
+    # SELECT ... FOR UPDATE：并发 approve/cancel 串行化，后到请求读到最新状态（409）
+    task = await get_agent_task(db, user_id=user_id, task_id=task_id, for_update=True)
     if not task:
         return {"error": "NOT_FOUND"}
 

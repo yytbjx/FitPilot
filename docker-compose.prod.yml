@@ -3,13 +3,17 @@
 # 阶段后期使用：后端/前端与基础设施一起交付；开发期优先 docker-compose.dev.yml
 
 # 必须的环境变量（无默认值，缺失即报错启动失败）：
-#   POSTGRES_PASSWORD            Postgres 超级用户密码（同时用于 worker 的 DATABASE_URL 拼接）
+#   POSTGRES_PASSWORD            Postgres 超级用户密码（同时用于 backend/worker/migrate 的 DATABASE_URL 拼接）
 #   GF_SECURITY_ADMIN_PASSWORD   Grafana 管理员密码
+# 可选（带默认值）：
+#   POSTGRES_USER / POSTGRES_DB  默认 fitpilot
+#   FRONTEND_PORT                前端对外端口，默认 8080
 # 在仓库根目录创建生产环境文件（参考 .env.example，勿提交真实密钥），
 # 通过 `docker compose --env-file <file> -f docker-compose.prod.yml up` 注入，
 # 或在 shell 中 export 后运行。backend/worker 的其余密钥经 env_file: .env 注入。
-
-
+#
+# Ollama 运行在宿主机：backend/worker 通过 host.docker.internal:11434 访问
+# （Linux 宿主依靠 extra_hosts 的 host-gateway 映射；Windows/Mac Docker Desktop 原生支持）。
 
 services:
 
@@ -19,11 +23,11 @@ services:
 
     environment:
 
-      POSTGRES_USER: fitpilot
+      POSTGRES_USER: ${POSTGRES_USER:-fitpilot}
 
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}
 
-      POSTGRES_DB: fitpilot
+      POSTGRES_DB: ${POSTGRES_DB:-fitpilot}
 
     volumes:
 
@@ -31,7 +35,7 @@ services:
 
     healthcheck:
 
-      test: ["CMD-SHELL", "pg_isready -U fitpilot -d fitpilot"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
 
       interval: 5s
 
@@ -48,6 +52,16 @@ services:
     volumes:
 
       - fitpilot_redis_data:/data
+
+    healthcheck:
+
+      test: ["CMD", "redis-cli", "ping"]
+
+      interval: 5s
+
+      timeout: 3s
+
+      retries: 10
 
 
 
@@ -67,13 +81,14 @@ services:
 
 
 
-  backend:
+  # 一次性迁移任务：alembic upgrade head 成功后退出
+  migrate:
 
     build:
 
-      context: ./backend
+      context: .
 
-      dockerfile: Dockerfile
+      dockerfile: backend/Dockerfile
 
     env_file:
 
@@ -81,12 +96,44 @@ services:
 
     environment:
 
-      POSTGRES_HOST: postgres
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-fitpilot}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@postgres:5432/${POSTGRES_DB:-fitpilot}
+
+    working_dir: /srv
+
+    command: ["alembic", "-c", "/srv/alembic.ini", "upgrade", "head"]
+
+    restart: "no"
+
+    depends_on:
+
+      postgres:
+
+        condition: service_healthy
+
+
+
+  backend:
+
+    build:
+
+      context: .
+
+      dockerfile: backend/Dockerfile
+
+    env_file:
+
+      - .env
+
+    environment:
+
+      # Settings.database_url 只认 DATABASE_URL（POSTGRES_HOST 不是配置字段），必须显式给出
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-fitpilot}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@postgres:5432/${POSTGRES_DB:-fitpilot}
 
       REDIS_URL: redis://redis:6379/0
 
       QDRANT_URL: http://qdrant:6333
 
+      # Ollama 在宿主机；如需容器化 Ollama 请改服务名并补 GPU 资源声明
       OLLAMA_BASE_URL: http://host.docker.internal:11434
 
       AGENT_USE_WORKER: "true"
@@ -95,7 +142,28 @@ services:
 
       - "8000:8000"
 
+    volumes:
+
+      # 本地 Embedding/Reranker 权重（避免打进镜像；缺失时代码回退 HF 下载）
+      - ./models:/srv/models:ro
+
+    healthcheck:
+
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4)"]
+
+      interval: 30s
+
+      timeout: 5s
+
+      start_period: 30s
+
+      retries: 3
+
     depends_on:
+
+      migrate:
+
+        condition: service_completed_successfully
 
       postgres:
 
@@ -119,9 +187,9 @@ services:
 
     build:
 
-      context: ./backend
+      context: .
 
-      dockerfile: Dockerfile
+      dockerfile: backend/Dockerfile
 
     command: ["python", "-m", "app.worker.agent_runner"]
 
@@ -133,7 +201,7 @@ services:
 
       REDIS_URL: redis://redis:6379/0
 
-      DATABASE_URL: postgresql+asyncpg://fitpilot:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@postgres:5432/fitpilot
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-fitpilot}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set}@postgres:5432/${POSTGRES_DB:-fitpilot}
 
       QDRANT_URL: http://qdrant:6333
 
@@ -141,7 +209,31 @@ services:
 
       AGENT_USE_WORKER: "true"
 
+    volumes:
+
+      - ./models:/srv/models:ro
+
+    healthcheck:
+
+      # worker 无 HTTP 端口；探测其关键依赖 Redis 连通性作为存活信号
+      # （worker 进程即 PID 1，崩溃时容器整体退出，由 restart 策略兜底）
+      test: ["CMD", "python", "-c", "import os, redis; redis.Redis.from_url(os.environ['REDIS_URL'], socket_timeout=3).ping()"]
+
+      interval: 30s
+
+      timeout: 10s
+
+      start_period: 20s
+
+      retries: 3
+
+    restart: unless-stopped
+
     depends_on:
+
+      migrate:
+
+        condition: service_completed_successfully
 
       postgres:
 
@@ -154,6 +246,31 @@ services:
     extra_hosts:
 
       - "host.docker.internal:host-gateway"
+
+
+
+  frontend:
+
+    build:
+
+      context: ./frontend
+
+      dockerfile: Dockerfile
+
+      args:
+
+        # 浏览器经 nginx /api 反代访问后端；如需直连可改 http://<host>:8000
+        VITE_API_BASE: /api
+
+    ports:
+
+      - "${FRONTEND_PORT:-8080}:80"
+
+    depends_on:
+
+      backend:
+
+        condition: service_healthy
 
 
 
@@ -187,6 +304,12 @@ services:
 
       GF_SECURITY_ADMIN_PASSWORD: ${GF_SECURITY_ADMIN_PASSWORD:?GF_SECURITY_ADMIN_PASSWORD must be set}
 
+    volumes:
+
+      - ./deploy/grafana/provisioning:/etc/grafana/provisioning:ro
+
+      - ./deploy/grafana/dashboards:/var/lib/grafana/dashboards:ro
+
     depends_on:
 
       - prometheus
@@ -200,4 +323,3 @@ volumes:
   fitpilot_redis_data:
 
   fitpilot_qdrant_data:
-

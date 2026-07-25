@@ -9,7 +9,11 @@ import httpx
 from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.core.metrics import LLM_GENERATION_COUNT, LLM_GENERATION_LATENCY, TOKEN_USAGE, timed_histogram
-from app.core.token_monitor import TokenBudgetExceeded, get_token_monitor
+from app.core.token_monitor import (
+    TokenBudgetExceeded,
+    current_token_budget_user,
+    get_budget_manager,
+)
 from app.core.tracing import add_step, finish_step
 
 logger = get_logger(__name__)
@@ -68,8 +72,10 @@ class OllamaClient:
         options: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """调用 /api/chat；可通过 role 或 model 指定模型；keep_alive 控制显存驻留。"""
-        monitor = get_token_monitor()
-        monitor.ensure_allowed()
+        # 多租户分桶：优先熔断当前用户（contextvars 传入），全局桶兜底
+        manager = get_budget_manager()
+        budget_user = current_token_budget_user()
+        manager.ensure_allowed(budget_user)
         if model:
             model_name = model
         elif role:
@@ -99,7 +105,8 @@ class OllamaClient:
         completion_tokens = int(data.get("eval_count") or 0)
         TOKEN_USAGE.labels(model=model_name, type="prompt").inc(prompt_tokens)
         TOKEN_USAGE.labels(model=model_name, type="completion").inc(completion_tokens)
-        snap = monitor.record(
+        snap = manager.record(
+            budget_user,
             prompt_tokens=prompt_tokens,
             completion_tokens=completion_tokens,
             source="ollama.chat",

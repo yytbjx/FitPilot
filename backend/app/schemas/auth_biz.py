@@ -23,12 +23,22 @@ def _normalize_email(value: str) -> str:
 
 class RegisterRequest(BaseModel):
     email: str = Field(min_length=3, max_length=255)
-    password: str = Field(min_length=6, max_length=72)
+    password: str = Field(min_length=10, max_length=72)
 
     @field_validator("email")
     @classmethod
     def email_ok(cls, v: str) -> str:
         return _normalize_email(v)
+
+    @field_validator("password")
+    @classmethod
+    def password_ok(cls, v: str) -> str:
+        """密码策略：至少 10 位，且同时包含字母和数字。"""
+        if not any(c.isalpha() for c in v):
+            raise ValueError("密码需至少包含一个字母（建议字母+数字组合，长度 ≥ 10 位）")
+        if not any(c.isdigit() for c in v):
+            raise ValueError("密码需至少包含一个数字（建议字母+数字组合，长度 ≥ 10 位）")
+        return v
 
 
 class LoginRequest(BaseModel):

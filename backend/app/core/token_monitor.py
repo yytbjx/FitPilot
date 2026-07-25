@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import threading
 import time
+from contextvars import ContextVar
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -183,3 +184,106 @@ def get_token_monitor() -> TokenMonitor:
             if _monitor is None:
                 _monitor = TokenMonitor.from_settings()
     return _monitor
+
+
+# ---------- 多租户分桶（迭代 2） ----------
+
+# 当前调用链归属的用户；agent runner 在任务开始时 set，LLM 客户端读取。
+# 用 contextvars 避免沿 graph → ollama_client 调用链显式改几十个签名。
+_budget_user: ContextVar[int | None] = ContextVar("fitpilot_token_budget_user", default=None)
+
+
+def set_token_budget_user(user_id: int | None):
+    """设置当前上下文的 Token 预算归属用户，返回可 reset 的 token。"""
+    return _budget_user.set(user_id)
+
+
+def reset_token_budget_user(token: Any) -> None:
+    """恢复上一个预算归属用户。"""
+    _budget_user.reset(token)
+
+
+def current_token_budget_user() -> int | None:
+    """读取当前上下文的预算归属用户（未设置返回 None）。"""
+    return _budget_user.get()
+
+
+class TokenBudgetManager:
+    """按 user_id 分桶的 Token 预算管理器 + 全局桶兜底熔断。
+
+    - 每个用户独立 TokenMonitor（预算 = token_budget_per_user），单用户打满只熔断自己；
+    - 全局桶（token_budget_global）作为整站成本兜底；
+    - ensure_allowed / record 同时作用于全局桶与（若有）用户桶。
+    """
+
+    # 防御性上限：用户数异常膨胀时清空重建，避免内存泄漏
+    _MAX_USER_BUCKETS = 10_000
+
+    def __init__(self, settings: Settings | None = None) -> None:
+        s = settings or get_settings()
+        self.stop_ratio = s.token_stop_ratio
+        self.per_user_budget = s.token_budget_per_user
+        self.global_monitor = TokenMonitor(
+            budget=s.token_budget_global, stop_ratio=s.token_stop_ratio
+        )
+        self._users: dict[int, TokenMonitor] = {}
+        self._lock = threading.Lock()
+
+    def user_monitor(self, user_id: int) -> TokenMonitor:
+        with self._lock:
+            if len(self._users) >= self._MAX_USER_BUCKETS:
+                logger.warning("token_budget_user_buckets_reset", size=len(self._users))
+                self._users.clear()
+            monitor = self._users.get(user_id)
+            if monitor is None:
+                monitor = TokenMonitor(budget=self.per_user_budget, stop_ratio=self.stop_ratio)
+                self._users[user_id] = monitor
+            return monitor
+
+    def ensure_allowed(self, user_id: int | None = None) -> None:
+        """LLM 调用前检查：全局桶或用户桶任一熔断即抛错。"""
+        self.global_monitor.ensure_allowed()
+        if user_id is not None:
+            self.user_monitor(user_id).ensure_allowed()
+
+    def record(
+        self,
+        user_id: int | None = None,
+        *,
+        prompt_tokens: int = 0,
+        completion_tokens: int = 0,
+        source: str = "ollama",
+    ) -> TokenUsageSnapshot:
+        """累加一次调用的 Token（全局 + 用户桶），返回用户桶（或全局）快照。"""
+        snap = self.global_monitor.record(
+            prompt_tokens=prompt_tokens,
+            completion_tokens=completion_tokens,
+            source=source,
+        )
+        if user_id is not None:
+            snap = self.user_monitor(user_id).record(
+                prompt_tokens=prompt_tokens,
+                completion_tokens=completion_tokens,
+                source=source,
+            )
+        return snap
+
+    def reset(self) -> None:
+        """重置全部计数（仅管理/测试用途）。"""
+        self.global_monitor.reset()
+        with self._lock:
+            self._users.clear()
+
+
+_budget_manager: TokenBudgetManager | None = None
+_budget_manager_lock = threading.Lock()
+
+
+def get_budget_manager() -> TokenBudgetManager:
+    """获取进程级 TokenBudgetManager 单例。"""
+    global _budget_manager
+    if _budget_manager is None:
+        with _budget_manager_lock:
+            if _budget_manager is None:
+                _budget_manager = TokenBudgetManager()
+    return _budget_manager

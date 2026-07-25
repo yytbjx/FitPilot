@@ -5,7 +5,7 @@ from __future__ import annotations
 import random
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import delete, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -351,6 +351,16 @@ async def _stage_plan_preview(
     }
     if extra_pending:
         pending.update(extra_pending)
+    # 幂等暂存：同一请求（任务重试共享同一 request_id/trace_id）只保留最新草稿，
+    # 先作废旧草稿再插入，保证 worker 重试不产生多份 staged 草稿
+    if request_id:
+        await db.execute(
+            delete(AuditLog).where(
+                AuditLog.user_id == user_id,
+                AuditLog.action == "plan_preview",
+                AuditLog.request_id == request_id,
+            )
+        )
     db.add(
         AuditLog(
             user_id=user_id,
@@ -401,6 +411,12 @@ async def weekly_adjust_preview(
     if not validation["ok"]:
         return {"ok": False, "validation": validation, "preview": preview, "diagnosis": adjusted["diagnosis"]}
 
+    # 幂等暂存：worker 重试前先把该用户未确认的旧的周调整草稿作废
+    await db.execute(
+        update(PlanAdjustment)
+        .where(PlanAdjustment.user_id == user_id, PlanAdjustment.status == "pending")
+        .values(status="superseded")
+    )
     db.add(
         PlanAdjustment(
             user_id=user_id,

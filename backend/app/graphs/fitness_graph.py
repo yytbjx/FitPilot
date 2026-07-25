@@ -1,4 +1,4 @@
-"""LangGraph 健身 Agent 主图（实时进度推送）。"""
+"""LangGraph 健身 Agent 主图（实时进度推送 + 协作式取消）。"""
 
 from __future__ import annotations
 
@@ -15,6 +15,7 @@ from app.db.session import get_engine
 from app.graphs.checkpointer import PostgresCheckpointSaver, load_latest_checkpoint_state
 from app.graphs.runner_utils import normalize_graph_result
 from app.graphs.state import FitnessAgentState
+from app.services.agent_cancellation import AgentTaskCancelledError, CancelCheckerFn
 from app.services.ollama_client import get_ollama_client
 from app.tools.domain import check_risk
 
@@ -227,6 +228,34 @@ def _session_factory() -> async_sessionmaker[AsyncSession]:
     return async_sessionmaker(get_engine(), expire_on_commit=False)
 
 
+async def _run_graph_supersteps(
+    graph: Any,
+    input_: Any,
+    config: dict[str, Any],
+    *,
+    task_id: str,
+    cancel_checker: CancelCheckerFn | None,
+) -> dict[str, Any]:
+    """逐 super-step 流式执行图；每步之间做协作式取消检查。
+
+    stream_mode="values" 产出与 ainvoke 等价的全量状态；interrupt/resume
+    语义不变（interrupt 时流自然结束，由 aget_state 归一化结果）。
+    """
+    last: dict[str, Any] = {}
+    async for chunk in graph.astream(input_, config, stream_mode="values"):
+        last = chunk
+        if cancel_checker is not None and await cancel_checker():
+            emit_progress(
+                stage="graph_cancelled",
+                title="任务已取消",
+                detail=f"task_id={task_id} 在 super-step 间检测到取消",
+                tool="langgraph",
+                status="done",
+            )
+            raise AgentTaskCancelledError(task_id)
+    return last
+
+
 async def run_fitness_agent(
     *,
     db: AsyncSession,
@@ -237,6 +266,7 @@ async def run_fitness_agent(
     trace_id: str | None = None,
     resume: bool = False,
     resume_command: dict[str, Any] | None = None,
+    cancel_checker: CancelCheckerFn | None = None,
 ) -> FitnessAgentState:
     emit_progress(
         stage="graph_start",
@@ -250,10 +280,14 @@ async def run_fitness_agent(
 
     if resume_command is not None:
         emit_progress(stage="graph_resume", title="Command 恢复", detail="plan approval", tool="langgraph")
-        raw = await graph.ainvoke(Command(resume=resume_command), config)
+        raw = await _run_graph_supersteps(
+            graph, Command(resume=resume_command), config, task_id=task_id, cancel_checker=cancel_checker
+        )
     elif resume:
         emit_progress(stage="graph_resume", title="从检查点恢复", detail=f"thread_id={task_id}", tool="langgraph")
-        raw = await graph.ainvoke(None, config)
+        raw = await _run_graph_supersteps(
+            graph, None, config, task_id=task_id, cancel_checker=cancel_checker
+        )
     else:
         prior = await load_latest_checkpoint_state(factory, task_id)
         init: FitnessAgentState = {
@@ -283,7 +317,9 @@ async def run_fitness_agent(
                     "citations",
                 }:
                     init[k] = v  # type: ignore[literal-required]
-        raw = await graph.ainvoke(init, config)
+        raw = await _run_graph_supersteps(
+            graph, init, config, task_id=task_id, cancel_checker=cancel_checker
+        )
 
     snap = await graph.aget_state(config)
     result = normalize_graph_result(dict(raw), snap)

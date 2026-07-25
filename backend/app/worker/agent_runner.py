@@ -10,12 +10,22 @@ from typing import Any
 
 from sqlalchemy.ext.asyncio import async_sessionmaker
 
+from app.core.config import get_settings
+from app.core.metrics import AGENT_TASK_TIMEOUT
 from app.core.progress import reset_progress_sink, set_progress_sink
-from app.core.token_monitor import TokenBudgetExceeded
+from app.core.token_monitor import (
+    TokenBudgetExceeded,
+    reset_token_budget_user,
+    set_token_budget_user,
+)
 from app.core.tracing import end_trace, start_trace
 from app.db.session import get_engine
 from app.graphs.fitness_graph import run_fitness_agent
 from app.models.agent_task import AgentTask
+from app.services.agent_cancellation import (
+    AgentTaskCancelledError,
+    CancellationChecker,
+)
 from app.services.agent_persistence import (
     append_task_event,
     mark_task_finished,
@@ -73,23 +83,55 @@ async def run_agent_job(payload: dict[str, Any]) -> None:
                 await _persist_event(ev_db, task_id, ev)
 
     token = set_progress_sink(_sink)
+    budget_token = set_token_budget_user(user_id)
     persist_task = asyncio.create_task(_persist_loop())
     start_trace("agent_worker", task_id=task_id, user_id=user_id)
+    settings = get_settings()
+    checker = CancellationChecker(factory, task_id)
     try:
         async with factory() as session:
             await mark_task_started(session, task_id, trace_id=trace_id)
             await session.commit()
 
-            result = await run_fitness_agent(
-                db=session,
-                user_id=user_id,
-                message=message,
-                task_id=task_id,
-                session_id=session_id,
-                trace_id=trace_id,
-                resume=bool(payload.get("resume")),
-                resume_command=payload.get("resume_command"),
-            )
+            try:
+                result = await asyncio.wait_for(
+                    run_fitness_agent(
+                        db=session,
+                        user_id=user_id,
+                        message=message,
+                        task_id=task_id,
+                        session_id=session_id,
+                        trace_id=trace_id,
+                        resume=bool(payload.get("resume")),
+                        resume_command=payload.get("resume_command"),
+                        cancel_checker=checker,
+                    ),
+                    timeout=settings.agent_task_timeout_seconds,
+                )
+            except asyncio.TimeoutError:
+                # 任务级超时：标记 failed(reason=timeout) 并 ACK（不重试）
+                await session.rollback()
+                AGENT_TASK_TIMEOUT.labels(path="worker").inc()
+                await _persist_event(
+                    session,
+                    task_id,
+                    {
+                        "event": "failed",
+                        "code": "TASK_TIMEOUT",
+                        "message": f"任务执行超过 {settings.agent_task_timeout_seconds}s，已终止",
+                    },
+                )
+                await mark_task_finished(session, task_id, status="failed", error_code="timeout")
+                await session.commit()
+                await ack_agent_task(stream_id)
+                return
+            except AgentTaskCancelledError:
+                # 协作式取消：DB 已由 cancel API 置 cancelled，ACK 不重试
+                await session.rollback()
+                await mark_task_finished(session, task_id, status="cancelled")
+                await session.commit()
+                await ack_agent_task(stream_id)
+                return
 
             intents = result.get("intents") or []
             if intents:
@@ -142,6 +184,7 @@ async def run_agent_job(payload: dict[str, Any]) -> None:
     finally:
         done = True
         reset_progress_sink(token)
+        reset_token_budget_user(budget_token)
         await persist_task
         end_trace()
 
@@ -149,19 +192,30 @@ async def run_agent_job(payload: dict[str, Any]) -> None:
 async def worker_loop(*, poll_timeout: int = 5) -> None:
     consumer = f"worker-{os.getpid()}"
     logger.info("FitPilot agent worker started consumer=%s", consumer)
-    while not _shutdown.is_set():
+    # worker 模式：stale 任务 reaper + TTL 清理在 worker 进程内周期运行
+    from app.services.agent_reaper import agent_maintenance_loop
+
+    maintenance = asyncio.create_task(agent_maintenance_loop(stop_event=_shutdown))
+    try:
+        while not _shutdown.is_set():
+            try:
+                payload = await dequeue_agent_task(consumer=consumer, timeout=poll_timeout)
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("dequeue_failed: %s", exc)
+                await asyncio.sleep(1)
+                continue
+            if not payload:
+                continue
+            if payload.get("_dead_letter"):
+                await fail_agent_task(payload, error="max_retries_exceeded")
+                continue
+            await run_agent_job(payload)
+    finally:
+        maintenance.cancel()
         try:
-            payload = await dequeue_agent_task(consumer=consumer, timeout=poll_timeout)
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("dequeue_failed: %s", exc)
-            await asyncio.sleep(1)
-            continue
-        if not payload:
-            continue
-        if payload.get("_dead_letter"):
-            await fail_agent_task(payload, error="max_retries_exceeded")
-            continue
-        await run_agent_job(payload)
+            await maintenance
+        except asyncio.CancelledError:
+            pass
     logger.info("FitPilot agent worker stopped gracefully")
 
 

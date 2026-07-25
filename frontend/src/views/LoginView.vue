@@ -9,7 +9,7 @@ const router = useRouter()
 const route = useRoute()
 const mode = ref<'login' | 'register'>('login')
 const email = ref('demo@fitpilot.local')
-const password = ref('demo1234')
+const password = ref('demo123456')
 const loading = ref(false)
 
 async function submit() {

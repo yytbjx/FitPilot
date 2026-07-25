@@ -1,0 +1,14 @@
+# Grafana Dashboard provisioning：从 /var/lib/grafana/dashboards 加载
+apiVersion: 1
+
+providers:
+  - name: fitpilot
+    orgId: 1
+    folder: FitPilot
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 30
+    allowUiUpdates: true
+    options:
+      path: /var/lib/grafana/dashboards
+      foldersFromFilesStructure: false

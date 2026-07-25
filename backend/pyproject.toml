@@ -49,6 +49,7 @@ dependencies = [
     "pillow>=10.4.0",
     "typer>=0.15.0",
     "ortools>=9.11.0",
+    "slowapi>=0.1.10",
 ]
 
 [project.scripts]

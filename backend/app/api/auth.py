@@ -10,6 +10,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import fail, get_current_user, get_request_id, ok
+from app.core.rate_limit import auth_rate_limit, limiter
 from app.core.security import (
     create_access_token,
     create_refresh_token,
@@ -55,6 +56,7 @@ async def _issue_tokens(db: AsyncSession, user: User) -> tuple[str, str]:
 
 
 @router.post("/register")
+@limiter.limit(auth_rate_limit)
 async def register(
     body: RegisterRequest, request: Request, db: AsyncSession = Depends(get_db)
 ) -> JSONResponse:
@@ -77,6 +79,7 @@ async def register(
 
 
 @router.post("/login")
+@limiter.limit(auth_rate_limit)
 async def login(
     body: LoginRequest, request: Request, db: AsyncSession = Depends(get_db)
 ) -> JSONResponse:

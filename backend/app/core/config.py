@@ -59,6 +59,60 @@ class Settings(BaseSettings):
         description="CORS 允许源，逗号分隔；production 禁止单独使用 * 且开启 credentials",
     )
 
+    # ---------- Agent 任务可靠性（迭代 2） ----------
+    agent_task_timeout_seconds: int = Field(
+        default=600,
+        description="单个 Agent 任务执行超时（秒）；超时标记 failed(error_code=timeout)",
+        ge=10,
+    )
+    agent_stale_task_seconds: int = Field(
+        default=300,
+        description="queued 状态超过该秒数视为排队超时，由 reaper 标记 failed(reason=queue_timeout)",
+        ge=10,
+    )
+    agent_running_task_max_seconds: int = Field(
+        default=1800,
+        description="running 状态最长存活秒数（应 >= agent_task_timeout_seconds），超时标记 failed(reason=running_timeout)",
+        ge=60,
+    )
+    agent_max_concurrent_tasks_per_user: int = Field(
+        default=3,
+        description="每用户同时进行中的 Agent 任务上限（queued/pending/running），超限返回 429",
+        ge=1,
+        le=100,
+    )
+    agent_reaper_interval_seconds: int = Field(
+        default=30,
+        description="stale 任务 reaper 扫描周期（秒）",
+        ge=5,
+    )
+    agent_retention_days: int = Field(
+        default=30,
+        description="LangGraph 检查点保留天数，过期由清理任务删除",
+        ge=1,
+    )
+    agent_event_retention_days: int = Field(
+        default=7,
+        description="agent_task_events 保留天数，过期由清理任务删除",
+        ge=1,
+    )
+    memory_proposal_ttl_days: int = Field(
+        default=30,
+        description="user_memories 未确认提议保留天数，超期未确认删除",
+        ge=1,
+    )
+    agent_cleanup_interval_seconds: int = Field(
+        default=3600,
+        description="TTL 清理任务执行周期（秒），与 reaper 共用调度循环",
+        ge=60,
+    )
+    agent_cleanup_batch_size: int = Field(
+        default=500,
+        description="清理/回收单批最大行数（分批避免长事务）",
+        ge=10,
+        le=10000,
+    )
+
     # ---------- 食谱优化 ----------
     meal_use_ortools: bool = Field(
         default=True,
@@ -152,6 +206,24 @@ class Settings(BaseSettings):
         description="用量达到预算的该比例时自动停止（默认 50%）",
         ge=0.01,
         le=1.0,
+    )
+    token_budget_per_user: int = Field(
+        default=100_000,
+        description="每用户 Token 预算（分桶隔离，单用户打满不影响其他用户）",
+        ge=1000,
+    )
+    token_budget_global: int = Field(
+        default=1_000_000,
+        description="全局 Token 预算兜底熔断（所有用户合计）",
+        ge=1000,
+    )
+
+    # ---------- 安全运营 ----------
+    auth_rate_limit_per_minute: int = Field(
+        default=10,
+        description="登录/注册接口每 IP 每分钟限流次数",
+        ge=1,
+        le=10000,
     )
 
     # ---------- 日志 ----------

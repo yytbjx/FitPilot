@@ -21,7 +21,11 @@ from app.application.agent import (
 from app.api.deps import fail, get_current_user, get_request_id, ok
 from app.core.input_sanitizer import get_sanitizer
 from app.core.metrics import SANITIZE_REJECT
-from app.core.token_monitor import TokenBudgetExceeded
+from app.core.token_monitor import (
+    TokenBudgetExceeded,
+    reset_token_budget_user,
+    set_token_budget_user,
+)
 from app.core.tracing import end_trace, get_trace, list_traces, start_trace
 from app.db.session import get_db, get_engine
 from app.graphs.checkpointer import get_latest_checkpoint_info
@@ -77,6 +81,7 @@ async def chat_legacy(
         return bad
     task_id = f"task_{uuid.uuid4().hex[:12]}"
     start_trace("agent_chat", task_id=task_id, user_id=user.id)
+    budget_token = set_token_budget_user(user.id)
     try:
         result = await run_fitness_agent(
             db=db,
@@ -106,6 +111,7 @@ async def chat_legacy(
         )
     finally:
         await db.commit()
+        reset_token_budget_user(budget_token)
         end_trace()
 
 
@@ -129,6 +135,16 @@ async def create_task(
         trace_id=rid,
         idempotency_key=idempotency_key,
     )
+    if data.get("error") == "CONCURRENCY_LIMIT":
+        return JSONResponse(
+            status_code=429,
+            content=fail(
+                rid,
+                "TOO_MANY_CONCURRENT_TASKS",
+                f"同时进行的任务已达上限（{data.get('limit')}），请等待部分任务完成",
+                details={"active": data.get("active"), "limit": data.get("limit")},
+            ),
+        )
     return JSONResponse(ok(rid, data))
 
 
@@ -209,7 +225,9 @@ async def approve_task(
     if data.get("error") == "NOT_FOUND":
         return JSONResponse(status_code=404, content=fail(rid, "NOT_FOUND", "任务不存在"))
     if data.get("error") == "NOT_AWAITING":
-        return JSONResponse(status_code=400, content=fail(rid, "NOT_AWAITING", "任务不在等待确认状态"))
+        return JSONResponse(
+            status_code=409, content=fail(rid, "NOT_AWAITING", "任务不在等待确认状态")
+        )
     return JSONResponse(ok(rid, data))
 
 
@@ -234,6 +252,10 @@ async def resume_task(
         return JSONResponse(status_code=404, content=fail(rid, "NOT_FOUND", "任务不存在"))
     if data.get("error") == "NO_CHECKPOINT":
         return JSONResponse(status_code=404, content=fail(rid, "NO_CHECKPOINT", "无可用检查点"))
+    if data.get("error") == "TASK_CANCELLED":
+        return JSONResponse(
+            status_code=409, content=fail(rid, "TASK_CANCELLED", "任务已取消，无法恢复")
+        )
     return JSONResponse(ok(rid, data))
 
 
@@ -249,6 +271,11 @@ async def cancel_task(
     data = await cancel_agent_task(db, user_id=user.id, task_id=task_id, reason=reason)
     if data.get("error") == "NOT_FOUND":
         return JSONResponse(status_code=404, content=fail(rid, "NOT_FOUND", "任务不存在"))
+    if data.get("error") == "ALREADY_FINISHED":
+        return JSONResponse(
+            status_code=409,
+            content=fail(rid, "ALREADY_FINISHED", "任务已结束，无法取消", details={"status": data.get("status")}),
+        )
     return JSONResponse(ok(rid, data))
 
 

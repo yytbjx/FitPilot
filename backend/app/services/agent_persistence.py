@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.agent_runtime import AgentTaskEvent
@@ -30,11 +31,28 @@ async def append_task_event(
     event_type: str,
     payload: dict[str, Any],
 ) -> AgentTaskEvent:
+    """追加任务事件。
+
+    seq 采用 max+1；并发写入撞 (task_id, seq) 唯一约束时（SAVEPOINT 兜底），
+    重取 seq 重试一次，仍冲突则抛错由调用方处理。
+    """
     seq = await _next_event_seq(db, task_id)
-    row = AgentTaskEvent(task_id=task_id, seq=seq, event_type=event_type, payload=payload)
-    db.add(row)
-    await db.flush()
-    return row
+    for _attempt in range(2):
+        row = AgentTaskEvent(task_id=task_id, seq=seq, event_type=event_type, payload=payload)
+        try:
+            async with db.begin_nested():
+                db.add(row)
+                await db.flush()
+            return row
+        except IntegrityError:
+            # 并发写同 seq：回滚到保存点后摘除失败行，重取 seq 重试
+            try:
+                db.expunge(row)
+            except Exception:  # noqa: BLE001
+                pass
+            seq = await _next_event_seq(db, task_id)
+    # 理论不可达（第二次失败会直接抛出）；防御性兜底
+    raise IntegrityError("INSERT", {}, Exception("agent_task_events seq conflict retry exhausted"))
 
 
 async def list_task_events(
@@ -87,9 +105,14 @@ async def mark_task_finished(
     - 不传（默认 _UNSET）：保持 DB 原值；
     - 传 None：显式清空（commit/reject 后清除残留待确认计划）；
     - 传 dict：覆盖写入。
+
+    取消保护：DB 当前状态已是 cancelled 时，finalize 链不得将其覆盖为
+    succeeded/failed 等其他终态（协作式取消兜底）。
     """
     row = await db.get(AgentTask, task_id)
     if not row:
+        return
+    if row.status == "cancelled" and status != "cancelled":
         return
     row.status = status
     row.completed_at = datetime.now(timezone.utc)

@@ -101,10 +101,23 @@ async def ingest(
     request: Request,
     user: User = Depends(require_role("admin")),
 ) -> JSONResponse:
+    """目录入库（HTTP 端点收紧：仅允许 knowledge_base/ 内路径；CLI 走 scripts 不受影响）。"""
     rid = get_request_id(request)
+    base = (get_settings().project_root / "knowledge_base").resolve()
     root = Path(body.path)
     if not root.is_absolute():
         root = get_settings().project_root / body.path
+    root = root.resolve()
+    if root != base and base not in root.parents:
+        return JSONResponse(
+            status_code=400,
+            content=fail(
+                rid,
+                "PATH_NOT_ALLOWED",
+                "仅允许入库 knowledge_base/ 目录内的路径",
+                details={"path": str(root)},
+            ),
+        )
     result = await ingest_directory(root, version_id=body.version_id)
     return JSONResponse(ok(rid, result))
 

@@ -8,6 +8,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import time
 import uuid
 
@@ -15,12 +16,14 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, Response
 from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_latest
+from slowapi.errors import RateLimitExceeded
 
 from app import __version__
 from app.api import api_router
 from app.api.deps import fail
 from app.core.config import get_settings
 from app.core.logging import get_logger, setup_logging
+from app.core.rate_limit import limiter
 from app.core.token_monitor import TokenBudgetExceeded, get_token_monitor
 
 setup_logging()
@@ -44,6 +47,8 @@ app = FastAPI(
     version=__version__,
     description="个性化训练与膳食协同 AI Agent 系统后端",
 )
+# slowapi 限流器（登录/注册）
+app.state.limiter = limiter
 
 def _cors_origins() -> list[str]:
     """生产环境禁止 credentials + 通配 * 组合；开发可用 *。"""
@@ -96,6 +101,16 @@ async def token_budget_handler(request: Request, exc: TokenBudgetExceeded):
     )
 
 
+@app.exception_handler(RateLimitExceeded)
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    """限流命中：统一 API 错误格式。"""
+    rid = getattr(request.state, "request_id", "unknown")
+    return JSONResponse(
+        status_code=429,
+        content=fail(rid, "RATE_LIMITED", "请求过于频繁，请稍后再试"),
+    )
+
+
 @app.get("/metrics")
 async def prometheus_metrics() -> Response:
     """Prometheus scrape 端点。"""
@@ -108,6 +123,10 @@ _WEAK_JWT = {
     "secret",
     "jwt-secret",
 }
+
+# 进程内维护任务句柄（reaper + TTL 清理）
+_maintenance_task: asyncio.Task | None = None
+_maintenance_stop: asyncio.Event | None = None
 
 
 @app.on_event("startup")
@@ -140,6 +159,31 @@ async def on_startup() -> None:
         token_stop_ratio=monitor.stop_ratio,
         token_stop_threshold=monitor.stop_threshold,
     )
+
+    # 进程内模式（无独立 worker）：stale reaper + TTL 清理由本进程后台任务承担
+    global _maintenance_stop, _maintenance_task
+    if not settings.agent_use_worker and _maintenance_task is None:
+        from app.services.agent_reaper import agent_maintenance_loop
+
+        _maintenance_stop = asyncio.Event()
+        _maintenance_task = asyncio.create_task(
+            agent_maintenance_loop(stop_event=_maintenance_stop)
+        )
+
+
+@app.on_event("shutdown")
+async def on_shutdown() -> None:
+    """停止后台维护任务（若已启动）。"""
+    global _maintenance_stop, _maintenance_task
+    if _maintenance_stop is not None:
+        _maintenance_stop.set()
+    if _maintenance_task is not None:
+        try:
+            await asyncio.wait_for(_maintenance_task, timeout=5)
+        except (asyncio.TimeoutError, asyncio.CancelledError):
+            _maintenance_task.cancel()
+        _maintenance_task = None
+        _maintenance_stop = None
 
 
 # uvicorn app.main:app --reload

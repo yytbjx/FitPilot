@@ -5,7 +5,7 @@ from __future__ import annotations
 import uuid
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
@@ -32,8 +32,27 @@ async def create_agent_task(
         if existing:
             return {"task_id": existing.id, "status": existing.status, "deduped": True}
 
+    settings = get_settings()
+    # 每用户并发任务上限（多租户隔离）：queued/pending/running 计入占用
+    limit = settings.agent_max_concurrent_tasks_per_user
+    active = int(
+        await db.scalar(
+            select(func.count(AgentTask.id)).where(
+                AgentTask.user_id == user_id,
+                AgentTask.status.in_(["queued", "pending", "running"]),
+            )
+        )
+        or 0
+    )
+    if active >= limit:
+        return {
+            "error": "CONCURRENCY_LIMIT",
+            "active": active,
+            "limit": limit,
+        }
+
     task_id = f"task_{uuid.uuid4().hex[:12]}"
-    queued = get_settings().agent_use_worker
+    queued = settings.agent_use_worker
     task = AgentTask(
         id=task_id,
         user_id=user_id,

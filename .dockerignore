@@ -1,0 +1,23 @@
+# Docker 构建上下文裁剪（backend/Dockerfile 的构建上下文为仓库根）
+.git
+.github
+.ruff_cache
+node_modules
+frontend/node_modules
+frontend/dist
+backend/.venv
+backend/tests
+**/__pycache__
+**/*.pyc
+dist
+evals/reports
+例子或数据
+docs
+_refs
+knowledge_base
+models
+.env
+.env.*
+!.env.example
+!.env.*.example
+*.local

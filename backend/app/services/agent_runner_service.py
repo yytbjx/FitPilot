@@ -7,12 +7,23 @@ from typing import Any, Callable, Awaitable
 
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
+from app.core.config import get_settings
+from app.core.metrics import AGENT_TASK_TIMEOUT
 from app.core.progress import reset_progress_sink, set_progress_sink
-from app.core.token_monitor import TokenBudgetExceeded
+from app.core.token_monitor import (
+    TokenBudgetExceeded,
+    reset_token_budget_user,
+    set_token_budget_user,
+)
 from app.core.tracing import end_trace, start_trace
 from app.db.session import get_engine
 from app.graphs.fitness_graph import run_fitness_agent
 from app.models.agent_task import AgentTask
+from app.services.agent_cancellation import (
+    AgentTaskCancelledError,
+    CancellationChecker,
+    register_task_handle,
+)
 from app.services.agent_persistence import (
     append_task_event,
     mark_task_finished,
@@ -64,22 +75,49 @@ async def run_agent_with_persistence(
                 await persist_event(ev_db, task_id, ev)
 
     token = set_progress_sink(_sink)
+    budget_token = set_token_budget_user(user_id)
     persist_task = asyncio.create_task(_persist_loop())
     start_trace(trace_name, task_id=task_id, user_id=user_id)
+    settings = get_settings()
+    checker = CancellationChecker(factory, task_id)
     try:
         async with factory() as session:
             await mark_task_started(session, task_id, trace_id=trace_id)
             await session.commit()
-            result = await run_fitness_agent(
-                db=session,
-                user_id=user_id,
-                message=message,
-                task_id=task_id,
-                session_id=session_id,
-                trace_id=trace_id,
-                resume=resume,
-                resume_command=resume_command,
-            )
+            try:
+                result = await asyncio.wait_for(
+                    run_fitness_agent(
+                        db=session,
+                        user_id=user_id,
+                        message=message,
+                        task_id=task_id,
+                        session_id=session_id,
+                        trace_id=trace_id,
+                        resume=resume,
+                        resume_command=resume_command,
+                        cancel_checker=checker,
+                    ),
+                    timeout=settings.agent_task_timeout_seconds,
+                )
+            except asyncio.TimeoutError:
+                # 任务级超时：明确标记 failed(reason=timeout)，不是静默断
+                await session.rollback()
+                AGENT_TASK_TIMEOUT.labels(path="inprocess").inc()
+                timeout_ev = {
+                    "event": "failed",
+                    "code": "TASK_TIMEOUT",
+                    "message": f"任务执行超过 {settings.agent_task_timeout_seconds}s，已终止",
+                }
+                await persist_event(session, task_id, timeout_ev)
+                await mark_task_finished(session, task_id, status="failed", error_code="timeout")
+                await session.commit()
+                return
+            except AgentTaskCancelledError:
+                # 协作式取消：DB 已由 cancel API 置为 cancelled，仅确认终态
+                await session.rollback()
+                await mark_task_finished(session, task_id, status="cancelled")
+                await session.commit()
+                return
             intents = result.get("intents") or []
             if intents:
                 row = await session.get(AgentTask, task_id)
@@ -118,6 +156,14 @@ async def run_agent_with_persistence(
             await persist_event(session, task_id, fail_ev)
             await mark_task_finished(session, task_id, status="failed", error_code="TOKEN_BUDGET_EXCEEDED")
             await session.commit()
+    except asyncio.CancelledError:
+        # 快速路径 task.cancel()：DB 已由 cancel API 置 cancelled，尽力确认终态后向上抛
+        try:
+            async with factory() as session:
+                await mark_task_finished(session, task_id, status="cancelled")
+                await session.commit()
+        finally:
+            raise
     except Exception as exc:  # noqa: BLE001
         fail_ev = {"event": "failed", "code": "AGENT_ERROR", "message": str(exc)}
         async with factory() as session:
@@ -127,6 +173,7 @@ async def run_agent_with_persistence(
     finally:
         end_trace()
         reset_progress_sink(token)
+        reset_token_budget_user(budget_token)
         done = True
         await persist_task
 
@@ -143,4 +190,6 @@ def enqueue_or_run(task_id: str, payload: dict[str, Any], runner: Callable[[], A
 
         asyncio.create_task(_enqueue())
     else:
-        asyncio.create_task(runner())
+        # 进程内模式：登记 task_id→Task 句柄，cancel 可走 task.cancel() 快速路径
+        task = asyncio.create_task(runner())
+        register_task_handle(task_id, task)
