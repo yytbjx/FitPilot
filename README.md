@@ -54,53 +54,89 @@ FitPilot 把**结构化业务数据**（档案、食物库、动作库、计划�
 
 ```mermaid
 flowchart TB
-    Vue["Vue 3 + Element Plus + Pinia"]
+    UI["Vue 3 Frontend<br/>Element Plus · Pinia"]
 
-    subgraph apiLayer["API"]
-        API["FastAPI<br/>Auth / Business / Agent / Memories / SSE"]
-        Prom["Prometheus / Grafana"]
+    subgraph access["Access & Execution"]
+        direction LR
+        API["FastAPI API<br/>Auth · Business · Agent · Memories · SSE"]
+        Queue[("Redis Streams")]
+        Worker["Agent Worker"]
+        Observe["Prometheus · Grafana"]
+
+        API --> Queue --> Worker
+        API -.-> Observe
     end
 
-    subgraph agentLayer["Application + LangGraph"]
-        App["Application<br/>Use Cases / UoW"]
-        Router["Intent Router<br/>rules + risk gate"]
-        SG["Domain Subgraphs<br/>plan / knowledge / personal / safety / logs"]
-        WF["Workflow<br/>preview - interrupt - commit"]
-        RAG["RAG<br/>Dense+BM25 - RRF - Rerank - Gate"]
-        Domain["Domain Engine<br/>nutrition / MIP / validators"]
-        Tools["Tool Registry<br/>write needs approval"]
+    subgraph core["Application & LangGraph"]
+        direction TB
+        App["Application Layer<br/>Use Cases · Unit of Work"]
+        Router(["Intent Router<br/>Rules · Risk Gate"])
+        Graphs["Domain Subgraphs<br/>Plan · Knowledge · Personal · Safety · Logs"]
+
+        subgraph capabilities["Controlled Capabilities"]
+            direction LR
+            Workflow["Approval Workflow<br/>Preview → Interrupt → Commit"]
+            RAG["RAG Pipeline<br/>Dense + BM25 → RRF → Rerank → Gate"]
+        end
+
+        subgraph services["Deterministic Services"]
+            direction LR
+            Domain["Domain Engine<br/>Nutrition · MIP · Validators"]
+            Tools["Tool Registry<br/>Writes Require Approval"]
+        end
+
+        App --> Router --> Graphs
+        Graphs --> Workflow
+        Graphs --> RAG
+        Workflow --> Domain
+        Workflow --> Tools
     end
 
-    subgraph infraLayer["Infrastructure"]
+    subgraph data["Data, Retrieval & Models"]
+        direction LR
         PG[("PostgreSQL")]
-        Redis[("Redis Streams")]
         Qdrant[("Qdrant")]
-        BM25["BM25"]
-        Ollama["Ollama"]
-        BGE["BGE"]
+        BM25["BM25 Index"]
+        BGE["BGE<br/>Embedding · Rerank"]
+        Ollama["Ollama<br/>Local LLM"]
     end
 
-    Worker["Agent Worker"]
-
-    Vue --> API
+    UI --> API
     API --> App
-    API -.-> Prom
-    App --> Router
-    Router --> SG
-    SG --> WF
-    SG --> RAG
-    WF --> Domain
-    WF --> Tools
-    API --> Redis
-    Redis --> Worker
-    Worker --> SG
-    SG --> PG
+    Worker --> Graphs
+    Graphs --> PG
     Domain --> PG
     Tools --> PG
     RAG --> Qdrant
     RAG --> BM25
     RAG --> BGE
     RAG --> Ollama
+
+    classDef client fill:#EEF2FF,stroke:#4F46E5,color:#1E1B4B,stroke-width:1.5px;
+    classDef gateway fill:#EFF6FF,stroke:#2563EB,color:#172554,stroke-width:1.5px;
+    classDef agent fill:#F5F3FF,stroke:#7C3AED,color:#2E1065,stroke-width:1.5px;
+    classDef control fill:#FFF7ED,stroke:#EA580C,color:#431407,stroke-width:1.5px;
+    classDef engine fill:#FEFCE8,stroke:#CA8A04,color:#422006,stroke-width:1.5px;
+    classDef storage fill:#ECFDF5,stroke:#059669,color:#022C22,stroke-width:1.5px;
+    classDef model fill:#F0FDFA,stroke:#0F766E,color:#042F2E,stroke-width:1.5px;
+    classDef observe fill:#F8FAFC,stroke:#64748B,color:#0F172A,stroke-width:1.5px;
+
+    class UI client;
+    class API,Queue,Worker gateway;
+    class App,Router,Graphs agent;
+    class Workflow,RAG control;
+    class Domain,Tools engine;
+    class PG,Qdrant,BM25 storage;
+    class BGE,Ollama model;
+    class Observe observe;
+
+    linkStyle default stroke:#64748B,stroke-width:1.5px;
+
+    style access fill:#F8FAFC,stroke:#CBD5E1,stroke-width:1px,color:#334155
+    style core fill:#FAFAFF,stroke:#C4B5FD,stroke-width:1px,color:#4C1D95
+    style capabilities fill:#FFFBF5,stroke:#FED7AA,stroke-width:1px,color:#9A3412
+    style services fill:#FFFFF5,stroke:#FDE68A,stroke-width:1px,color:#854D0E
+    style data fill:#F6FFFB,stroke:#A7F3D0,stroke-width:1px,color:#065F46
 ```
 
 设计原则：API 不直接跑复杂 Agent；写操作必经 Application + 审批；Agent 通过 Tool Registry / Repository 访问数据；RAG 提供可定位证据，低证据拒答。
