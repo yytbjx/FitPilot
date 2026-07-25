@@ -54,42 +54,30 @@ FitPilot 把**结构化业务数据**（档案、食物库、动作库、计划�
 
 ```mermaid
 flowchart TB
-    %% ── Client ──
-    Vue["Vue 3 · Element Plus · Pinia"]
+    Vue["Vue 3 + Element Plus + Pinia"]
 
-    %% ── API edge ──
-    subgraph Edge["API 层"]
-        direction LR
-        API["FastAPI<br/>Auth · Business · Agent · Memories · SSE"]
+    subgraph apiLayer["API"]
+        API["FastAPI<br/>Auth / Business / Agent / Memories / SSE"]
         Prom["Prometheus / Grafana"]
     end
 
-    %% ── Application + Agent ──
-    subgraph Core["应用与 Agent"]
-        direction TB
+    subgraph agentLayer["Application + LangGraph"]
         App["Application<br/>Use Cases / UoW"]
-        Router["结构化路由<br/>规则三级 + 风险拦截"]
-
-        subgraph Runtime["LangGraph 运行时"]
-            direction LR
-            SG["五条领域子图<br/>计划 / 知识 / 个人 / 安全 / 日志"]
-            WF["工作流<br/>preview → interrupt → commit"]
-            RAG["RAG<br/>Dense+BM25 → RRF → Rerank → Gate"]
-        end
-
-        Domain["确定性领域引擎<br/>营养 · MIP 配餐 · 计划校验"]
-        Tools["Tool Registry<br/>写操作需审批"]
+        Router["Intent Router<br/>rules + risk gate"]
+        SG["Domain Subgraphs<br/>plan / knowledge / personal / safety / logs"]
+        WF["Workflow<br/>preview - interrupt - commit"]
+        RAG["RAG<br/>Dense+BM25 - RRF - Rerank - Gate"]
+        Domain["Domain Engine<br/>nutrition / MIP / validators"]
+        Tools["Tool Registry<br/>write needs approval"]
     end
 
-    %% ── Data plane ──
-    subgraph Data["数据与模型"]
-        direction LR
-        PG[("PostgreSQL<br/>业务 · 检查点 · 事件")]
-        Redis[("Redis Streams<br/>队列 · 死信 · 重试")]
+    subgraph infraLayer["Infrastructure"]
+        PG[("PostgreSQL")]
+        Redis[("Redis Streams")]
         Qdrant[("Qdrant")]
         BM25["BM25"]
         Ollama["Ollama"]
-        BGE["BGE 嵌入/重排"]
+        BGE["BGE"]
     end
 
     Worker["Agent Worker"]
@@ -97,13 +85,15 @@ flowchart TB
     Vue --> API
     API --> App
     API -.-> Prom
-    App --> Router --> SG
+    App --> Router
+    Router --> SG
     SG --> WF
     SG --> RAG
     WF --> Domain
     WF --> Tools
-
-    API --> Redis --> Worker --> SG
+    API --> Redis
+    Redis --> Worker
+    Worker --> SG
     SG --> PG
     Domain --> PG
     Tools --> PG
@@ -111,18 +101,6 @@ flowchart TB
     RAG --> BM25
     RAG --> BGE
     RAG --> Ollama
-
-    classDef client fill:#e8f4f8,stroke:#3a7ca5,color:#0d3b4c
-    classDef edge fill:#f0f7e8,stroke:#5a8f3c,color:#1e3a12
-    classDef core fill:#f7f0e8,stroke:#a67c52,color:#3d2b1a
-    classDef data fill:#f3eef8,stroke:#7a5ea7,color:#2a1f3d
-    classDef worker fill:#fff4e0,stroke:#c4892a,color:#4a3208
-
-    class Vue client
-    class API,Prom edge
-    class App,Router,SG,WF,RAG,Domain,Tools core
-    class PG,Redis,Qdrant,BM25,Ollama,BGE data
-    class Worker worker
 ```
 
 设计原则：API 不直接跑复杂 Agent；写操作必经 Application + 审批；Agent 通过 Tool Registry / Repository 访问数据；RAG 提供可定位证据，低证据拒答。
