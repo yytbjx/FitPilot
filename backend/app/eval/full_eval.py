@@ -9,12 +9,14 @@ from pathlib import Path
 from typing import Any
 
 from app.eval.agent_eval import run_agent_eval
+from app.eval.context_kv_eval import run_context_kv_eval
 from app.eval.generation_eval import run_generation_eval
 from app.eval.generation_online_eval import run_generation_online_eval
 from app.eval.meal_eval import run_meal_eval
 from app.eval.no_answer_eval import run_no_answer_eval
 from app.eval.parsing_eval import run_parsing_eval
 from app.eval.plan_eval import run_plan_eval
+from app.eval.progress import layer_banner
 from app.eval.rag_eval import run_rag_eval
 from app.eval.safety_eval import run_safety_eval
 
@@ -28,6 +30,7 @@ LAYER_ORDER = [
     ("plan", "训练计划"),
     ("meal", "食谱优化"),
     ("safety", "安全与联合调整"),
+    ("context_kv", "长上下文与编排"),
 ]
 
 
@@ -107,9 +110,14 @@ def run_full_eval(
     repo_root: Path | None = None,
     out_path: Path | None = None,
     md_path: Path | None = None,
+    suite_set: str | None = None,
 ) -> FullEvalReport:
     root = repo_root or config_path.parent.parent
     cfg = _load_config(config_path)
+    if suite_set:
+        from app.eval.suite_set import apply_suite_set_to_config
+
+        cfg = apply_suite_set_to_config(cfg, repo_root=root, suite_set=suite_set)
     modules = cfg.get("modules") or {}
     suites = cfg.get("suites") or {}
     params = cfg.get("parameters") or {}
@@ -129,8 +137,9 @@ def run_full_eval(
 
     # Layer 1 — parsing
     if _mod_enabled("parsing", True):
-        path = _suite("parsing", "evals/parsing_cases.json")
+        path = _suite("parsing", "evals/large/parsing_cases.json")
         if path.exists():
+            layer_banner("1", "文档解析")
             r = run_parsing_eval(path)
             report.layers.append(
                 LayerReport(
@@ -144,8 +153,9 @@ def run_full_eval(
 
     # Layer 2 — retrieval
     if _mod_enabled("retrieval", True):
-        suite = _suite("retrieval", params.get("dataset_path") or "evals/golden_rag.json")
+        suite = _suite("retrieval", params.get("dataset_path") or "evals/large/golden_rag.json")
         if suite.exists():
+            layer_banner("2", "RAG 检索")
             r = run_rag_eval(
                 suite_path=suite,
                 top_k=int(params.get("top_k") or 4),
@@ -162,6 +172,13 @@ def run_full_eval(
                         "mrr": r.mrr,
                         "citation_rate": r.citation_rate,
                         "hit_at_k": r.hit_at_k,
+                        "precision_at_k": r.precision_at_k,
+                        "term_recall_at_k": r.term_recall_at_k,
+                        "ndcg_at_k": r.ndcg_at_k,
+                        "anchor_chunk_at_k": r.anchor_chunk_at_k,
+                        "anchor_doc_at_k": r.anchor_doc_at_k,
+                        "anchor_chunk_cases": r.anchor_chunk_cases,
+                        "anchor_doc_cases": r.anchor_doc_cases,
                         "cases": _cases_payload(r.cases),
                     },
                 )
@@ -169,8 +186,9 @@ def run_full_eval(
 
     # Layer 2b — no_answer
     if _mod_enabled("no_answer", True):
-        path = _suite("no_answer", "evals/no_answer_cases.json")
+        path = _suite("no_answer", "evals/large/no_answer_cases.json")
         if path.exists():
+            layer_banner("2b", "拒答/无答案")
             r = run_no_answer_eval(path)
             report.layers.append(
                 LayerReport(
@@ -188,8 +206,9 @@ def run_full_eval(
 
     # Layer 3 — generation (offline rules + e2e retrieve)
     if _mod_enabled("generation", True):
-        path = _suite("generation", "evals/generation_cases.json")
+        path = _suite("generation", "evals/large/generation_cases.json")
         if path.exists():
+            layer_banner("3", "生成与引用")
             r = run_generation_eval(path)
             report.layers.append(
                 LayerReport(
@@ -203,8 +222,9 @@ def run_full_eval(
 
     # Layer 3b — generation online (LLM-as-judge)
     if _mod_enabled("generation_online", False):
-        path = _suite("generation_online", "evals/generation_online_cases.json")
+        path = _suite("generation_online", "evals/large/generation_online_cases.json")
         if path.exists():
+            layer_banner("3b", "生成在线裁判")
             r = run_generation_online_eval(path)
             report.layers.append(
                 LayerReport(
@@ -222,8 +242,9 @@ def run_full_eval(
 
     # Layer 4 — agent
     if _mod_enabled("agent", True):
-        path = _suite("agent", "evals/agent_routing_cases.json")
+        path = _suite("agent", "evals/large/agent_routing_cases.json")
         if path.exists():
+            layer_banner("4", "Agent 路由")
             r = run_agent_eval(path)
             agent_th = thresholds.get("agent") if isinstance(thresholds.get("agent"), dict) else {}
             # config 阈值可覆盖套件（若明确给出）
@@ -247,8 +268,9 @@ def run_full_eval(
 
     # Layer 5 — plan
     if _mod_enabled("plan", True):
-        path = _suite("plan", "evals/plan_cases.json")
+        path = _suite("plan", "evals/large/plan_cases.json")
         if path.exists():
+            layer_banner("5", "训练计划")
             r = run_plan_eval(path)
             report.layers.append(
                 LayerReport(
@@ -262,8 +284,9 @@ def run_full_eval(
 
     # Layer 6 — meal
     if _mod_enabled("meal", True):
-        path = _suite("meal", "evals/meal_cases.json")
+        path = _suite("meal", "evals/large/meal_cases.json")
         if path.exists():
+            layer_banner("6", "食谱优化")
             r = run_meal_eval(path)
             meal_th = thresholds.get("meal") if isinstance(thresholds.get("meal"), dict) else {}
             if "max_kcal_error_pct" in meal_th:
@@ -284,8 +307,9 @@ def run_full_eval(
 
     # Layer 7 — safety
     if _mod_enabled("safety", True):
-        path = _suite("safety", "evals/safety_cases.json")
+        path = _suite("safety", "evals/large/safety_cases.json")
         if path.exists():
+            layer_banner("7", "安全与联合调整")
             r = run_safety_eval(path)
             report.layers.append(
                 LayerReport(
@@ -294,6 +318,49 @@ def run_full_eval(
                     ok=r.ok,
                     summary=r.summary_text(),
                     metrics={"pass_rate": r.pass_rate, "cases": _cases_payload(r.cases)},
+                )
+            )
+
+    # Layer 8 — context / KV / orchestration (offline)
+    if _mod_enabled("context_kv", True):
+        path = _suite("context_kv", "evals/large/context_kv_cases.json")
+        if path.exists():
+            layer_banner("8", "长上下文与编排")
+            r = run_context_kv_eval(path)
+            th = thresholds.get("context_kv") if isinstance(thresholds.get("context_kv"), dict) else {}
+            if "min_reduction" in th:
+                r.min_reduction = float(th["min_reduction"])
+            if "min_recall_at_budget" in th:
+                r.min_recall_at_budget = float(th["min_recall_at_budget"])
+            if "min_lcp" in th:
+                r.min_lcp = float(th["min_lcp"])
+            if "min_route_accuracy" in th:
+                r.min_route_accuracy = float(th["min_route_accuracy"])
+            if "min_orchestrator_pass" in th:
+                r.min_orchestrator_pass = float(th["min_orchestrator_pass"])
+            # 阈值可能覆盖默认后需重算 ok
+            r.ok = (
+                r.avg_reduction >= r.min_reduction
+                and r.avg_recall_at_budget >= r.min_recall_at_budget
+                and r.avg_lcp >= r.min_lcp
+                and r.route_accuracy >= r.min_route_accuracy
+                and r.orchestrator_pass >= r.min_orchestrator_pass
+                and all(c.ok for c in r.cases)
+            )
+            report.layers.append(
+                LayerReport(
+                    layer="8",
+                    title="长上下文与编排",
+                    ok=r.ok,
+                    summary=r.summary_text(),
+                    metrics={
+                        "avg_reduction": r.avg_reduction,
+                        "avg_recall_at_budget": r.avg_recall_at_budget,
+                        "avg_lcp": r.avg_lcp,
+                        "route_accuracy": r.route_accuracy,
+                        "orchestrator_pass": r.orchestrator_pass,
+                        "cases": _cases_payload(r.cases),
+                    },
                 )
             )
 

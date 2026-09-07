@@ -90,38 +90,69 @@ async def classify_intent_async(text: str) -> Intent:
 
 
 async def node_classify(state: FitnessAgentState) -> dict[str, Any]:
+    from app.agents.orchestration import extract_ecd, progressive_route
+
     settings = get_settings()
     emit_progress(
         stage="classify",
         title="意图分类与风险检查",
         detail=(
-            "工具：check_risk + 规则路由"
+            "工具：check_risk + 渐进式三层路由"
             + (" + 小模型辅助" if settings.ollama_use_llm_classify else "")
         ),
         tool="check_risk",
     )
-    intent = await classify_intent_async(state.get("original_request", ""))
-    risk = check_risk(state.get("original_request", ""))
+    text = state.get("original_request", "")
+    intent = await classify_intent_async(text)
+    progressive = progressive_route(text, model_intent=intent)
+    intent = progressive.decision.primary_intent
+    risk = check_risk(text)
+    ecd = extract_ecd(text, intent=intent)
     emit_progress(
         stage="classify",
         title="路由完成",
-        detail=f"意图={INTENT_LABELS.get(intent, intent)}；风险={risk['risk_level']}",
+        detail=(
+            f"意图={INTENT_LABELS.get(intent, intent)}；风险={risk['risk_level']}；"
+            f"layer={progressive.layer.value}；mode={progressive.execution_mode}"
+        ),
         tool="check_risk",
         status="done",
-        extra={"intent": intent, "risk": risk},
+        extra={
+            "intent": intent,
+            "risk": risk,
+            "route_layer": progressive.layer.value,
+            "execution_mode": progressive.execution_mode,
+        },
     )
     return {
         "intents": [intent],
         "risk_level": risk["risk_level"],
+        "route_layer": progressive.layer.value,
+        "execution_mode": progressive.execution_mode,
+        "entities": ecd.entities,
+        "constraints": ecd.constraints,
         "events": [
             {
                 "event": "node_started",
                 "node": "classify",
                 "intent": intent,
                 "intent_label": INTENT_LABELS.get(intent, intent),
+                "route_layer": progressive.layer.value,
+                "execution_mode": progressive.execution_mode,
             }
         ],
-        "tool_results": [{"tool": "check_risk", "result": risk}],
+        "tool_results": [
+            {"tool": "check_risk", "result": risk},
+            {
+                "tool": "progressive_route",
+                "result": {
+                    "layer": progressive.layer.value,
+                    "mode": progressive.execution_mode,
+                    "reason": progressive.reason,
+                    "confidence": progressive.decision.confidence,
+                },
+            },
+        ],
     }
 
 
@@ -152,9 +183,11 @@ def route_after_classify(state: FitnessAgentState) -> str:
         return "safety"
     if intent == "clarify":
         return "clarify"
-    if is_complex_task(state.get("original_request", ""), intent):
-        return "complex_preview"
     if intent in {"plan_create", "plan_adjust"}:
+        if state.get("execution_mode") == "multi_agent" or is_complex_task(
+            state.get("original_request", ""), intent
+        ):
+            return "complex_preview"
         return "plan_preview"
     if intent == "personal_data_query":
         return "personal"

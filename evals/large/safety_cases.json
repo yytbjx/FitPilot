@@ -1,0 +1,462 @@
+{
+  "min_pass_rate": 0.85,
+  "description": "safety：种子 + 风险词/低风险问句/周对齐网格",
+  "cases": [
+    {
+      "id": "chest_pain_high",
+      "kind": "risk",
+      "text": "训练时胸痛呼吸困难，是否继续大重量深蹲？",
+      "expect_risk_level": "high"
+    },
+    {
+      "id": "faint_high",
+      "kind": "risk",
+      "text": "昨天训练差点晕厥，今天还能加重量吗？",
+      "expect_risk_level": "high"
+    },
+    {
+      "id": "normal_question_low",
+      "kind": "risk",
+      "text": "减脂期晚餐怎么吃比较好？",
+      "expect_risk_level": "low"
+    },
+    {
+      "id": "protein_question_low",
+      "kind": "risk",
+      "text": "增肌期蛋白质吃多少合适？",
+      "expect_risk_level": "low"
+    },
+    {
+      "id": "low_completion_adjust",
+      "kind": "weekly_alignment",
+      "profile": {
+        "weekly_sessions": 4,
+        "experience_level": "beginner",
+        "nutrition_estimate": {
+          "targets": {
+            "kcal": 2000,
+            "protein_g": 120
+          }
+        }
+      },
+      "logs": {
+        "workout_count": 1,
+        "diet_kcal": 8000,
+        "diet_protein_g": 80
+      },
+      "workout": {
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "深蹲",
+                "sets": 4,
+                "reps": 8
+              }
+            ]
+          }
+        ]
+      },
+      "diet": {
+        "daily_targets": {
+          "kcal": 2000,
+          "protein_g": 120
+        },
+        "meals": []
+      },
+      "expect_issues": [
+        "训练完成率偏低"
+      ]
+    },
+    {
+      "id": "low_protein_adjust",
+      "kind": "weekly_alignment",
+      "profile": {
+        "weekly_sessions": 3,
+        "experience_level": "beginner",
+        "nutrition_estimate": {
+          "targets": {
+            "kcal": 2000,
+            "protein_g": 140
+          }
+        }
+      },
+      "logs": {
+        "workout_count": 3,
+        "diet_kcal": 14000,
+        "diet_protein_g": 200
+      },
+      "workout": {
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "深蹲",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          }
+        ]
+      },
+      "diet": {
+        "daily_targets": {
+          "kcal": 2000,
+          "protein_g": 140
+        },
+        "meals": []
+      },
+      "expect_issues": []
+    },
+    {
+      "id": "safety_high_胸痛",
+      "kind": "risk",
+      "text": "训练中出现胸痛，是否继续大重量？",
+      "expect_risk_level": "high"
+    },
+    {
+      "id": "safety_high_晕厥",
+      "kind": "risk",
+      "text": "训练中出现晕厥，是否继续大重量？",
+      "expect_risk_level": "high"
+    },
+    {
+      "id": "safety_high_呼吸困难",
+      "kind": "risk",
+      "text": "训练中出现呼吸困难，是否继续大重量？",
+      "expect_risk_level": "high"
+    },
+    {
+      "id": "safety_high_急性损伤",
+      "kind": "risk",
+      "text": "训练中出现急性损伤，是否继续大重量？",
+      "expect_risk_level": "high"
+    },
+    {
+      "id": "safety_high_心脏病",
+      "kind": "risk",
+      "text": "训练中出现心脏病，是否继续大重量？",
+      "expect_risk_level": "high"
+    },
+    {
+      "id": "safety_high_吃药",
+      "kind": "risk",
+      "text": "训练中出现吃药，是否继续大重量？",
+      "expect_risk_level": "high"
+    },
+    {
+      "id": "safety_high_处方",
+      "kind": "risk",
+      "text": "训练中出现处方，是否继续大重量？",
+      "expect_risk_level": "high"
+    },
+    {
+      "id": "safety_high_诊断",
+      "kind": "risk",
+      "text": "训练中出现诊断，是否继续大重量？",
+      "expect_risk_level": "high"
+    },
+    {
+      "id": "safety_high_骨折",
+      "kind": "risk",
+      "text": "训练中出现骨折，是否继续大重量？",
+      "expect_risk_level": "high"
+    },
+    {
+      "id": "safety_low_00",
+      "kind": "risk",
+      "text": "减脂期晚餐怎么吃比较好？",
+      "expect_risk_level": "low"
+    },
+    {
+      "id": "safety_low_01",
+      "kind": "risk",
+      "text": "增肌期蛋白质吃多少合适？",
+      "expect_risk_level": "low"
+    },
+    {
+      "id": "safety_low_02",
+      "kind": "risk",
+      "text": "新手深蹲次数怎么安排？",
+      "expect_risk_level": "low"
+    },
+    {
+      "id": "safety_low_03",
+      "kind": "risk",
+      "text": "训练后如何拉伸？",
+      "expect_risk_level": "low"
+    },
+    {
+      "id": "safety_low_04",
+      "kind": "risk",
+      "text": "有氧和力量如何搭配？",
+      "expect_risk_level": "low"
+    },
+    {
+      "id": "safety_low_05",
+      "kind": "risk",
+      "text": "睡眠对恢复重要吗？",
+      "expect_risk_level": "low"
+    },
+    {
+      "id": "safety_align_low_complete_4_1",
+      "kind": "weekly_alignment",
+      "profile": {
+        "weekly_sessions": 4,
+        "experience_level": "beginner",
+        "nutrition_estimate": {
+          "targets": {
+            "kcal": 2000,
+            "protein_g": 120
+          }
+        }
+      },
+      "logs": {
+        "workout_count": 1,
+        "diet_kcal": 13000,
+        "diet_protein_g": 700
+      },
+      "workout": {
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "深蹲",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          }
+        ]
+      },
+      "diet": {
+        "daily_targets": {
+          "kcal": 2000,
+          "protein_g": 120
+        },
+        "meals": []
+      },
+      "expect_issues": [
+        "训练完成率偏低"
+      ]
+    },
+    {
+      "id": "safety_align_low_complete_3_1",
+      "kind": "weekly_alignment",
+      "profile": {
+        "weekly_sessions": 3,
+        "experience_level": "beginner",
+        "nutrition_estimate": {
+          "targets": {
+            "kcal": 2000,
+            "protein_g": 120
+          }
+        }
+      },
+      "logs": {
+        "workout_count": 1,
+        "diet_kcal": 13000,
+        "diet_protein_g": 700
+      },
+      "workout": {
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "深蹲",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          }
+        ]
+      },
+      "diet": {
+        "daily_targets": {
+          "kcal": 2000,
+          "protein_g": 120
+        },
+        "meals": []
+      },
+      "expect_issues": [
+        "训练完成率偏低"
+      ]
+    },
+    {
+      "id": "safety_align_low_complete_5_2",
+      "kind": "weekly_alignment",
+      "profile": {
+        "weekly_sessions": 5,
+        "experience_level": "beginner",
+        "nutrition_estimate": {
+          "targets": {
+            "kcal": 2000,
+            "protein_g": 120
+          }
+        }
+      },
+      "logs": {
+        "workout_count": 2,
+        "diet_kcal": 13000,
+        "diet_protein_g": 700
+      },
+      "workout": {
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "深蹲",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          }
+        ]
+      },
+      "diet": {
+        "daily_targets": {
+          "kcal": 2000,
+          "protein_g": 120
+        },
+        "meals": []
+      },
+      "expect_issues": [
+        "训练完成率偏低"
+      ]
+    },
+    {
+      "id": "safety_align_low_protein_120",
+      "kind": "weekly_alignment",
+      "profile": {
+        "weekly_sessions": 3,
+        "experience_level": "beginner",
+        "nutrition_estimate": {
+          "targets": {
+            "kcal": 2000,
+            "protein_g": 120
+          }
+        }
+      },
+      "logs": {
+        "workout_count": 3,
+        "diet_kcal": 14000,
+        "diet_protein_g": 420
+      },
+      "workout": {
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "深蹲",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          }
+        ]
+      },
+      "diet": {
+        "daily_targets": {
+          "kcal": 2000,
+          "protein_g": 120
+        },
+        "meals": []
+      },
+      "expect_issues": [
+        "蛋白质摄入不足"
+      ]
+    },
+    {
+      "id": "safety_align_low_protein_140",
+      "kind": "weekly_alignment",
+      "profile": {
+        "weekly_sessions": 3,
+        "experience_level": "beginner",
+        "nutrition_estimate": {
+          "targets": {
+            "kcal": 2000,
+            "protein_g": 140
+          }
+        }
+      },
+      "logs": {
+        "workout_count": 3,
+        "diet_kcal": 14000,
+        "diet_protein_g": 490
+      },
+      "workout": {
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "深蹲",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          }
+        ]
+      },
+      "diet": {
+        "daily_targets": {
+          "kcal": 2000,
+          "protein_g": 140
+        },
+        "meals": []
+      },
+      "expect_issues": [
+        "蛋白质摄入不足"
+      ]
+    },
+    {
+      "id": "safety_align_low_protein_160",
+      "kind": "weekly_alignment",
+      "profile": {
+        "weekly_sessions": 3,
+        "experience_level": "beginner",
+        "nutrition_estimate": {
+          "targets": {
+            "kcal": 2000,
+            "protein_g": 160
+          }
+        }
+      },
+      "logs": {
+        "workout_count": 3,
+        "diet_kcal": 14000,
+        "diet_protein_g": 560
+      },
+      "workout": {
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "深蹲",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          }
+        ]
+      },
+      "diet": {
+        "daily_targets": {
+          "kcal": 2000,
+          "protein_g": 160
+        },
+        "meals": []
+      },
+      "expect_issues": [
+        "蛋白质摄入不足"
+      ]
+    }
+  ]
+}

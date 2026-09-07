@@ -42,4 +42,4 @@ jobs:
           PYTHONPATH: ${{ github.workspace }}/backend
           NO_PROXY: 127.0.0.1,localhost
         run: |
-          uv run python main.py eval-gate --out ../evals/reports/ci_gate.json
+          uv run python main.py eval-gate --suite-set small --out ../evals/reports/ci_gate.json

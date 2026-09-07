@@ -95,6 +95,6 @@ def test_full_eval_config_smoke(tmp_path):
     cfg.setdefault("parameters", {})["dataset_limit"] = 5
     cfg_path = tmp_path / "eval_config_smoke.yaml"
     cfg_path.write_text(yaml.safe_dump(cfg, allow_unicode=True), encoding="utf-8")
-    report = run_full_eval(config_path=cfg_path, repo_root=root)
+    report = run_full_eval(config_path=cfg_path, repo_root=root, suite_set="small")
     assert len(report.layers) >= 5
     assert report.summary_text().startswith("=== FitPilot")

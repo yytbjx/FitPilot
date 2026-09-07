@@ -1,0 +1,695 @@
+{
+  "name": "fitpilot-offline-rag-capacity",
+  "description": "离线 RAG：fixture 种子 + 限量改写 + OOD 拒答（有多少造多少）",
+  "cases": [
+    {
+      "id": "off_protein_intake",
+      "query": "减脂期蛋白质按体重怎么吃？",
+      "expect_any": [
+        "蛋白",
+        "1.6",
+        "2.2",
+        "protein_basics"
+      ],
+      "relevance": [
+        {
+          "match": "1.6",
+          "grade": 2
+        },
+        {
+          "match": "蛋白",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_protein_intake_med",
+      "query": "请说明减脂期蛋白质按体重怎么吃（通常）呢？",
+      "expect_any": [
+        "蛋白",
+        "1.6",
+        "2.2",
+        "protein_basics"
+      ],
+      "relevance": [
+        {
+          "match": "1.6",
+          "grade": 2
+        },
+        {
+          "match": "蛋白",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_protein_intake_hard",
+      "query": "体脂管理阶段蛋白宏量按体重怎么吃呢？",
+      "expect_any": [
+        "蛋白",
+        "1.6",
+        "2.2",
+        "protein_basics"
+      ],
+      "relevance": [
+        {
+          "match": "1.6",
+          "grade": 2
+        },
+        {
+          "match": "蛋白",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_protein_sources",
+      "query": "蛋白质来源有哪些？",
+      "expect_any": [
+        "鸡胸",
+        "鸡蛋",
+        "豆制品",
+        "蛋白"
+      ],
+      "relevance": [
+        {
+          "match": "鸡胸",
+          "grade": 2
+        },
+        {
+          "match": "豆制品",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_protein_sources_med",
+      "query": "帮我看看蛋白质来源有哪些？",
+      "expect_any": [
+        "鸡胸",
+        "鸡蛋",
+        "豆制品",
+        "蛋白"
+      ],
+      "relevance": [
+        {
+          "match": "鸡胸",
+          "grade": 2
+        },
+        {
+          "match": "豆制品",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_protein_sources_hard",
+      "query": "增肌相关宏量来源有哪些？",
+      "expect_any": [
+        "鸡胸",
+        "鸡蛋",
+        "豆制品",
+        "蛋白"
+      ],
+      "relevance": [
+        {
+          "match": "鸡胸",
+          "grade": 2
+        },
+        {
+          "match": "豆制品",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_strength_frequency",
+      "query": "力量训练新手每周练几次？",
+      "expect_any": [
+        "2",
+        "3",
+        "力量",
+        "strength_training"
+      ],
+      "relevance": [
+        {
+          "match": "每周 2–3 次",
+          "grade": 2
+        },
+        {
+          "match": "力量",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_strength_frequency_med",
+      "query": "请问力量训练新手每周练几次有什么建议？",
+      "expect_any": [
+        "2",
+        "3",
+        "力量",
+        "strength_training"
+      ],
+      "relevance": [
+        {
+          "match": "每周 2–3 次",
+          "grade": 2
+        },
+        {
+          "match": "力量",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_strength_frequency_hard",
+      "query": "简单说一下肌力训练新手七天内练几次？",
+      "expect_any": [
+        "2",
+        "3",
+        "力量",
+        "strength_training"
+      ],
+      "relevance": [
+        {
+          "match": "每周 2–3 次",
+          "grade": 2
+        },
+        {
+          "match": "力量",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_progressive_overload",
+      "query": "什么是渐进超负荷？",
+      "expect_any": [
+        "渐进",
+        "超负荷",
+        "负荷"
+      ],
+      "relevance": [
+        {
+          "match": "渐进超负荷",
+          "grade": 2
+        },
+        {
+          "match": "负荷",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_progressive_overload_med",
+      "query": "请问什么是渐进超负荷（通常）呢？",
+      "expect_any": [
+        "渐进",
+        "超负荷",
+        "负荷"
+      ],
+      "relevance": [
+        {
+          "match": "渐进超负荷",
+          "grade": 2
+        },
+        {
+          "match": "负荷",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_weekly_aerobic",
+      "query": "成年人每周应做多少中等强度有氧活动？",
+      "expect_any": [
+        "150",
+        "300",
+        "有氧",
+        "分钟"
+      ],
+      "relevance": [
+        {
+          "match": "150",
+          "grade": 2
+        },
+        {
+          "match": "有氧",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_weekly_aerobic_med",
+      "query": "简单说一下成年人每周应做多少中等强度有氧活动有什么建议？",
+      "expect_any": [
+        "150",
+        "300",
+        "有氧",
+        "分钟"
+      ],
+      "relevance": [
+        {
+          "match": "150",
+          "grade": 2
+        },
+        {
+          "match": "有氧",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_weekly_aerobic_hard",
+      "query": "请说明成年人每周应做多少呼吸加快但仍能说话的强度有氧活动有什么建议？",
+      "expect_any": [
+        "150",
+        "300",
+        "有氧",
+        "分钟"
+      ],
+      "relevance": [
+        {
+          "match": "150",
+          "grade": 2
+        },
+        {
+          "match": "有氧",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_electrolyte",
+      "query": "出汗多时要不要补充电解质？",
+      "expect_any": [
+        "电解质",
+        "钠",
+        "出汗",
+        "hydration"
+      ],
+      "relevance": [
+        {
+          "match": "电解质",
+          "grade": 2
+        },
+        {
+          "match": "钠",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_electrolyte_med",
+      "query": "想问一下出汗多时要不要补充电解质（大概）怎么理解？",
+      "expect_any": [
+        "电解质",
+        "钠",
+        "出汗",
+        "hydration"
+      ],
+      "relevance": [
+        {
+          "match": "电解质",
+          "grade": 2
+        },
+        {
+          "match": "钠",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_electrolyte_hard",
+      "query": "简单说一下出汗多时要不要补充盐分与矿物质？",
+      "expect_any": [
+        "电解质",
+        "钠",
+        "出汗",
+        "hydration"
+      ],
+      "relevance": [
+        {
+          "match": "电解质",
+          "grade": 2
+        },
+        {
+          "match": "钠",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_sports_drink",
+      "query": "每次训练都必须喝运动饮料吗？",
+      "expect_any": [
+        "运动饮料",
+        "清水",
+        "hydration"
+      ],
+      "relevance": [
+        {
+          "match": "运动饮料",
+          "grade": 2
+        },
+        {
+          "match": "清水",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_sports_drink_med",
+      "query": "请说明每次训练都必须喝运动饮料吗怎么理解？",
+      "expect_any": [
+        "运动饮料",
+        "清水",
+        "hydration"
+      ],
+      "relevance": [
+        {
+          "match": "运动饮料",
+          "grade": 2
+        },
+        {
+          "match": "清水",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_safety_diagnosis",
+      "query": "FitPilot 能帮我诊断伤病或开药吗？",
+      "expect_any": [
+        "诊断",
+        "开药",
+        "医",
+        "safety_boundary"
+      ],
+      "relevance": [
+        {
+          "match": "诊断",
+          "grade": 2
+        },
+        {
+          "match": "医",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_safety_diagnosis_med",
+      "query": "帮我看看FitPilot 能帮我诊断伤病或开药吗有什么建议？",
+      "expect_any": [
+        "诊断",
+        "开药",
+        "医",
+        "safety_boundary"
+      ],
+      "relevance": [
+        {
+          "match": "诊断",
+          "grade": 2
+        },
+        {
+          "match": "医",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_safety_diagnosis_hard",
+      "query": "FitPilot 能帮我下医学结论伤病或开具处方药吗？",
+      "expect_any": [
+        "诊断",
+        "开药",
+        "医",
+        "safety_boundary"
+      ],
+      "relevance": [
+        {
+          "match": "诊断",
+          "grade": 2
+        },
+        {
+          "match": "医",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_chest_pain",
+      "query": "训练时胸痛应该怎么办？",
+      "expect_any": [
+        "胸痛",
+        "就医",
+        "停止"
+      ],
+      "relevance": [
+        {
+          "match": "胸痛",
+          "grade": 2
+        },
+        {
+          "match": "就医",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_chest_pain_med",
+      "query": "请说明训练时胸痛应该怎么办？",
+      "expect_any": [
+        "胸痛",
+        "就医",
+        "停止"
+      ],
+      "relevance": [
+        {
+          "match": "胸痛",
+          "grade": 2
+        },
+        {
+          "match": "就医",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_dietary_principles",
+      "query": "中国居民膳食指南八准则有哪些要点？",
+      "expect_any": [
+        "膳食",
+        "准则",
+        "食物多样",
+        "dietary_guidelines"
+      ],
+      "relevance": [
+        {
+          "match": "食物多样",
+          "grade": 2
+        },
+        {
+          "match": "准则",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_dietary_principles_med",
+      "query": "请问中国居民膳食指南八准则有哪些要点（通常）？",
+      "expect_any": [
+        "膳食",
+        "准则",
+        "食物多样",
+        "dietary_guidelines"
+      ],
+      "relevance": [
+        {
+          "match": "食物多样",
+          "grade": 2
+        },
+        {
+          "match": "准则",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_dietary_principles_hard",
+      "query": "中国居民平衡膳食建议八准则有哪些要点？",
+      "expect_any": [
+        "膳食",
+        "准则",
+        "食物多样",
+        "dietary_guidelines"
+      ],
+      "relevance": [
+        {
+          "match": "食物多样",
+          "grade": 2
+        },
+        {
+          "match": "准则",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_alcohol",
+      "query": "健身期间为什么要限制酒精？",
+      "expect_any": [
+        "酒精",
+        "控糖限酒",
+        "恢复"
+      ],
+      "relevance": [
+        {
+          "match": "酒精",
+          "grade": 2
+        },
+        {
+          "match": "恢复",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_alcohol_med",
+      "query": "健身期间为什么要限制酒精呢？",
+      "expect_any": [
+        "酒精",
+        "控糖限酒",
+        "恢复"
+      ],
+      "relevance": [
+        {
+          "match": "酒精",
+          "grade": 2
+        },
+        {
+          "match": "恢复",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_sedentary",
+      "query": "为什么要减少久坐？",
+      "expect_any": [
+        "久坐",
+        "活动",
+        "strength_training"
+      ],
+      "relevance": [
+        {
+          "match": "久坐",
+          "grade": 2
+        },
+        {
+          "match": "活动",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_sedentary_med",
+      "query": "简单说一下为什么要减少久坐？",
+      "expect_any": [
+        "久坐",
+        "活动",
+        "strength_training"
+      ],
+      "relevance": [
+        {
+          "match": "久坐",
+          "grade": 2
+        },
+        {
+          "match": "活动",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_sedentary_hard",
+      "query": "为什么要减少静坐少动？",
+      "expect_any": [
+        "久坐",
+        "活动",
+        "strength_training"
+      ],
+      "relevance": [
+        {
+          "match": "久坐",
+          "grade": 2
+        },
+        {
+          "match": "活动",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "off_na_00",
+      "query": "量子纠缠在超导量子芯片里如何校准门保真度？",
+      "expect_no_answer": true
+    },
+    {
+      "id": "off_na_01",
+      "query": "纳斯达克期货隔夜跳空对冲策略有哪些？",
+      "expect_no_answer": true
+    },
+    {
+      "id": "off_na_02",
+      "query": "火星大气中二氧化碳电解制氧的工程参数？",
+      "expect_no_answer": true
+    },
+    {
+      "id": "off_na_03",
+      "query": "中世纪拉丁手稿古文字学断代方法？",
+      "expect_no_answer": true
+    },
+    {
+      "id": "off_na_04",
+      "query": "深海热液喷口古菌基因组组装流程？",
+      "expect_no_answer": true
+    },
+    {
+      "id": "off_na_05",
+      "query": "非欧几何在建筑曲面放样中的应用？",
+      "expect_no_answer": true
+    },
+    {
+      "id": "off_na_06",
+      "query": "聚合物电解质燃料电池催化剂老化机理？",
+      "expect_no_answer": true
+    },
+    {
+      "id": "off_na_07",
+      "query": "贝叶斯层次模型在地震预警中的先验选择？",
+      "expect_no_answer": true
+    },
+    {
+      "id": "off_na_quantum",
+      "query": "量子纠缠能否实现超光速通信？",
+      "expect_no_answer": true
+    },
+    {
+      "id": "off_na_mars",
+      "query": "火星土壤适合种植土豆吗？",
+      "expect_no_answer": true
+    },
+    {
+      "id": "off_na_stock",
+      "query": "纳斯达克指数下周走势预测？",
+      "expect_no_answer": true
+    },
+    {
+      "id": "off_na_recipe",
+      "query": "红烧肉怎么做才软糯？",
+      "expect_no_answer": true
+    }
+  ]
+}

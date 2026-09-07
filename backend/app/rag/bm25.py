@@ -104,9 +104,11 @@ def _index_path() -> Path:
     return get_settings().project_root / "knowledge_base" / "bm25_index.json"
 
 
-def get_bm25_index() -> BM25Index:
+def get_bm25_index(*, reload: bool = False) -> BM25Index:
     global _GLOBAL
     path = _index_path()
+    if reload:
+        _GLOBAL = None
     if _GLOBAL is None:
         if path.exists():
             _GLOBAL = BM25Index.load(path)
@@ -119,3 +121,9 @@ def persist_bm25(index: BM25Index) -> None:
     global _GLOBAL
     _GLOBAL = index
     index.save(_index_path())
+
+
+def clear_bm25_cache() -> None:
+    """丢弃进程内单例，下次 get_bm25_index 从磁盘重载。"""
+    global _GLOBAL
+    _GLOBAL = None

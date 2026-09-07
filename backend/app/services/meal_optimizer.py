@@ -24,6 +24,9 @@ MAX_GRAM = 350
 
 GRAM_STEP = 10
 
+# SCIP 默认时限（毫秒）。大食物池无时限会卡数分钟；超时由调用方回退贪心。
+DEFAULT_ORTOOLS_TIME_LIMIT_MS = 3000
+
 
 
 
@@ -158,9 +161,12 @@ def _optimize_ortools(
 
     meal_names: list[str] | None = None,
 
+    time_limit_ms: int | None = None,
+
 ) -> list[dict[str, Any]] | None:
 
     from ortools.linear_solver import pywraplp
+    import time as _time
 
 
 
@@ -195,6 +201,15 @@ def _optimize_ortools(
     if not solver:
 
         return None
+
+    limit_ms = (
+        DEFAULT_ORTOOLS_TIME_LIMIT_MS
+        if time_limit_ms is None
+        else max(0, int(time_limit_ms))
+    )
+    if limit_ms > 0:
+        # pywraplp SetTimeLimit 单位为毫秒
+        solver.SetTimeLimit(limit_ms)
 
 
 
@@ -310,11 +325,27 @@ def _optimize_ortools(
 
 
 
+    t0 = _time.perf_counter()
     status = solver.Solve()
+    elapsed_ms = (_time.perf_counter() - t0) * 1000.0
 
     if status not in (pywraplp.Solver.OPTIMAL, pywraplp.Solver.FEASIBLE):
-
+        logger.info(
+            "ortools_meal_no_solution status=%s foods=%s limit_ms=%s elapsed_ms=%.0f",
+            int(status),
+            n_foods,
+            limit_ms,
+            elapsed_ms,
+        )
         return None
+    if elapsed_ms >= limit_ms * 0.95 and limit_ms > 0 and status != pywraplp.Solver.OPTIMAL:
+        logger.info(
+            "ortools_meal_time_budget status=%s foods=%s limit_ms=%s elapsed_ms=%.0f",
+            int(status),
+            n_foods,
+            limit_ms,
+            elapsed_ms,
+        )
 
 
 
@@ -386,9 +417,11 @@ def optimize_meals(
 
     use_ortools: bool = True,
 
+    time_limit_ms: int | None = None,
+
 ) -> list[dict[str, Any]]:
 
-    """在宏量目标下优化三餐食物与克数；优先 OR-Tools，失败回退贪心。"""
+    """在宏量目标下优化三餐食物与克数；优先 OR-Tools，失败/超时回退贪心。"""
 
     if not foods or not targets:
 
@@ -407,10 +440,22 @@ def optimize_meals(
     if use_ortools:
 
         try:
+            limit = time_limit_ms
+            if limit is None:
+                try:
+                    from app.core.config import get_settings
+
+                    limit = int(get_settings().meal_ortools_time_limit_ms)
+                except Exception:  # noqa: BLE001
+                    limit = DEFAULT_ORTOOLS_TIME_LIMIT_MS
 
             ortools_meals = _optimize_ortools(
 
-                foods, targets, profile=profile, meal_names=meal_names
+                foods,
+                targets,
+                profile=profile,
+                meal_names=meal_names,
+                time_limit_ms=limit,
 
             )
 

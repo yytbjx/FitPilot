@@ -1,0 +1,21 @@
+{
+  "suite_set": "large",
+  "mode": "fewshot_style_capacity",
+  "seed": 20260725,
+  "written": {
+    "golden_rag.json": 300,
+    "golden_rag_offline.json": 44,
+    "parsing_cases.json": 54,
+    "no_answer_cases.json": 36,
+    "generation_cases.json": 17,
+    "generation_online_cases.json": 13,
+    "agent_routing_cases.json": 163,
+    "plan_cases.json": 23,
+    "meal_cases.json": 107,
+    "safety_cases.json": 27
+  },
+  "total_cases": 784,
+  "notes": "按小集方式重生：RAG 锚 KB chunk；其余层=fewshot 种子+唯一模板网格；有多少造多少，不凑 200/300。",
+  "large_suite_dir": "evals/large",
+  "small_suite_dir": "evals/fewshot"
+}

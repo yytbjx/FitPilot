@@ -10,6 +10,28 @@ from app.rag import DocumentChunk
 from app.rag.parent_child import split_parent_child
 
 _HEADING = re.compile(r"^(#{1,6})\s+(.+)$", re.M)
+# 中文指南/科普常见无 Markdown 标题的章节起笔（准则一、一、1. …）
+_CN_SECTION = re.compile(
+    r"^(?P<title>(?:准则[一二三四五六七八九十百零〇两\d]+[、.：:\s].+"
+    r"|核心推荐[：:].*"
+    r"|[（(]?[一二三四五六七八九十百零〇两\d]+[）)][、.：:\s].+"
+    r"|\d{1,2}[、.．]\s*.+))$",
+    re.M,
+)
+
+
+def normalize_plain_chinese_sections(text: str) -> str:
+    """把无 # 标题的中文章节行提升为 Markdown ##，便于后续 heading/parent_child 切分。"""
+    if not text or _HEADING.search(text):
+        return text
+    if not _CN_SECTION.search(text):
+        return text
+
+    def repl(m: re.Match[str]) -> str:
+        title = m.group("title").strip()
+        return f"## {title}"
+
+    return _CN_SECTION.sub(repl, text)
 
 
 def _chunk_id(document_id: str, version_id: str, idx: int, text: str) -> str:
@@ -28,6 +50,7 @@ def split_text(
     overlap: int = 120,
 ) -> list[DocumentChunk]:
     """优先按 Markdown 标题切，再对超长段递归。"""
+    text = normalize_plain_chinese_sections(text)
     sections: list[tuple[str, str]] = []
     matches = list(_HEADING.finditer(text))
     if not matches:

@@ -83,7 +83,8 @@ def test_index_version_list_and_find(tmp_path: Path, monkeypatch):
 
 
 def test_ci_gates_offline_pass():
-    report = run_ci_gates()
+    # 单测用小总集，避免大集拖慢 CI/本地 pytest
+    report = run_ci_gates(suite_set="small")
     assert report.layers, "应至少跑一层离线门禁"
     # 若失败打印摘要便于排查
     if not report.ok:

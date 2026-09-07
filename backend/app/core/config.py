@@ -101,6 +101,55 @@ class Settings(BaseSettings):
         description="user_memories 未确认提议保留天数，超期未确认删除",
         ge=1,
     )
+
+    # ---------- 分层对话记忆 / KV Cache 友好装配 ----------
+    conversation_memory_enabled: bool = Field(
+        default=True,
+        description="启用分层对话记忆（Core/Recall/Archival）",
+    )
+    conversation_memory_embed: bool = Field(
+        default=True,
+        description="为会话摘要生成 embedding；False 时仅用关键词召回",
+    )
+    conversation_core_k: int = Field(
+        default=8,
+        description="活跃层保留最近 K 轮",
+        ge=1,
+        le=64,
+    )
+    conversation_neighbor_radius: int = Field(
+        default=2,
+        description="召回片段前后邻近轮次半径 R",
+        ge=0,
+        le=8,
+    )
+    conversation_recall_n: int = Field(
+        default=8,
+        description="摘要向量召回候选数 N",
+        ge=1,
+        le=32,
+    )
+    conversation_summary_ratio: float = Field(
+        default=0.333,
+        description="历史摘要相对原文的最大比例",
+        ge=0.1,
+        le=1.0,
+    )
+    conversation_min_importance: float = Field(
+        default=0.3,
+        description="低于该重要性且无召回命中的历史不进入上下文",
+        ge=0.0,
+        le=1.0,
+    )
+    context_token_budget: int = Field(
+        default=4096,
+        description="上下文装配 Token 预算（路径优化约束）",
+        ge=256,
+    )
+    orchestrator_enabled: bool = Field(
+        default=True,
+        description="复杂任务启用 ECD+DAG 轻量编排与对抗审查",
+    )
     agent_cleanup_interval_seconds: int = Field(
         default=3600,
         description="TTL 清理任务执行周期（秒），与 reaper 共用调度循环",
@@ -117,6 +166,12 @@ class Settings(BaseSettings):
     meal_use_ortools: bool = Field(
         default=True,
         description="为 True 时优先使用 OR-Tools 约束优化；失败则回退贪心",
+    )
+    meal_ortools_time_limit_ms: int = Field(
+        default=3000,
+        description="OR-Tools SCIP 求解时限（毫秒）；超时无解则回退贪心，避免大食物池卡死",
+        ge=0,
+        le=120_000,
     )
 
     # ---------- PostgreSQL ----------
@@ -183,8 +238,13 @@ class Settings(BaseSettings):
         description="Reranker 模型；空则使用 <项目根>/models/bge-reranker-large",
     )
     reranker_device: str = Field(default="cpu", description="Reranker 推理设备；与 Ollama 错峰可用 cpu")
-    rag_top_k: int = Field(default=8, description="混合检索召回条数")
+    rag_top_k: int = Field(default=12, description="混合检索召回条数（加宽候选池供精排）")
     rag_rerank_top_k: int = Field(default=4, description="精排后保留条数")
+    rag_max_per_doc: int = Field(
+        default=1,
+        description="精排后同一 document_id 最多保留条数；0=不限制（抬 Precision/TermRecall）",
+        ge=0,
+    )
     rag_chunk_strategy: Literal[
         "auto", "fixed", "heading", "parent_child", "faq_qa", "clause", "table_row"
     ] = Field(
@@ -254,8 +314,8 @@ class Settings(BaseSettings):
 
     @property
     def project_root(self) -> Path:
-        """仓库根目录（backend 的上一级）。"""
-        return Path(__file__).resolve().parents[2]
+        """仓库根目录（backend/app/core → 上溯三级到 FitPilot）。"""
+        return Path(__file__).resolve().parents[3]
 
     @property
     def resolved_embedding_model(self) -> str:

@@ -1,4 +1,4 @@
-"""FitPilot RAG 评估：Hit@K / MRR / 引用率 / 时延 + JSON/Markdown 报告。"""
+"""FitPilot RAG 评估：Hit@K / Precision@K / TermRecall@K / MRR / nDCG / 时延。"""
 
 from __future__ import annotations
 
@@ -10,6 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from app.eval.progress import track_cases
 from app.rag.context import build_context
 from app.rag.retrieve import hybrid_retrieve
 
@@ -29,6 +30,10 @@ class CaseResult:
     citations: list[str] = field(default_factory=list)
     context_fallback_hit: bool = False
     ndcg_at_k: dict[str, float] = field(default_factory=dict)
+    precision_at_k: dict[str, float] = field(default_factory=dict)
+    term_recall_at_k: dict[str, float] = field(default_factory=dict)
+    anchor_chunk_at_k: dict[str, float] | None = None
+    anchor_doc_at_k: dict[str, float] | None = None
     error: str | None = None
 
 
@@ -43,6 +48,12 @@ class EvalReport:
     mrr: float
     ok: bool
     ndcg_at_k: dict[str, float] = field(default_factory=dict)
+    precision_at_k: dict[str, float] = field(default_factory=dict)
+    term_recall_at_k: dict[str, float] = field(default_factory=dict)
+    anchor_chunk_at_k: dict[str, float] = field(default_factory=dict)
+    anchor_doc_at_k: dict[str, float] = field(default_factory=dict)
+    anchor_chunk_cases: int = 0
+    anchor_doc_cases: int = 0
     fallback_hits: int = 0
     thresholds: dict[str, Any] = field(default_factory=dict)
 
@@ -59,9 +70,32 @@ class EvalReport:
         for k, v in sorted(self.hit_at_k.items(), key=lambda x: int(x[0].replace("hit@", "") or 0)):
             lines.append(f"{k}={v:.2%}")
         for k, v in sorted(
+            self.precision_at_k.items(), key=lambda x: int(x[0].replace("precision@", "") or 0)
+        ):
+            lines.append(f"{k}={v:.4f}")
+        for k, v in sorted(
+            self.term_recall_at_k.items(),
+            key=lambda x: int(x[0].replace("term_recall@", "") or 0),
+        ):
+            lines.append(f"{k}={v:.4f}")
+        for k, v in sorted(
             self.ndcg_at_k.items(), key=lambda x: int(x[0].replace("ndcg@", "") or 0)
         ):
             lines.append(f"{k}={v:.4f}")
+        if self.anchor_chunk_cases:
+            lines.append(f"anchor_chunk_cases={self.anchor_chunk_cases}")
+            for k, v in sorted(
+                self.anchor_chunk_at_k.items(),
+                key=lambda x: int(x[0].replace("anchor_chunk@", "") or 0),
+            ):
+                lines.append(f"{k}={v:.2%}")
+        if self.anchor_doc_cases:
+            lines.append(f"anchor_doc_cases={self.anchor_doc_cases}")
+            for k, v in sorted(
+                self.anchor_doc_at_k.items(),
+                key=lambda x: int(x[0].replace("anchor_doc@", "") or 0),
+            ):
+                lines.append(f"{k}={v:.2%}")
         lines.append(f"pass={self.ok}")
         for c in self.cases:
             status = "HIT" if c.hit else ("FALLBACK" if c.context_fallback_hit else "MISS")
@@ -94,12 +128,48 @@ class EvalReport:
         ]
         for k, v in sorted(self.hit_at_k.items(), key=lambda x: int(x[0].replace("hit@", "") or 0)):
             lines.append(f"| {k} | {v:.2%} |")
+        lines.extend(["", "## Precision@K", "", "| K | value |", "|---|------|"])
+        for k, v in sorted(
+            self.precision_at_k.items(), key=lambda x: int(x[0].replace("precision@", "") or 0)
+        ):
+            lines.append(f"| {k} | {v:.4f} |")
+        lines.extend(["", "## TermRecall@K", "", "| K | value |", "|---|------|"])
+        for k, v in sorted(
+            self.term_recall_at_k.items(),
+            key=lambda x: int(x[0].replace("term_recall@", "") or 0),
+        ):
+            lines.append(f"| {k} | {v:.4f} |")
         lines.extend(["", "## nDCG@K", "", "| K | value |", "|---|------|"])
         for k, v in sorted(
             self.ndcg_at_k.items(), key=lambda x: int(x[0].replace("ndcg@", "") or 0)
         ):
             lines.append(f"| {k} | {v:.4f} |")
-        lines.extend(["", "## Cases", "", "| id | hit | rank | latency_ms | query |", "|----|-----|------|------------|-------|"])
+        if self.anchor_chunk_cases or self.anchor_doc_cases:
+            lines.extend(
+                [
+                    "",
+                    "## Anchor Recall@K",
+                    "",
+                    f"- anchor_chunk_cases: **{self.anchor_chunk_cases}**",
+                    f"- anchor_doc_cases: **{self.anchor_doc_cases}**",
+                    "",
+                    "| metric | value |",
+                    "|--------|------|",
+                ]
+            )
+            for k, v in sorted(
+                self.anchor_chunk_at_k.items(),
+                key=lambda x: int(x[0].replace("anchor_chunk@", "") or 0),
+            ):
+                lines.append(f"| {k} | {v:.2%} |")
+            for k, v in sorted(
+                self.anchor_doc_at_k.items(),
+                key=lambda x: int(x[0].replace("anchor_doc@", "") or 0),
+            ):
+                lines.append(f"| {k} | {v:.2%} |")
+        lines.extend(
+            ["", "## Cases", "", "| id | hit | rank | latency_ms | query |", "|----|-----|------|------------|-------|"]
+        )
         for c in self.cases:
             rank = c.first_relevant_rank if c.first_relevant_rank is not None else ""
             q = c.query.replace("|", "/")[:48]
@@ -114,7 +184,13 @@ class EvalReport:
             "citation_rate": self.citation_rate,
             "avg_latency_ms": self.avg_latency_ms,
             "hit_at_k": self.hit_at_k,
+            "precision_at_k": self.precision_at_k,
+            "term_recall_at_k": self.term_recall_at_k,
             "ndcg_at_k": self.ndcg_at_k,
+            "anchor_chunk_at_k": self.anchor_chunk_at_k,
+            "anchor_doc_at_k": self.anchor_doc_at_k,
+            "anchor_chunk_cases": self.anchor_chunk_cases,
+            "anchor_doc_cases": self.anchor_doc_cases,
             "fallback_hits": self.fallback_hits,
             "mrr": self.mrr,
             "ok": self.ok,
@@ -196,6 +272,65 @@ def _first_relevant_rank(chunks: list[Any], expect_any: list[str]) -> tuple[int 
     return None, []
 
 
+def _is_relevant_chunk(chunk: Any, expect_any: list[str]) -> bool:
+    """chunk 是否相关：blob 命中任意 expect_any（与 Hit 判定一致）。"""
+    if not expect_any:
+        return True
+    blob = _chunk_blob(chunk)
+    return any(t and t in blob for t in expect_any)
+
+
+def _precision_at_k(chunks: list[Any], expect_any: list[str], k: int) -> float:
+    """Precision@K = top-K 中相关 chunk 数 / K。空检索返回 0。"""
+    if k <= 0:
+        return 0.0
+    top = list(chunks)[:k]
+    if not top:
+        return 0.0
+    relevant = sum(1 for ch in top if _is_relevant_chunk(ch, expect_any))
+    return relevant / float(k)
+
+
+def _term_recall_at_k(chunks: list[Any], expect_any: list[str], k: int) -> float:
+    """TermRecall@K = top-K 覆盖的 expect_any 词数 / |expect_any|。
+
+    expect_any 为空时：有结果记 1.0，无结果记 0.0。
+    """
+    top = list(chunks)[:k]
+    if not expect_any:
+        return 1.0 if top else 0.0
+    if not top:
+        return 0.0
+    blob = "\n".join(_chunk_blob(ch) for ch in top)
+    hit = sum(1 for t in expect_any if t and t in blob)
+    return hit / float(len(expect_any))
+
+
+def _chunk_id_of(chunk: Any) -> str:
+    if isinstance(chunk, dict):
+        return str(chunk.get("chunk_id") or "")
+    return str(getattr(chunk, "chunk_id", "") or "")
+
+
+def _document_id_of(chunk: Any) -> str:
+    if isinstance(chunk, dict):
+        return str(chunk.get("document_id") or "")
+    return str(getattr(chunk, "document_id", "") or "")
+
+
+def _anchor_hit_at_k(chunks: list[Any], case: dict[str, Any], k: int) -> dict[str, float | None]:
+    """有源标注时的锚点召回（0/1）；缺标注字段时对应值为 None。"""
+    top = list(chunks)[:k]
+    src_chunk = str(case.get("source_chunk_id") or "").strip()
+    src_doc = str(case.get("source_document_id") or "").strip()
+    out: dict[str, float | None] = {"chunk": None, "doc": None}
+    if src_chunk:
+        out["chunk"] = 1.0 if any(_chunk_id_of(ch) == src_chunk for ch in top) else 0.0
+    if src_doc:
+        out["doc"] = 1.0 if any(_document_id_of(ch) == src_doc for ch in top) else 0.0
+    return out
+
+
 def _graded_relevance(case: dict[str, Any], expect_any: list[str]) -> list[tuple[str, int]]:
     """提取分级 relevance：(关键词小写, 等级)。向后兼容：无 relevance 字段时由 expect_any 退化为二元。"""
     rel = case.get("relevance")
@@ -256,7 +391,12 @@ async def _eval_one(
     expect_any = sorted({t for t, _ in graded})
     t0 = time.perf_counter()
     try:
-        chunks = await hybrid_retrieve(query, top_k=top_k)
+        # 与 @K 对齐：勿被默认 rag_rerank_top_k=4 截断导致 Precision@5/TermRecall@5 虚低
+        chunks = await hybrid_retrieve(
+            query,
+            top_k=top_k,
+            rerank_top_k=max(k_list) if k_list else top_k,
+        )
         packed = build_context(chunks)
         latency = (time.perf_counter() - t0) * 1000
         rank, matched = _first_relevant_rank(list(chunks), expect_any)
@@ -270,6 +410,25 @@ async def _eval_one(
                 context_fallback = True
         hit_map = {f"hit@{k}": bool(rank is not None and rank <= k) for k in k_list}
         ndcg_map = {f"ndcg@{k}": round(ndcg_at_k(list(chunks), graded, k), 4) for k in k_list}
+        precision_map = {
+            f"precision@{k}": round(_precision_at_k(list(chunks), expect_any, k), 4) for k in k_list
+        }
+        term_recall_map = {
+            f"term_recall@{k}": round(_term_recall_at_k(list(chunks), expect_any, k), 4)
+            for k in k_list
+        }
+        anchor_chunk_map: dict[str, float] | None = None
+        anchor_doc_map: dict[str, float] | None = None
+        for k in k_list:
+            anchors = _anchor_hit_at_k(list(chunks), case, k)
+            if anchors["chunk"] is not None:
+                if anchor_chunk_map is None:
+                    anchor_chunk_map = {}
+                anchor_chunk_map[f"anchor_chunk@{k}"] = float(anchors["chunk"])
+            if anchors["doc"] is not None:
+                if anchor_doc_map is None:
+                    anchor_doc_map = {}
+                anchor_doc_map[f"anchor_doc@{k}"] = float(anchors["doc"])
         citations: list[str] = []
         for c in packed.get("citations") or []:
             if isinstance(c, dict):
@@ -299,6 +458,10 @@ async def _eval_one(
             citations=citations[:8],
             context_fallback_hit=context_fallback,
             ndcg_at_k=ndcg_map,
+            precision_at_k=precision_map,
+            term_recall_at_k=term_recall_map,
+            anchor_chunk_at_k=anchor_chunk_map,
+            anchor_doc_at_k=anchor_doc_map,
         )
     except Exception as exc:  # noqa: BLE001 — 评估容错
         latency = (time.perf_counter() - t0) * 1000
@@ -308,6 +471,8 @@ async def _eval_one(
             hit=False,
             hit_at_k={f"hit@{k}": False for k in k_list},
             ndcg_at_k={f"ndcg@{k}": 0.0 for k in k_list},
+            precision_at_k={f"precision@{k}": 0.0 for k in k_list},
+            term_recall_at_k={f"term_recall@{k}": 0.0 for k in k_list},
             latency_ms=latency,
             error=str(exc),
         )
@@ -350,7 +515,10 @@ def run_rag_eval(
     min_mrr = float(retrieval_th.get("mrr", 0.0) or 0.0)
 
     async def _run() -> list[CaseResult]:
-        return [await _eval_one(c, top_k=retrieve_k, k_list=k_list) for c in cases_raw]
+        out: list[CaseResult] = []
+        for c in track_cases(cases_raw, desc="retrieval"):
+            out.append(await _eval_one(c, top_k=retrieve_k, k_list=k_list))
+        return out
 
     results = asyncio.run(_run())
     n = len(results) or 1
@@ -366,6 +534,35 @@ def run_rag_eval(
         f"ndcg@{k}": sum(c.ndcg_at_k.get(f"ndcg@{k}", 0.0) for c in results) / n
         for k in k_list
     }
+    precision_k = {
+        f"precision@{k}": sum(c.precision_at_k.get(f"precision@{k}", 0.0) for c in results) / n
+        for k in k_list
+    }
+    term_recall_k = {
+        f"term_recall@{k}": sum(c.term_recall_at_k.get(f"term_recall@{k}", 0.0) for c in results)
+        / n
+        for k in k_list
+    }
+    anchor_chunk_cases = [c for c in results if c.anchor_chunk_at_k]
+    anchor_doc_cases = [c for c in results if c.anchor_doc_at_k]
+    n_ac = len(anchor_chunk_cases) or 1
+    n_ad = len(anchor_doc_cases) or 1
+    anchor_chunk_k = {
+        f"anchor_chunk@{k}": (
+            sum(c.anchor_chunk_at_k.get(f"anchor_chunk@{k}", 0.0) for c in anchor_chunk_cases) / n_ac
+            if anchor_chunk_cases
+            else 0.0
+        )
+        for k in k_list
+    }
+    anchor_doc_k = {
+        f"anchor_doc@{k}": (
+            sum(c.anchor_doc_at_k.get(f"anchor_doc@{k}", 0.0) for c in anchor_doc_cases) / n_ad
+            if anchor_doc_cases
+            else 0.0
+        )
+        for k in k_list
+    }
 
     ok = hit_rate >= threshold
     if min_mrr > 0:
@@ -377,6 +574,12 @@ def run_rag_eval(
         key = f"recall@{k}"
         if key in retrieval_th:
             ok = ok and hit_at_k.get(f"hit@{k}", 0.0) >= float(retrieval_th[key])
+    min_precision_at_5 = float(retrieval_th.get("precision_at_5", 0.0) or 0.0)
+    if min_precision_at_5 > 0:
+        ok = ok and precision_k.get("precision@5", 0.0) >= min_precision_at_5
+    min_term_recall_at_5 = float(retrieval_th.get("term_recall_at_5", 0.0) or 0.0)
+    if min_term_recall_at_5 > 0:
+        ok = ok and term_recall_k.get("term_recall@5", 0.0) >= min_term_recall_at_5
 
     report = EvalReport(
         suite=str(suite_path),
@@ -386,6 +589,12 @@ def run_rag_eval(
         avg_latency_ms=avg_latency,
         hit_at_k=hit_at_k,
         ndcg_at_k=ndcg_k,
+        precision_at_k=precision_k,
+        term_recall_at_k=term_recall_k,
+        anchor_chunk_at_k=anchor_chunk_k if anchor_chunk_cases else {},
+        anchor_doc_at_k=anchor_doc_k if anchor_doc_cases else {},
+        anchor_chunk_cases=len(anchor_chunk_cases),
+        anchor_doc_cases=len(anchor_doc_cases),
         fallback_hits=fallback_hits,
         mrr=mrr,
         ok=ok,
@@ -393,6 +602,8 @@ def run_rag_eval(
             "min_hit_rate": threshold,
             "min_mrr": min_mrr,
             "min_ndcg": min_ndcg,
+            "min_precision_at_5": min_precision_at_5,
+            "min_term_recall_at_5": min_term_recall_at_5,
             "retrieval": retrieval_th,
         },
     )

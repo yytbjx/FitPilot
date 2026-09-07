@@ -20,6 +20,8 @@ _SKIP_DIR_NAMES = {
     "venv",
     ".idea",
     ".vscode",
+    # 原始网页快照仅作溯源；入库使用 curated/guidelines 清洗后的 Markdown，避免与 HTML 重复切块
+    "public_web",
 }
 
 

@@ -40,9 +40,9 @@ _doc.zip
 _doc_text.txt
 _doc_text_utf8.txt
 
-# 模型缓存（体积大，本地自行下载）
+# 模型缓存（体积大，本地自行下载；仅忽略仓库根目录 /models，勿误伤 backend/app/models ORM）
 .cache/
-models/
+/models/
 **/huggingface/
 
 # 数据卷备份

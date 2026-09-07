@@ -150,6 +150,33 @@ async def run_agent_with_persistence(
                     payload=payload,
                     summary=summarize_session(payload, reply=result.get("reply")),
                 )
+                # 分层对话记忆：归档本轮 user/assistant（摘要+向量）
+                if get_settings().conversation_memory_enabled and not resume:
+                    from app.agents.memory.conversation_memory import append_message
+
+                    try:
+                        await append_message(
+                            session,
+                            user_id=user_id,
+                            session_id=session_id,
+                            role="user",
+                            content=message,
+                            task_id=task_id,
+                            extra={"intents": result.get("intents") or []},
+                        )
+                        reply_text = (result.get("reply") or "").strip()
+                        if reply_text:
+                            await append_message(
+                                session,
+                                user_id=user_id,
+                                session_id=session_id,
+                                role="assistant",
+                                content=reply_text,
+                                task_id=task_id,
+                                extra={"final_status": result.get("final_status")},
+                            )
+                    except Exception:  # noqa: BLE001 — 记忆写入失败不阻断任务终态
+                        pass
     except TokenBudgetExceeded as exc:
         fail_ev = {"event": "failed", "code": "TOKEN_BUDGET_EXCEEDED", "message": str(exc)}
         async with factory() as session:

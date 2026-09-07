@@ -95,7 +95,9 @@ class PostgresCheckpointSaver(BaseCheckpointSaver):
             )
 
             if row:
-
+                # LangGraph 约定：缺省 channel 存 ("empty", b"")，加载时跳过
+                if row.blob_type == "empty":
+                    continue
                 channel_values[channel] = self.serde.loads_typed((row.blob_type, row.blob_data))
 
         return channel_values
@@ -138,13 +140,12 @@ class PostgresCheckpointSaver(BaseCheckpointSaver):
 
         ).all()
 
-        return [
-
-            (r.task_id, r.channel, self.serde.loads_typed((r.blob_type, r.blob_data)))
-
-            for r in rows
-
-        ]
+        out: list[tuple[str, str, Any]] = []
+        for r in rows:
+            if r.blob_type == "empty":
+                continue
+            out.append((r.task_id, r.channel, self.serde.loads_typed((r.blob_type, r.blob_data))))
+        return out
 
 
 

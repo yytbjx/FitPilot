@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from app.eval.common import PassRateEvalResult
+from app.eval.progress import track_cases
 from app.services.diet_plan_validator import validate_diet_plan
 from app.services.meal_optimizer import meal_macro_totals, optimize_meals
 
@@ -32,7 +33,7 @@ def run_meal_eval(suite_path: Path) -> MealEvalResult:
         max_protein_error_pct=float(raw.get("max_protein_error_pct") or 0.15),
         min_pass_rate=float(raw.get("min_pass_rate") or 0.8),
     )
-    for case in raw.get("cases") or []:
+    for case in track_cases(list(raw.get("cases") or []), desc="meal"):
         foods = case.get("foods") or []
         targets = case.get("targets") or {}
         profile = case.get("profile") or {}

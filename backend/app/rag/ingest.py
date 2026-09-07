@@ -87,7 +87,11 @@ def delete_document(document_id: str) -> dict:
 
 
 async def ingest_paths(
-    paths: Iterable[Path], *, version_id: str = "v1", batch_size: int = 32
+    paths: Iterable[Path],
+    *,
+    version_id: str = "v1",
+    batch_size: int = 32,
+    rebuild_bm25: bool = False,
 ) -> dict:
     settings = get_settings()
     svc = get_qdrant_service()
@@ -125,8 +129,8 @@ async def ingest_paths(
         }
 
     # 幂等：先按 document_id 清掉旧 chunk，避免文件改短后残留
-    bm25 = get_bm25_index()
-    merged: dict[str, dict] = dict(bm25.payloads)
+    # rebuild_bm25=True（配合 --reset）时不从旧索引合并，避免残留 exercise_* 等历史噪声
+    merged: dict[str, dict] = {} if rebuild_bm25 else dict(get_bm25_index().payloads)
     docs = sorted({c.document_id for c in all_chunks})
     purged = 0
     for doc_id in docs:
@@ -168,9 +172,11 @@ async def ingest_paths(
     }
 
 
-async def ingest_directory(root: Path, *, version_id: str = "v1") -> dict:
+async def ingest_directory(
+    root: Path, *, version_id: str = "v1", rebuild_bm25: bool = False
+) -> dict:
     files = iter_source_files(root)
-    return await ingest_paths(files, version_id=version_id)
+    return await ingest_paths(files, version_id=version_id, rebuild_bm25=rebuild_bm25)
 
 
 async def ingest_text_document(

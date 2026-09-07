@@ -8,6 +8,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from app.eval.progress import track_cases
 from app.services.ollama_client import get_ollama_client
 
 
@@ -63,7 +64,7 @@ async def run_generation_online_eval_async(suite_path: Path) -> GenerationOnline
     client = get_ollama_client()
     result.used_llm = True
 
-    for case in raw.get("cases") or []:
+    for case in track_cases(list(raw.get("cases") or []), desc="generation_online"):
         question = str(case.get("question") or "")
         context = str(case.get("context") or "")
         answer = str(case.get("answer") or "")

@@ -1,5 +1,10 @@
-# FitPilot 多层评估配置（唯一权威配置；JSON 版已于迭代 3 删除）
+# FitPilot 评估配置（唯一权威；JSON 版已删除）
 # 修改后无需重启服务；`fitpilot eval` / `eval-all` / `eval-gate` 每次加载。
+#
+# 评测集规模（与 suites 路径配合）：
+#   --suite-set large  → evals/large/*.json     （大评测总集，默认）
+#   --suite-set small  → evals/fewshot/*.json   （小评测总集 / CI 建议）
+# 详见 evals/README.md
 
 modules:
   parsing:
@@ -35,22 +40,26 @@ modules:
   safety:
     enabled: true
     description: "风险识别 / 周联合调整"
+  context_kv:
+    enabled: true
+    description: "长上下文占用减少 / Recall@Budget / LCP / 三层路由 / DAG 编排（离线）"
 
 suites:
-  parsing: "evals/parsing_cases.json"
-  retrieval: "evals/golden_rag.json"
-  retrieval_offline: "evals/golden_rag_offline.json"
-  no_answer: "evals/no_answer_cases.json"
-  no_answer_offline: "evals/golden_rag_offline.json"
-  generation: "evals/generation_cases.json"
-  generation_online: "evals/generation_online_cases.json"
-  agent: "evals/agent_routing_cases.json"
-  plan: "evals/plan_cases.json"
-  meal: "evals/meal_cases.json"
-  safety: "evals/safety_cases.json"
+  parsing: "evals/large/parsing_cases.json"
+  retrieval: "evals/large/golden_rag.json"
+  retrieval_offline: "evals/large/golden_rag_offline.json"
+  no_answer: "evals/large/no_answer_cases.json"
+  no_answer_offline: "evals/large/golden_rag_offline.json"
+  generation: "evals/large/generation_cases.json"
+  generation_online: "evals/large/generation_online_cases.json"
+  agent: "evals/large/agent_routing_cases.json"
+  plan: "evals/large/plan_cases.json"
+  meal: "evals/large/meal_cases.json"
+  safety: "evals/large/safety_cases.json"
+  context_kv: "evals/large/context_kv_cases.json"
 
 parameters:
-  dataset_path: "evals/golden_rag.json"
+  dataset_path: "evals/large/golden_rag.json"
   dataset_limit: null
   top_k_list: [1, 3, 5]
   top_k: 4
@@ -62,10 +71,19 @@ thresholds:
     # 迭代 3 收紧：hit_rate 0.5→0.7，mrr 0→0.3；严格口径（context 兜底命中单独计数）
     hit_rate: 0.7
     mrr: 0.3
+    # Precision@K / TermRecall@K：默认 0=不作为硬门禁（观察目标约 precision@5≥0.70 / term_recall@5≥0.80）
+    precision_at_5: 0.0
+    term_recall_at_5: 0.0
+    # 锚点子集观察（suite v4 清理后看基线；暂不硬 fail）
+    # anchor_doc_at_5: 0.0
+    # anchor_chunk_at_5: 0.0
   retrieval_offline:
     # 离线确定性门禁实测：hit_rate=1.0 / mrr≈0.96（fixture 语料，阈值留有余量）
     hit_rate: 0.7
     mrr: 0.3
+    precision_at_5: 0.0
+    term_recall_at_5: 0.0
+    # 观察目标同 online：precision@5≥0.70 / term_recall@5≥0.80（默认 0 不 fail CI）
   no_answer_offline:
     # 离线实测 recall=1.0 / precision=1.0
     min_no_answer_recall: 0.7
@@ -88,3 +106,9 @@ thresholds:
   no_answer:
     min_no_answer_recall: 0.7
     min_no_answer_precision: 0.6
+  context_kv:
+    min_reduction: 0.1
+    min_recall_at_budget: 0.6
+    min_lcp: 0.9
+    min_route_accuracy: 0.8
+    min_orchestrator_pass: 0.75

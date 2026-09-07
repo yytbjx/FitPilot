@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from app.eval.progress import track_cases
 from app.graphs.fitness_graph import classify_intent, is_complex_task
 
 
@@ -76,7 +77,7 @@ def run_agent_eval(suite_path: Path) -> AgentEvalResult:
     min_acc = float(raw.get("min_accuracy") or 0.85)
     min_f1 = float(raw.get("min_macro_f1") or 0.8)
     result = AgentEvalResult(min_accuracy=min_acc, min_macro_f1=min_f1)
-    for case in raw.get("cases") or []:
+    for case in track_cases(list(raw.get("cases") or []), desc="agent"):
         text = str(case.get("message") or "")
         expect_intent = str(case.get("expect_intent") or "")
         expect_complex = case.get("expect_complex")

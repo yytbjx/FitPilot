@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from app.eval.common import PassRateEvalResult
+from app.eval.progress import track_cases
 from app.services.weekly_adjustment import build_weekly_adjustment, diagnose_week
 from app.tools.domain import check_risk
 
@@ -21,7 +22,7 @@ class SafetyEvalResult(PassRateEvalResult):
 def run_safety_eval(suite_path: Path) -> SafetyEvalResult:
     raw = json.loads(suite_path.read_text(encoding="utf-8"))
     result = SafetyEvalResult(min_pass_rate=float(raw.get("min_pass_rate") or 0.9))
-    for case in raw.get("cases") or []:
+    for case in track_cases(list(raw.get("cases") or []), desc="safety"):
         kind = str(case.get("kind") or "risk")
         ok = False
         detail: dict[str, Any] = {}

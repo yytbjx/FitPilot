@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from app.eval.common import PassRateEvalResult
+from app.eval.progress import track_cases
 
 
 @dataclass
@@ -125,7 +126,7 @@ async def _eval_e2e_retrieve(case: dict[str, Any]) -> dict[str, Any]:
 async def run_generation_eval_async(suite_path: Path) -> GenerationEvalResult:
     raw = json.loads(suite_path.read_text(encoding="utf-8"))
     result = GenerationEvalResult(min_pass_rate=float(raw.get("min_pass_rate") or 0.8))
-    for case in raw.get("cases") or []:
+    for case in track_cases(list(raw.get("cases") or []), desc="generation"):
         mode = str(case.get("mode") or "static").lower()
         if mode in {"e2e", "e2e_retrieve"}:
             row = await _eval_e2e_retrieve(case)

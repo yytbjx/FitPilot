@@ -163,41 +163,169 @@ async def run_plan_preview_workflow(state: FitnessAgentState, *, db: AsyncSessio
 
 
 async def run_complex_plan_workflow(state: FitnessAgentState, *, db: AsyncSession) -> dict[str, Any]:
-    """复杂计划预览：档案 → 近 14 天日志 → 周联合调整预览。"""
+    """复杂计划预览：ECD+DAG 编排（档案∥日志 → 计划 → 对抗审查 → 审批）。"""
     if state.get("risk_level") == "high":
         from app.agents.workflows.safety_workflow import run_safety_workflow
 
         return await run_safety_workflow(state)
 
+    from app.agents.orchestration import (
+        DagNode,
+        DagPlan,
+        build_dag_from_ecd,
+        extract_ecd,
+        run_dag,
+    )
+    from app.core.config import get_settings
+
     user_id = state["user_id"]
     request_id = state.get("trace_id")
+    text = state.get("original_request", "")
+    intent = (state.get("intents") or ["plan_adjust"])[0]
+    settings = get_settings()
 
-    assert_allowed_without_approval("get_user_profile_data")
-    profile = await get_user_profile_data(db, user_id)
+    # 未开启编排器时保持原线性路径
+    if not settings.orchestrator_enabled:
+        assert_allowed_without_approval("get_user_profile_data")
+        profile = await get_user_profile_data(db, user_id)
+        assert_allowed_without_approval("recent_logs")
+        logs = await recent_logs(db, user_id, days=14)
+        assert_allowed_without_approval("weekly_adjust_preview")
+        out = await weekly_adjust_preview(db, user_id, profile, request_id=request_id)
+        steps = [
+            {"tool": "get_user_profile_data", "result": _summarize(profile), "status": "ok"},
+            {"tool": "recent_logs", "result": _summarize(logs), "status": "ok"},
+            {
+                "tool": "weekly_adjust_preview",
+                "result": _summarize(out),
+                "status": "ok" if out.get("ok") else "error",
+            },
+        ]
+        return build_preview_update(
+            out,
+            tool="weekly_adjust_preview",
+            steps=steps,
+            profile=profile if out.get("ok") else None,
+            logs=logs,
+            task_id=state.get("task_id"),
+        )
 
-    assert_allowed_without_approval("recent_logs")
-    logs = await recent_logs(db, user_id, days=14)
+    ecd = extract_ecd(text, intent=intent)  # type: ignore[arg-type]
+    # 强制复杂计划最小 DAG
+    if not any(a == "plan_generate" or b == "plan_generate" for a, b in ecd.dependencies):
+        ecd.dependencies = [
+            ("extract_profile", "fetch_logs"),
+            ("fetch_logs", "plan_generate"),
+            ("extract_profile", "plan_generate"),
+            ("plan_generate", "consensus_check"),
+            ("consensus_check", "human_approval"),
+        ]
+    dag = build_dag_from_ecd(ecd, intent=intent)  # type: ignore[arg-type]
+    lookback = int(ecd.constraints.get("lookback_days") or 14)
+    shared: dict[str, Any] = {"profile": None, "logs": None, "plan_out": None}
 
-    assert_allowed_without_approval("weekly_adjust_preview")
-    out = await weekly_adjust_preview(db, user_id, profile, request_id=request_id)
-    emit_progress(
-        stage="tool_executor",
-        title="工具完成：weekly_adjust_preview",
-        detail="complex_preview",
-        tool="weekly_adjust_preview",
-        status="done",
-    )
+    async def h_profile(node: DagNode, plan: DagPlan, ctx: dict[str, Any]) -> dict[str, Any]:
+        assert_allowed_without_approval("get_user_profile_data")
+        profile = await get_user_profile_data(db, user_id)
+        shared["profile"] = profile
+        emit_progress(
+            stage="orchestrator",
+            title="节点完成：extract_profile",
+            detail="personal_agent",
+            tool="get_user_profile_data",
+            status="done",
+        )
+        return {"ok": True, "profile": profile, "confidence": 0.95}
+
+    async def h_logs(node: DagNode, plan: DagPlan, ctx: dict[str, Any]) -> dict[str, Any]:
+        assert_allowed_without_approval("recent_logs")
+        logs = await recent_logs(db, user_id, days=lookback)
+        shared["logs"] = logs
+        emit_progress(
+            stage="orchestrator",
+            title="节点完成：fetch_logs",
+            detail=f"days={lookback}",
+            tool="recent_logs",
+            status="done",
+        )
+        return {"ok": True, **_summarize(logs), "confidence": 0.9}
+
+    async def h_plan(node: DagNode, plan: DagPlan, ctx: dict[str, Any]) -> dict[str, Any]:
+        profile = shared.get("profile") or await get_user_profile_data(db, user_id)
+        shared["profile"] = profile
+        assert_allowed_without_approval("weekly_adjust_preview")
+        out = await weekly_adjust_preview(db, user_id, profile, request_id=request_id)
+        shared["plan_out"] = out
+        emit_progress(
+            stage="orchestrator",
+            title="节点完成：plan_generate",
+            detail="plan_agent",
+            tool="weekly_adjust_preview",
+            status="done",
+        )
+        return {
+            "ok": bool(out.get("ok")),
+            **_summarize(out),
+            "weight_kg": (profile or {}).get("weight_kg"),
+            "confidence": 0.85 if out.get("ok") else 0.2,
+            "error": None if out.get("ok") else "plan validation failed",
+        }
+
+    async def h_consensus(node: DagNode, plan: DagPlan, ctx: dict[str, Any]) -> dict[str, Any]:
+        # 真实审查在 run_dag 末尾 adversarial_review；此处做节点级占位通过
+        return {"ok": True, "confidence": 0.8, "role": "reviewer"}
+
+    async def h_approval(node: DagNode, plan: DagPlan, ctx: dict[str, Any]) -> dict[str, Any]:
+        return {"ok": True, "confidence": 1.0, "role": "approval_gate", "pending": True}
+
+    async def h_knowledge(node: DagNode, plan: DagPlan, ctx: dict[str, Any]) -> dict[str, Any]:
+        # 可选知识节点：复杂计划默认不阻断
+        return {"ok": True, "confidence": 0.6, "skipped": True}
+
+    async def h_default(node: DagNode, plan: DagPlan, ctx: dict[str, Any]) -> dict[str, Any]:
+        return {"ok": True, "confidence": 0.5, "noop": True}
+
+    handlers = {
+        "extract_profile": h_profile,
+        "fetch_logs": h_logs,
+        "plan_generate": h_plan,
+        "consensus_check": h_consensus,
+        "human_approval": h_approval,
+        "knowledge_retrieve": h_knowledge,
+        "default": h_default,
+    }
+
+    orch = await run_dag(dag, handlers=handlers, context={"user_profile": shared.get("profile") or {}})
+    out = shared.get("plan_out") or {"ok": False, "validation": {"errors": ["编排未产出计划"]}}
+    profile = shared.get("profile")
+    logs = shared.get("logs") or {}
 
     steps = [
-        {"tool": "get_user_profile_data", "result": _summarize(profile), "status": "ok"},
+        {"tool": "dag_orchestrator", "result": {"ok": orch.get("ok"), "replans": orch.get("replans"), "failed": orch.get("failed")}},
+        {"tool": "get_user_profile_data", "result": _summarize(profile or {}), "status": "ok" if profile else "error"},
         {"tool": "recent_logs", "result": _summarize(logs), "status": "ok"},
         {
             "tool": "weekly_adjust_preview",
             "result": _summarize(out),
             "status": "ok" if out.get("ok") else "error",
         },
+        {"tool": "adversarial_review", "result": (orch.get("reviews") or [{}])[-1]},
     ]
-    return build_preview_update(
+
+    if not orch.get("ok") and not out.get("ok"):
+        return {
+            "reply": "复杂任务编排失败："
+            + ("；".join(str(x.get("error")) for x in (orch.get("failed") or []) if x.get("error")) or "未知错误"),
+            "citations": [],
+            "final_status": "validation_failed",
+            "pending_actions": None,
+            "requires_confirmation": False,
+            "orchestration": orch,
+            "events": [{"event": "completed", "status": "orchestration_failed", "orchestration": orch}],
+            "tool_results": steps,
+        }
+
+    update = build_preview_update(
         out,
         tool="weekly_adjust_preview",
         steps=steps,
@@ -205,6 +333,10 @@ async def run_complex_plan_workflow(state: FitnessAgentState, *, db: AsyncSessio
         logs=logs,
         task_id=state.get("task_id"),
     )
+    update["orchestration"] = orch
+    update["entities"] = ecd.entities
+    update["constraints"] = ecd.constraints
+    return update
 
 
 async def run_plan_commit_workflow(state: FitnessAgentState, *, db: AsyncSession) -> dict[str, Any]:

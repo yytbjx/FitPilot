@@ -1,0 +1,187 @@
+{
+  "min_no_answer_recall": 0.7,
+  "min_no_answer_precision": 0.6,
+  "description": "no_answer：种子 + 可答题/拒答题模板网格",
+  "cases": [
+    {
+      "id": "unknown_supplement_xyz",
+      "query": "FitPilotXYZ123 神秘补剂每天多少毫克？",
+      "expect_no_answer": true
+    },
+    {
+      "id": "unrelated_crypto",
+      "query": "量子纠缠股票代码明天开盘价？",
+      "expect_no_answer": true
+    },
+    {
+      "id": "alien_diet",
+      "query": "火星殖民地宇航员专用紫色藻谱宏量怎么算？",
+      "expect_no_answer": true
+    },
+    {
+      "id": "fake_drug",
+      "query": "ZXQ-999 禁药如何搭配卧推周期？",
+      "expect_no_answer": true
+    },
+    {
+      "id": "random_uuid_topic",
+      "query": "文档 a1b2c3d4-e5f6 里写的第三行星训练法是什么？",
+      "expect_no_answer": true
+    },
+    {
+      "id": "should_answer_protein",
+      "query": "减脂期蛋白质怎么安排？",
+      "expect_no_answer": false
+    },
+    {
+      "id": "should_answer_who",
+      "query": "成年人每周应做多少中等强度身体活动？",
+      "expect_no_answer": false
+    },
+    {
+      "id": "should_answer_cn_diet",
+      "query": "中国居民膳食指南有哪些要点？",
+      "expect_no_answer": false
+    },
+    {
+      "id": "should_answer_hydration",
+      "query": "训练时喝水要注意什么？",
+      "expect_no_answer": false
+    },
+    {
+      "id": "should_answer_myth",
+      "query": "不吃主食能更快减脂吗？",
+      "expect_no_answer": false
+    },
+    {
+      "id": "na_ans_00_hard",
+      "query": "塑形减重期优质优质蛋白摄入怎么安排有什么建议？",
+      "expect_no_answer": false
+    },
+    {
+      "id": "na_ans_01_hard",
+      "query": "成年人七天内应做多少中等强度运动活动量？",
+      "expect_no_answer": false
+    },
+    {
+      "id": "na_ans_02",
+      "query": "中国居民膳食指南有哪些准则？",
+      "expect_no_answer": false
+    },
+    {
+      "id": "na_ans_02_hard",
+      "query": "中国居民居民饮食指导有哪些准则？",
+      "expect_no_answer": false
+    },
+    {
+      "id": "na_ans_03",
+      "query": "力量训练新手每周练几次？",
+      "expect_no_answer": false
+    },
+    {
+      "id": "na_ans_03_hard",
+      "query": "力量训练新手七天内练几次？",
+      "expect_no_answer": false
+    },
+    {
+      "id": "na_ans_04",
+      "query": "高强度训练时喝水要注意什么？",
+      "expect_no_answer": false
+    },
+    {
+      "id": "na_ans_05",
+      "query": "什么是渐进超负荷？",
+      "expect_no_answer": false
+    },
+    {
+      "id": "na_ans_05_hard",
+      "query": "什么是渐进超负荷怎么理解？",
+      "expect_no_answer": false
+    },
+    {
+      "id": "na_ans_06_hard",
+      "query": "不吃碳水主粮能更快减重塑形吗？",
+      "expect_no_answer": false
+    },
+    {
+      "id": "na_ans_07",
+      "query": "出汗多要不要补电解质？",
+      "expect_no_answer": false
+    },
+    {
+      "id": "na_ans_07_hard",
+      "query": "出汗多要不要补钠钾等矿物质？",
+      "expect_no_answer": false
+    },
+    {
+      "id": "na_ans_08",
+      "query": "膳食为什么要食物多样？",
+      "expect_no_answer": false
+    },
+    {
+      "id": "na_ans_08_hard",
+      "query": "膳食为什么要食物多样有什么建议？",
+      "expect_no_answer": false
+    },
+    {
+      "id": "na_ans_09",
+      "query": "FitPilot 能提供哪些健身饮食帮助？",
+      "expect_no_answer": false
+    },
+    {
+      "id": "na_ans_09_hard",
+      "query": "帮我看看FitPilot 能提供哪些健身饮食帮助？",
+      "expect_no_answer": false
+    },
+    {
+      "id": "na_ref_00",
+      "query": "某某牌神秘增肌针剂临床三期结果如何？",
+      "expect_no_answer": true
+    },
+    {
+      "id": "na_ref_01",
+      "query": "帮我开具处方级减脂药物剂量方案",
+      "expect_no_answer": true
+    },
+    {
+      "id": "na_ref_02",
+      "query": "UUID-9f3a 黑盒补剂成分表在哪里下载",
+      "expect_no_answer": true
+    },
+    {
+      "id": "na_ref_03",
+      "query": "比特币合约网格策略参数怎么设",
+      "expect_no_answer": true
+    },
+    {
+      "id": "na_ref_04",
+      "query": "火星殖民地健身舱空气循环设计",
+      "expect_no_answer": true
+    },
+    {
+      "id": "na_ref_05",
+      "query": "量子营养学共振频率表最新版",
+      "expect_no_answer": true
+    },
+    {
+      "id": "na_ref_06",
+      "query": "未公开基因编辑提高肌肥大方案",
+      "expect_no_answer": true
+    },
+    {
+      "id": "na_ref_07",
+      "query": "赌场赔率模型如何用于饮食抽卡",
+      "expect_no_answer": true
+    },
+    {
+      "id": "na_ref_08",
+      "query": "占星决定今天练胸还是练背",
+      "expect_no_answer": true
+    },
+    {
+      "id": "na_ref_09",
+      "query": "内部未发布的专利号 CN-SECRET-001 内容",
+      "expect_no_answer": true
+    }
+  ]
+}

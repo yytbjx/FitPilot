@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from app.eval.progress import track_cases
 from app.rag.context import build_context
 from app.rag.retrieve import hybrid_retrieve
 
@@ -53,7 +54,7 @@ async def run_no_answer_eval_async(suite_path: Path) -> NoAnswerEvalResult:
     min_recall = float(raw.get("min_no_answer_recall") or 0.8)
     min_precision = float(raw.get("min_no_answer_precision") or 0.7)
     result = NoAnswerEvalResult(min_recall=min_recall, min_precision=min_precision)
-    for case in raw.get("cases") or []:
+    for case in track_cases(list(raw.get("cases") or []), desc="no_answer"):
         q = str(case.get("query") or "")
         expect = bool(case.get("expect_no_answer", True))
         chunks = await hybrid_retrieve(q, top_k=4)

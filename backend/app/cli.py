@@ -118,30 +118,60 @@ def restore_cmd(backup_dir: Path = typer.Argument(..., help="备份目录")) -> 
 
 @cli.command("eval-no-answer")
 def eval_no_answer(
-    suite: Path = typer.Option(
-        REPO_ROOT / "evals" / "no_answer_cases.json",
+    suite_set: str = typer.Option(
+        "large",
+        "--suite-set",
+        help="评测集规模：large（evals/large/）| small（evals/fewshot/）",
+    ),
+    suite: Path | None = typer.Option(
+        None,
         "--suite",
-        help="无答案评测集",
+        help="显式指定评测集 JSON（优先于 --suite-set）",
+    ),
+    device: str = typer.Option(
+        "auto",
+        "--device",
+        help="评测设备：auto|cpu|cuda（仅本进程；默认 auto）",
     ),
 ) -> None:
-    from app.eval.no_answer_eval import run_no_answer_eval
+    from typing import cast
 
-    result = run_no_answer_eval(suite)
+    from app.eval.device_accel import EvalDeviceMode, apply_eval_device_accel
+    from app.eval.no_answer_eval import run_no_answer_eval
+    from app.eval.suite_set import resolve_suite_path
+
+    mode = device.strip().lower()
+    if mode not in {"auto", "cpu", "cuda"}:
+        raise typer.BadParameter("--device 仅支持 auto|cpu|cuda")
+    plan = apply_eval_device_accel(cast(EvalDeviceMode, mode))
+    typer.echo(plan.summary_text())
+
+    path = suite or resolve_suite_path(REPO_ROOT, suite_set, "no_answer_cases.json")
+    typer.echo(f"suite_set={suite_set} suite={path}")
+    result = run_no_answer_eval(path)
     typer.echo(result.summary_text())
     raise SystemExit(0 if result.ok else 1)
 
 
 @cli.command("eval-agent")
 def eval_agent(
-    suite: Path = typer.Option(
-        REPO_ROOT / "evals" / "agent_routing_cases.json",
+    suite_set: str = typer.Option(
+        "large",
+        "--suite-set",
+        help="评测集规模：large（evals/large/）| small（evals/fewshot/）",
+    ),
+    suite: Path | None = typer.Option(
+        None,
         "--suite",
-        help="Agent 路由评测集",
+        help="显式指定评测集 JSON（优先于 --suite-set）",
     ),
 ) -> None:
     from app.eval.agent_eval import run_agent_eval
+    from app.eval.suite_set import resolve_suite_path
 
-    result = run_agent_eval(suite)
+    path = suite or resolve_suite_path(REPO_ROOT, suite_set, "agent_routing_cases.json")
+    typer.echo(f"suite_set={suite_set} suite={path}")
+    result = run_agent_eval(path)
     typer.echo(result.summary_text())
     raise SystemExit(0 if result.ok else 1)
 
@@ -153,6 +183,11 @@ def eval_gate(
         "--config",
         help="评估配置（使用 thresholds 做门禁）",
     ),
+    suite_set: str = typer.Option(
+        "large",
+        "--suite-set",
+        help="评测集规模：large|small（CI 建议 small）",
+    ),
     out: Path | None = typer.Option(None, help="JSON 报告路径"),
 ) -> None:
     """CI 离线门禁：parsing / retrieval_offline / no_answer_offline / agent / plan / meal / safety。"""
@@ -160,7 +195,8 @@ def eval_gate(
 
     from app.eval.ci_gate import run_ci_gates
 
-    report = run_ci_gates(config)
+    typer.echo(f"suite_set={suite_set}")
+    report = run_ci_gates(config, suite_set=suite_set)
     typer.echo(report.summary_text())
     if out:
         out.parent.mkdir(parents=True, exist_ok=True)
@@ -175,15 +211,34 @@ def eval_all(
         "--config",
         help="多层评估配置（YAML）",
     ),
+    suite_set: str = typer.Option(
+        "large",
+        "--suite-set",
+        help="评测集规模：large（evals/large 大总集）| small（evals/fewshot 小总集）",
+    ),
     out: Path | None = typer.Option(None, help="JSON 报告路径"),
     md: Path | None = typer.Option(None, help="Markdown 报告路径"),
     persist: bool = typer.Option(False, "--persist", help="写入 evaluation_runs 表"),
     online: bool = typer.Option(False, "--online", help="启用 LLM-as-judge 在线评估"),
+    device: str = typer.Option(
+        "auto",
+        "--device",
+        help="在线检索相关层设备：auto|cpu|cuda（仅本进程；默认 auto）",
+    ),
 ) -> None:
     """运行多层评估编排（解析/检索/拒答/生成/Agent/计划/食谱/安全）。"""
     import asyncio
+    from typing import cast
 
+    from app.eval.device_accel import EvalDeviceMode, apply_eval_device_accel
     from app.eval.full_eval import run_full_eval
+
+    mode = device.strip().lower()
+    if mode not in {"auto", "cpu", "cuda"}:
+        raise typer.BadParameter("--device 仅支持 auto|cpu|cuda")
+    plan = apply_eval_device_accel(cast(EvalDeviceMode, mode))
+    typer.echo(plan.summary_text())
+    typer.echo(f"suite_set={suite_set}")
 
     if online:
         import yaml as _yaml
@@ -205,6 +260,7 @@ def eval_all(
         repo_root=REPO_ROOT,
         out_path=out_path,
         md_path=md_path,
+        suite_set=suite_set,
     )
     typer.echo(report.summary_text())
     typer.echo(f"report: {out_path}")
@@ -449,10 +505,15 @@ def chunk_compare(
 
 @cli.command("eval")
 def eval_cmd(
-    suite: Path = typer.Option(
-        REPO_ROOT / "evals" / "golden_rag.json",
+    suite_set: str = typer.Option(
+        "large",
+        "--suite-set",
+        help="评测集规模：large（evals/large/）| small（evals/fewshot/）",
+    ),
+    suite: Path | None = typer.Option(
+        None,
         "--suite",
-        help="评测集 JSON",
+        help="显式指定评测集 JSON（优先于 --suite-set）",
     ),
     top_k: int = typer.Option(4, help="检索 top_k（与 Hit@K 取更大）"),
     out: Path | None = typer.Option(None, help="结果输出 JSON 路径"),
@@ -462,12 +523,29 @@ def eval_cmd(
         "--config",
         help="评估配置 YAML",
     ),
+    device: str = typer.Option(
+        "auto",
+        "--device",
+        help="评测设备：auto|cpu|cuda（仅本进程；默认 auto=显存够则 cuda，不影响 API/.env）",
+    ),
 ) -> None:
     """运行 RAG 评估（Hit@K / MRR / nDCG / 引用 / 时延）。"""
-    from app.eval.rag_eval import run_rag_eval
+    from typing import cast
 
+    from app.eval.device_accel import EvalDeviceMode, apply_eval_device_accel
+    from app.eval.rag_eval import run_rag_eval
+    from app.eval.suite_set import resolve_suite_path
+
+    mode = device.strip().lower()
+    if mode not in {"auto", "cpu", "cuda"}:
+        raise typer.BadParameter("--device 仅支持 auto|cpu|cuda")
+    plan = apply_eval_device_accel(cast(EvalDeviceMode, mode))
+    typer.echo(plan.summary_text())
+
+    path = suite or resolve_suite_path(REPO_ROOT, suite_set, "golden_rag.json")
+    typer.echo(f"suite_set={suite_set} suite={path}")
     result = run_rag_eval(
-        suite_path=suite,
+        suite_path=path,
         top_k=top_k,
         out_path=out,
         md_path=md,

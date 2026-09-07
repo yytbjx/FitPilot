@@ -33,7 +33,16 @@ def detect_doc_type(
         return "faq"
     if re.search(r"(深蹲|硬拉|卧推|动作说明|动作要领)", title or "") and len(text or "") < 2500:
         return "action"
-    if fmt in {"md", "markdown", "docx", "pdf"} or "curated" in p:
+    # 指南/准则类中文网页或整理稿：按 guide→parent_child，并配合中文章节规范化
+    if (
+        "guidelines" in p
+        or "public_web" in p
+        or "膳食指南" in (title or "")
+        or "身体活动" in (title or "")
+        or re.search(r"准则[一二三四五六七八]", head)
+    ):
+        return "guide"
+    if fmt in {"md", "markdown", "docx", "pdf", "html", "htm"} or "curated" in p:
         return "guide"
     return "generic"
 

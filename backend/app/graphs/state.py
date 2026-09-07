@@ -15,6 +15,11 @@ class FitnessAgentState(TypedDict, total=False):
     intents: list[str]
     entities: dict[str, Any]
     constraints: dict[str, Any]
+    route_layer: str
+    execution_mode: str
+    orchestration: dict[str, Any]
+    context_metrics: dict[str, Any]
+    assembled_context: dict[str, Any]
     user_profile: dict[str, Any]
     current_goal: str
     current_plan_version: int

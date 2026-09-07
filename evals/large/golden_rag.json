@@ -1,0 +1,7029 @@
+{
+  "name": "fitpilot-golden-rag-kb-v4",
+  "description": "大评测总集 v4：KB chunk 主题分层出题；expect_any 收紧为源 chunk 2–3 核心词；hard 改写禁止半截占位；主题-文档门控；用于抬高 Precision/TermRecall 可解释性。",
+  "min_hit_rate": 0.7,
+  "generator": {
+    "script": "scripts/generate_rag_suite_from_kb.py",
+    "seed": 20260725,
+    "target": 300,
+    "max_per_theme": 40,
+    "max_per_doc": 28,
+    "bm25_chunks_loaded": 3972,
+    "theme_counts": {
+      "fewshot_seed": 80,
+      "who_pa": 40,
+      "usda_food": 34,
+      "added_sugar": 30,
+      "obesity": 25,
+      "salt": 21,
+      "older_pa": 11,
+      "healthy_diet": 11,
+      "protein": 8,
+      "children_pa": 8,
+      "cn_diet": 7,
+      "fitness_guide": 7,
+      "safety": 5,
+      "strength": 5,
+      "weight_mgmt": 4,
+      "fat_loss_myth": 3,
+      "hydration": 1
+    },
+    "difficulty_counts": {
+      "easy": 83,
+      "hard": 129,
+      "medium": 88
+    },
+    "origin_counts": {
+      "fewshot": 50,
+      "fewshot_paraphrase": 30,
+      "kb": 220
+    },
+    "unique_themes": 16,
+    "unique_source_docs": 39,
+    "unique_expect_any": 201
+  },
+  "cases": [
+    {
+      "id": "protein_fatloss",
+      "query": "减脂期蛋白质怎么安排？",
+      "expect_any": [
+        "蛋白",
+        "1.6",
+        "2.2",
+        "protein",
+        "protein_basics"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "protein_fatloss_hard1",
+      "query": "请问控制体脂阶段优质蛋白宏量怎么安排呢？",
+      "expect_any": [
+        "蛋白",
+        "1.6",
+        "2.2",
+        "protein",
+        "protein_basics"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "who_pa_adult",
+      "query": "成年人每周应做多少中等强度身体活动？",
+      "expect_any": [
+        "150",
+        "300",
+        "身体活动",
+        "who",
+        "久坐"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "who_pa_adult_hard1",
+      "query": "成年人七天内应做多少中等费力程度身体活动有什么建议？",
+      "expect_any": [
+        "150",
+        "300",
+        "身体活动",
+        "who",
+        "久坐"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "cn_diet",
+      "query": "中国居民膳食指南八准则有哪些要点？",
+      "expect_any": [
+        "膳食",
+        "准则",
+        "食物多样",
+        "cn_dietary"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "fat_loss_myth",
+      "query": "不吃主食能更快减脂吗？",
+      "expect_any": [
+        "误区",
+        "主食",
+        "减脂",
+        "fat_loss"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "fat_loss_myth_hard1",
+      "query": "帮我看看不吃碳水主粮能更快减脂吗？",
+      "expect_any": [
+        "误区",
+        "主食",
+        "减脂",
+        "fat_loss"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "usda_hummus",
+      "query": "鹰嘴豆泥每100克大概多少热量和蛋白质？",
+      "expect_any": [
+        "鹰嘴豆",
+        "hummus",
+        "229",
+        "7.35",
+        "蛋白"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "usda_hummus_hard1",
+      "query": "请问鹰嘴豆泥每100克大概多少能量和增肌相关宏量？",
+      "expect_any": [
+        "鹰嘴豆",
+        "hummus",
+        "229",
+        "7.35",
+        "蛋白"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "hydration",
+      "query": "高强度训练时喝水要注意什么？",
+      "expect_any": [
+        "饮水",
+        "电解质",
+        "hydration",
+        "运动饮料"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "hydration_hard1",
+      "query": "高强度训练时喝水要注意什么有什么建议？",
+      "expect_any": [
+        "饮水",
+        "电解质",
+        "hydration",
+        "运动饮料"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "strength_basics",
+      "query": "力量训练新手每周练几次比较合适？",
+      "expect_any": [
+        "力量",
+        "2",
+        "3",
+        "渐进",
+        "strength"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "strength_basics_hard1",
+      "query": "请问肌力训练新手按周计练几次比较合适呢？",
+      "expect_any": [
+        "力量",
+        "2",
+        "3",
+        "渐进",
+        "strength"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "safety_boundary",
+      "query": "FitPilot 会不会帮我诊断伤病或开药？",
+      "expect_any": [
+        "诊断",
+        "医",
+        "安全",
+        "safety_boundary",
+        "不能"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "safety_boundary_hard1",
+      "query": "FitPilot 会不会帮我临床确诊伤病或开药？",
+      "expect_any": [
+        "诊断",
+        "医",
+        "安全",
+        "safety_boundary",
+        "不能"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "protein_sources",
+      "query": "蛋白质可以从哪些食物获取？",
+      "expect_any": [
+        "鸡胸",
+        "鸡蛋",
+        "豆",
+        "蛋白",
+        "protein"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "protein_sources_hard1",
+      "query": "想了解一下优质蛋白宏量可以从哪些食物获取？",
+      "expect_any": [
+        "鸡胸",
+        "鸡蛋",
+        "豆",
+        "蛋白",
+        "protein"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "who_strength_days",
+      "query": "每周至少几天做增强肌肉力量的活动？",
+      "expect_any": [
+        "2",
+        "肌肉",
+        "力量",
+        "who",
+        "150"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "sedentary",
+      "query": "久坐有什么健康建议？",
+      "expect_any": [
+        "久坐",
+        "活动",
+        "身体活动",
+        "who"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "sedentary_hard1",
+      "query": "静坐少动有什么健康建议？",
+      "expect_any": [
+        "久坐",
+        "活动",
+        "身体活动",
+        "who"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "progressive_overload",
+      "query": "什么是渐进超负荷？",
+      "expect_any": [
+        "渐进",
+        "负荷",
+        "力量",
+        "strength"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "cn_variety",
+      "query": "膳食为什么要食物多样？",
+      "expect_any": [
+        "食物多样",
+        "膳食",
+        "准则",
+        "cn_dietary"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "fat_loss_carb",
+      "query": "减脂期是不是完全不能吃碳水？",
+      "expect_any": [
+        "减脂",
+        "主食",
+        "误区",
+        "fat_loss",
+        "碳水"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "fat_loss_carb_hard1",
+      "query": "体脂管理阶段是不是完全不能吃碳水？",
+      "expect_any": [
+        "减脂",
+        "主食",
+        "误区",
+        "fat_loss",
+        "碳水"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "kidney_protein_note",
+      "query": "有肾病限制蛋白还能按健身建议吃吗？",
+      "expect_any": [
+        "医嘱",
+        "肾病",
+        "蛋白",
+        "protein"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "electrolyte",
+      "query": "出汗多时要不要补充电解质？",
+      "expect_any": [
+        "电解质",
+        "钠",
+        "出汗",
+        "hydration"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "electrolyte_hard1",
+      "query": "出汗多时要不要补充盐分与矿物质呢？",
+      "expect_any": [
+        "电解质",
+        "钠",
+        "出汗",
+        "hydration"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "chest_pain_advice",
+      "query": "训练时胸痛应该怎么办？",
+      "expect_any": [
+        "胸痛",
+        "就医",
+        "安全",
+        "safety"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "chest_pain_advice_hard1",
+      "query": "训练时胸痛应该怎么办呢？",
+      "expect_any": [
+        "胸痛",
+        "就医",
+        "安全",
+        "safety"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "sleep_recovery",
+      "query": "睡眠对力量训练恢复重要吗？",
+      "expect_any": [
+        "睡眠",
+        "恢复",
+        "力量",
+        "strength"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "usda_macros_intro",
+      "query": "USDA 食物宏量数据可以用来算热量吗？",
+      "expect_any": [
+        "kcal",
+        "蛋白",
+        "usda",
+        "宏量",
+        "foundation"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "usda_macros_intro_hard1",
+      "query": "USDA 食物宏量数据可以用来算卡路里吗？",
+      "expect_any": [
+        "kcal",
+        "蛋白",
+        "usda",
+        "宏量",
+        "foundation"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "protein_timing",
+      "query": "力量训练日蛋白质是一天达标重要还是某一顿重要？",
+      "expect_any": [
+        "全天",
+        "蛋白",
+        "力量",
+        "protein"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "protein_timing_hard1",
+      "query": "肌力训练日优质蛋白质是一天达标重要还是某一顿重要？",
+      "expect_any": [
+        "全天",
+        "蛋白",
+        "力量",
+        "protein"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "protein_ratio_range",
+      "query": "健身人群蛋白质推荐按体重多少克每公斤？",
+      "expect_any": [
+        "1.6",
+        "2.2",
+        "g/kg",
+        "蛋白"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot",
+      "relevance": [
+        {
+          "match": "1.6",
+          "grade": 2
+        },
+        {
+          "match": "2.2",
+          "grade": 2
+        },
+        {
+          "match": "蛋白",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "protein_ratio_range_hard1",
+      "query": "健身人群优质宏量蛋白摄入推荐按体重多少克每公斤有什么建议？",
+      "expect_any": [
+        "1.6",
+        "2.2",
+        "g/kg",
+        "蛋白"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "protein_food_rotation",
+      "query": "减脂期蛋白质食材怎么轮换？",
+      "expect_any": [
+        "鸡胸",
+        "鱼虾",
+        "蛋",
+        "大豆",
+        "轮换"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot",
+      "relevance": [
+        {
+          "match": "轮换",
+          "grade": 2
+        },
+        {
+          "match": "鸡胸",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "myth_cardio",
+      "query": "减脂期有氧是不是越多越好？",
+      "expect_any": [
+        "有氧",
+        "恢复",
+        "力量",
+        "误区"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot",
+      "relevance": [
+        {
+          "match": "有氧",
+          "grade": 2
+        },
+        {
+          "match": "恢复",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "myth_cardio_hard1",
+      "query": "体脂管理阶段有氧是不是越多越好？",
+      "expect_any": [
+        "有氧",
+        "恢复",
+        "力量",
+        "误区"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "myth_single_food",
+      "query": "减脂期是不是听到某个食物就不能吃？",
+      "expect_any": [
+        "单一食物",
+        "全日",
+        "宏量",
+        "可坚持"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "myth_single_food_hard1",
+      "query": "体脂管理阶段是不是听到某个食物就不能吃？",
+      "expect_any": [
+        "单一食物",
+        "全日",
+        "宏量",
+        "可坚持"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "fatloss_principles",
+      "query": "减脂有哪些可执行原则？",
+      "expect_any": [
+        "热量缺口",
+        "蛋白",
+        "力量",
+        "睡眠"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "fatloss_principles_hard1",
+      "query": "想了解一下体脂管理有哪些可执行原则？",
+      "expect_any": [
+        "热量缺口",
+        "蛋白",
+        "力量",
+        "睡眠"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "carb_rebound",
+      "query": "过度限制碳水有什么后果？",
+      "expect_any": [
+        "碳水",
+        "训练表现",
+        "回弹",
+        "误区"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "strength_split",
+      "query": "进阶力量训练可以怎么分化？",
+      "expect_any": [
+        "上下肢",
+        "推拉腿",
+        "分化",
+        "动作质量"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "strength_split_hard1",
+      "query": "进阶肌力训练可以怎么分化？",
+      "expect_any": [
+        "上下肢",
+        "推拉腿",
+        "分化",
+        "动作质量"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "strength_movements",
+      "query": "新手全身训练应涵盖哪些动作模式？",
+      "expect_any": [
+        "蹲",
+        "推",
+        "拉",
+        "铰链",
+        "核心"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot",
+      "relevance": [
+        {
+          "match": "铰链",
+          "grade": 2
+        },
+        {
+          "match": "蹲",
+          "grade": 1
+        },
+        {
+          "match": "核心",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "sharp_pain_stop",
+      "query": "训练中出现锐痛或眩晕怎么办？",
+      "expect_any": [
+        "锐痛",
+        "眩晕",
+        "停止",
+        "评估"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot",
+      "relevance": [
+        {
+          "match": "锐痛",
+          "grade": 2
+        },
+        {
+          "match": "停止",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "aerobic_range",
+      "query": "高强度有氧每周建议多少分钟？",
+      "expect_any": [
+        "75",
+        "150",
+        "高强度",
+        "有氧"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot",
+      "relevance": [
+        {
+          "match": "75",
+          "grade": 2
+        },
+        {
+          "match": "150",
+          "grade": 2
+        },
+        {
+          "match": "有氧",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "below_recommendation",
+      "query": "达不到推荐活动量还能获益吗？",
+      "expect_any": [
+        "少量",
+        "获益",
+        "活动",
+        "久坐"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "who_elderly",
+      "query": "老年人身体活动有什么额外建议？",
+      "expect_any": [
+        "老年",
+        "平衡",
+        "跌倒",
+        "多组分"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot",
+      "relevance": [
+        {
+          "match": "跌倒",
+          "grade": 2
+        },
+        {
+          "match": "平衡",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "who_elderly_hard1",
+      "query": "高龄人群人运动活动量有什么额外建议？",
+      "expect_any": [
+        "老年",
+        "平衡",
+        "跌倒",
+        "多组分"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "who_children",
+      "query": "儿童青少年每天应活动多久？",
+      "expect_any": [
+        "60",
+        "儿童",
+        "青少年",
+        "高强度"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot",
+      "relevance": [
+        {
+          "match": "60",
+          "grade": 2
+        },
+        {
+          "match": "青少年",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "who_principle",
+      "query": "WHO 身体活动指南的核心原则是什么？",
+      "expect_any": [
+        "任何身体活动",
+        "久坐",
+        "健康获益",
+        "who"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "who_principle_hard1",
+      "query": "WHO 运动活动量指南的核心原则是什么有什么建议？",
+      "expect_any": [
+        "任何身体活动",
+        "久坐",
+        "健康获益",
+        "who"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "who_screen",
+      "query": "青少年娱乐性屏幕时间有什么建议？",
+      "expect_any": [
+        "屏幕",
+        "久坐",
+        "青少年",
+        "限制"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "cn_alcohol",
+      "query": "健身目标期为什么要限酒？",
+      "expect_any": [
+        "酒精",
+        "恢复",
+        "睡眠",
+        "控糖限酒"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "cn_alcohol_hard1",
+      "query": "帮我看看健身目标期为什么要限酒？",
+      "expect_any": [
+        "酒精",
+        "恢复",
+        "睡眠",
+        "控糖限酒"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "cn_salt_oil",
+      "query": "膳食指南对盐油糖酒有什么建议？",
+      "expect_any": [
+        "少盐少油",
+        "控糖限酒",
+        "准则",
+        "膳食"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "cn_salt_oil_hard1",
+      "query": "平衡膳食建议对盐油糖酒有什么建议呢？",
+      "expect_any": [
+        "少盐少油",
+        "控糖限酒",
+        "准则",
+        "膳食"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "cn_labels",
+      "query": "膳食指南里会烹会选会看标签是指什么？",
+      "expect_any": [
+        "会烹会选",
+        "标签",
+        "准则",
+        "膳食"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "cn_protein_foods",
+      "query": "膳食指南推荐哪些优质蛋白来源？",
+      "expect_any": [
+        "鱼",
+        "禽",
+        "蛋",
+        "瘦肉",
+        "大豆"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot",
+      "relevance": [
+        {
+          "match": "瘦肉",
+          "grade": 2
+        },
+        {
+          "match": "大豆",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "cn_protein_foods_hard1",
+      "query": "居民饮食指导推荐哪些优质优质蛋白来源有什么建议？",
+      "expect_any": [
+        "鱼",
+        "禽",
+        "蛋",
+        "瘦肉",
+        "大豆"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "urine_color",
+      "query": "训练前后怎么粗略判断要不要补水？",
+      "expect_any": [
+        "口渴",
+        "尿色",
+        "饮水",
+        "hydration"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "sports_drink_need",
+      "query": "短时中低强度训练需要运动饮料吗？",
+      "expect_any": [
+        "运动饮料",
+        "清水",
+        "中低强度",
+        "hydration"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "kidney_water",
+      "query": "医嘱限制饮水量的人训练时怎么办？",
+      "expect_any": [
+        "肾脏",
+        "医嘱",
+        "饮水",
+        "hydration"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "kidney_water_hard1",
+      "query": "帮我看看医嘱限制液体摄入量的人训练时怎么办呢？",
+      "expect_any": [
+        "肾脏",
+        "医嘱",
+        "饮水",
+        "hydration"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "fainting",
+      "query": "训练中出现晕厥或呼吸困难怎么办？",
+      "expect_any": [
+        "晕厥",
+        "呼吸困难",
+        "就医",
+        "停止"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot",
+      "relevance": [
+        {
+          "match": "晕厥",
+          "grade": 2
+        },
+        {
+          "match": "就医",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "what_we_can",
+      "query": "FitPilot 能提供哪些健身饮食方面的帮助？",
+      "expect_any": [
+        "建议",
+        "计划",
+        "知识库",
+        "安全"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "what_we_can_hard1",
+      "query": "FitPilot 能提供哪些健身饮食方面的帮助有什么建议？",
+      "expect_any": [
+        "建议",
+        "计划",
+        "知识库",
+        "安全"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "usda_broccoli",
+      "query": "西兰花每100克多少热量和蛋白质？",
+      "expect_any": [
+        "西兰花",
+        "31",
+        "2.57"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot",
+      "relevance": [
+        {
+          "match": "31",
+          "grade": 2
+        },
+        {
+          "match": "西兰花",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "usda_broccoli_hard1",
+      "query": "西兰花每100克多少能量和增肌相关宏量有什么建议？",
+      "expect_any": [
+        "西兰花",
+        "31",
+        "2.57"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "usda_greek_yogurt",
+      "query": "脱脂希腊酸奶每100克蛋白质多少？",
+      "expect_any": [
+        "希腊",
+        "酸奶",
+        "10.3",
+        "61"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "usda_beef_loin",
+      "query": "烤牛里脊每100克蛋白质和热量是多少？",
+      "expect_any": [
+        "牛肉",
+        "里脊",
+        "27.7",
+        "176"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "usda_beef_loin_hard1",
+      "query": "帮我看看烤牛里脊每100克增肌相关宏量和能量是多少呢？",
+      "expect_any": [
+        "牛肉",
+        "里脊",
+        "27.7",
+        "176"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "usda_egg",
+      "query": "冷冻整蛋每100克含多少蛋白质？",
+      "expect_any": [
+        "鸡蛋",
+        "12.3",
+        "150"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "usda_egg_hard1",
+      "query": "冷冻整蛋每100克含多少优质蛋白宏量？",
+      "expect_any": [
+        "鸡蛋",
+        "12.3",
+        "150"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "usda_banana",
+      "query": "过熟香蕉每100克碳水多少克？",
+      "expect_any": [
+        "香蕉",
+        "20.1",
+        "85"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "usda_banana_hard1",
+      "query": "请问过熟香蕉每100克碳水多少克有什么建议？",
+      "expect_any": [
+        "香蕉",
+        "20.1",
+        "85"
+      ],
+      "difficulty": "hard",
+      "theme": "fewshot_seed",
+      "origin": "fewshot_paraphrase"
+    },
+    {
+      "id": "usda_scope",
+      "query": "FitPilot 收录了多少种 USDA 基础食品？",
+      "expect_any": [
+        "363",
+        "19",
+        "分类",
+        "foundation"
+      ],
+      "difficulty": "easy",
+      "theme": "fewshot_seed",
+      "origin": "fewshot"
+    },
+    {
+      "id": "kb_who_pa_US_Physical_Activity_Gui_0080",
+      "query": "运动活动量指南对静坐少动有什么提醒？",
+      "expect_any": [
+        "150",
+        "300"
+      ],
+      "difficulty": "hard",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "US_Physical_Activity_Guidelines_2nd",
+      "source_chunk_id": "c_US_Physical_Activity_Guidelines_2nd_0_e1a0f285ef76",
+      "relevance": [
+        {
+          "match": "150",
+          "grade": 2
+        },
+        {
+          "match": "300",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_protein_protein_basics_0081",
+      "query": "想了解一下按体重计，增肌相关宏量推荐大概在什么范围？",
+      "expect_any": [
+        "g/kg",
+        "1.6",
+        "2.2"
+      ],
+      "difficulty": "hard",
+      "theme": "protein",
+      "origin": "kb",
+      "source_document_id": "protein_basics",
+      "source_chunk_id": "c_protein_basics_0_68850ea36418",
+      "relevance": [
+        {
+          "match": "g/kg",
+          "grade": 2
+        },
+        {
+          "match": "1.6",
+          "grade": 2
+        },
+        {
+          "match": "2.2",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_safety_cn_dietary_guidelines_20_0082",
+      "query": "训练时胸痛应该怎么办（全谷与蔬果）？",
+      "expect_any": [
+        "安全边界",
+        "处方"
+      ],
+      "difficulty": "medium",
+      "theme": "safety",
+      "origin": "kb",
+      "source_document_id": "cn_dietary_guidelines_2022_core",
+      "source_chunk_id": "c_cn_dietary_guidelines_2022_core_1_4a047fba609e",
+      "relevance": [
+        {
+          "match": "安全边界",
+          "grade": 2
+        },
+        {
+          "match": "处方",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_cn_diet_cn_dietary_guidelines_20_0083",
+      "query": "中国居民膳食指南有哪些核心要点？",
+      "expect_any": [
+        "膳食",
+        "控糖"
+      ],
+      "difficulty": "easy",
+      "theme": "cn_diet",
+      "origin": "kb",
+      "source_document_id": "cn_dietary_guidelines_2022_core",
+      "source_chunk_id": "c_cn_dietary_guidelines_2022_core_1_4a047fba609e",
+      "relevance": [
+        {
+          "match": "膳食",
+          "grade": 2
+        },
+        {
+          "match": "控糖",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_obesity_cn_national_fitness_guid_0084",
+      "query": "关于肥胖，资料怎么建议？",
+      "expect_any": [
+        "BMI",
+        "肥胖",
+        "超重"
+      ],
+      "difficulty": "easy",
+      "theme": "obesity",
+      "origin": "kb",
+      "source_document_id": "cn_national_fitness_guide_interpretation",
+      "source_chunk_id": "c_cn_national_fitness_guide_interpretation_2_c9ed636c3d77",
+      "relevance": [
+        {
+          "match": "BMI",
+          "grade": 2
+        },
+        {
+          "match": "肥胖",
+          "grade": 1
+        },
+        {
+          "match": "超重",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_weight_mgmt_who_healthy_diet_factshe_0085",
+      "query": "减重或体重管理常见原则有哪些？",
+      "expect_any": [
+        "能量摄入",
+        "热量",
+        "15"
+      ],
+      "difficulty": "medium",
+      "theme": "weight_mgmt",
+      "origin": "kb",
+      "source_document_id": "who_healthy_diet_factsheet_zh",
+      "source_chunk_id": "c_who_healthy_diet_factsheet_zh_2_e86e72a4e281",
+      "relevance": [
+        {
+          "match": "能量摄入",
+          "grade": 2
+        },
+        {
+          "match": "热量",
+          "grade": 1
+        },
+        {
+          "match": "15",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_fat_loss_myth_protein_basics_0086",
+      "query": "控制体脂阶段有氧是不是越多越好呢？",
+      "expect_any": [
+        "减脂",
+        "碳水",
+        "1.6"
+      ],
+      "difficulty": "hard",
+      "theme": "fat_loss_myth",
+      "origin": "kb",
+      "source_document_id": "protein_basics",
+      "source_chunk_id": "c_protein_basics_0_68850ea36418",
+      "relevance": [
+        {
+          "match": "减脂",
+          "grade": 2
+        },
+        {
+          "match": "碳水",
+          "grade": 1
+        },
+        {
+          "match": "1.6",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_hydration_hydration_training_0087",
+      "query": "出汗多时要不要补电解质？",
+      "expect_any": [
+        "运动饮料",
+        "电解质",
+        "饮水"
+      ],
+      "difficulty": "easy",
+      "theme": "hydration",
+      "origin": "kb",
+      "source_document_id": "hydration_training",
+      "source_chunk_id": "c_hydration_training_0_b83be4bc2ea6",
+      "relevance": [
+        {
+          "match": "运动饮料",
+          "grade": 2
+        },
+        {
+          "match": "电解质",
+          "grade": 1
+        },
+        {
+          "match": "饮水",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_older_pa_who_healthy_at_home_phys_0088",
+      "query": "帮我看看年长者人身体活动有什么额外建议呢？",
+      "expect_any": [
+        "老年",
+        "平衡",
+        "跌倒"
+      ],
+      "difficulty": "medium",
+      "theme": "older_pa",
+      "origin": "kb",
+      "source_document_id": "who_healthy_at_home_physical_activity_zh",
+      "source_chunk_id": "who_healthy_at_home_physical_activity_zh_1_441accab9dde6037",
+      "relevance": [
+        {
+          "match": "老年",
+          "grade": 2
+        },
+        {
+          "match": "平衡",
+          "grade": 1
+        },
+        {
+          "match": "跌倒",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_salt_cn_dietary_guidelines_20_0089",
+      "query": "膳食里盐/钠摄入一般怎么控制？",
+      "expect_any": [
+        "少盐",
+        "民膳食指南",
+        "发布仪式"
+      ],
+      "difficulty": "medium",
+      "theme": "salt",
+      "origin": "kb",
+      "source_document_id": "cn_dietary_guidelines_2022_release",
+      "source_chunk_id": "cn_dietary_guidelines_2022_release_2_cd7168456f31282b",
+      "relevance": [
+        {
+          "match": "少盐",
+          "grade": 2
+        },
+        {
+          "match": "民膳食指南",
+          "grade": 1
+        },
+        {
+          "match": "发布仪式",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_食品基础信息_中英对照_0090",
+      "query": "如何理解控糖相关建议？",
+      "expect_any": [
+        "sugar",
+        "添加糖"
+      ],
+      "difficulty": "hard",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "食品基础信息_中英对照",
+      "source_chunk_id": "食品基础信息_中英对照_247_142a9661b7adbd2d",
+      "relevance": [
+        {
+          "match": "sugar",
+          "grade": 2
+        },
+        {
+          "match": "添加糖",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_strength_strength_training_basics_0091",
+      "query": "什么是渐进超负荷呢？",
+      "expect_any": [
+        "力量",
+        "组数"
+      ],
+      "difficulty": "hard",
+      "theme": "strength",
+      "origin": "kb",
+      "source_document_id": "strength_training_basics",
+      "source_chunk_id": "c_strength_training_basics_1_7c7c6be093cf",
+      "relevance": [
+        {
+          "match": "力量",
+          "grade": 2
+        },
+        {
+          "match": "组数",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_healthy_diet_who_5_tips_healthy_diet__0092",
+      "query": "平衡膳食通常强调哪些食物类别？",
+      "expect_any": [
+        "全谷",
+        "奶类"
+      ],
+      "difficulty": "hard",
+      "theme": "healthy_diet",
+      "origin": "kb",
+      "source_document_id": "who_5_tips_healthy_diet_zh",
+      "source_chunk_id": "who_5_tips_healthy_diet_zh_2_f8c7afff797470c4",
+      "relevance": [
+        {
+          "match": "全谷",
+          "grade": 2
+        },
+        {
+          "match": "奶类",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_who_physical_activity_fa_0093",
+      "query": "请问体力活动指南对静坐少动有什么提醒？",
+      "expect_any": [
+        "身体活动",
+        "中等强度",
+        "久坐"
+      ],
+      "difficulty": "hard",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "who_physical_activity_factsheet_zh",
+      "source_chunk_id": "who_physical_activity_factsheet_zh_2_fe5889b82255e9ac",
+      "relevance": [
+        {
+          "match": "身体活动",
+          "grade": 2
+        },
+        {
+          "match": "中等强度",
+          "grade": 1
+        },
+        {
+          "match": "久坐",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_protein_who_healthy_diet_factshe_0094",
+      "query": "健身或控制体脂场景下，增肌相关宏量摄入一般怎么安排？",
+      "expect_any": [
+        "蛋白",
+        "大豆",
+        "15"
+      ],
+      "difficulty": "hard",
+      "theme": "protein",
+      "origin": "kb",
+      "source_document_id": "who_healthy_diet_factsheet_zh",
+      "source_chunk_id": "c_who_healthy_diet_factsheet_zh_2_e86e72a4e281",
+      "relevance": [
+        {
+          "match": "蛋白",
+          "grade": 2
+        },
+        {
+          "match": "大豆",
+          "grade": 1
+        },
+        {
+          "match": "15",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_safety_who_cvd_factsheet_zh_0095",
+      "query": "想了解一下出现锐痛或眩晕还能否继续加重量？",
+      "expect_any": [
+        "胸痛",
+        "就医",
+        "80"
+      ],
+      "difficulty": "hard",
+      "theme": "safety",
+      "origin": "kb",
+      "source_document_id": "who_cvd_factsheet_zh",
+      "source_chunk_id": "who_cvd_factsheet_zh_5_7332ece656b516ce",
+      "relevance": [
+        {
+          "match": "胸痛",
+          "grade": 2
+        },
+        {
+          "match": "就医",
+          "grade": 1
+        },
+        {
+          "match": "80",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_食品基础信息_中英对照_0096",
+      "query": "帮我看看USDA 食物宏量数据可以用来估算热量吗？",
+      "expect_any": [
+        "kcal",
+        "每100",
+        "蛋白"
+      ],
+      "difficulty": "medium",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "食品基础信息_中英对照",
+      "source_chunk_id": "食品基础信息_中英对照_1_b96befc23a425380",
+      "relevance": [
+        {
+          "match": "kcal",
+          "grade": 2
+        },
+        {
+          "match": "每100",
+          "grade": 1
+        },
+        {
+          "match": "蛋白",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_cn_diet_cn_dietary_guidelines_20_0097",
+      "query": "中国居民膳食指南有哪些核心要点（《中国居民膳食指南（2022）》）？",
+      "expect_any": [
+        "食物多样",
+        "少盐少油",
+        "会烹会选"
+      ],
+      "difficulty": "medium",
+      "theme": "cn_diet",
+      "origin": "kb",
+      "source_document_id": "cn_dietary_guidelines_2022_release",
+      "source_chunk_id": "cn_dietary_guidelines_2022_release_2_cd7168456f31282b",
+      "relevance": [
+        {
+          "match": "食物多样",
+          "grade": 2
+        },
+        {
+          "match": "少盐少油",
+          "grade": 1
+        },
+        {
+          "match": "会烹会选",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_obesity_who_cvd_factsheet_zh_0098",
+      "query": "体重管理通常从哪些方面入手有什么建议？",
+      "expect_any": [
+        "肥胖",
+        "超重"
+      ],
+      "difficulty": "hard",
+      "theme": "obesity",
+      "origin": "kb",
+      "source_document_id": "who_cvd_factsheet_zh",
+      "source_chunk_id": "who_cvd_factsheet_zh_3_566fa3a2b59c40e0",
+      "relevance": [
+        {
+          "match": "肥胖",
+          "grade": 2
+        },
+        {
+          "match": "超重",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_weight_mgmt_who_obesity_overweight_f_0099",
+      "query": "关于能量摄入，减重建议是什么？",
+      "expect_any": [
+        "能量摄入",
+        "热量"
+      ],
+      "difficulty": "easy",
+      "theme": "weight_mgmt",
+      "origin": "kb",
+      "source_document_id": "who_obesity_overweight_factsheet_zh",
+      "source_chunk_id": "c_who_obesity_overweight_factsheet_zh_3_32e9965fd028",
+      "relevance": [
+        {
+          "match": "能量摄入",
+          "grade": 2
+        },
+        {
+          "match": "热量",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_fat_loss_myth_fat_loss_myths_0100",
+      "query": "关于卡路里缺口，体脂管理建议怎么看有什么建议？",
+      "expect_any": [
+        "热量缺口",
+        "减脂",
+        "误区"
+      ],
+      "difficulty": "medium",
+      "theme": "fat_loss_myth",
+      "origin": "kb",
+      "source_document_id": "fat_loss_myths",
+      "source_chunk_id": "c_fat_loss_myths_0_707c2fcc9755",
+      "relevance": [
+        {
+          "match": "热量缺口",
+          "grade": 2
+        },
+        {
+          "match": "减脂",
+          "grade": 1
+        },
+        {
+          "match": "误区",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_older_pa_cn_national_fitness_guid_0101",
+      "query": "请问高龄人群人体力活动有什么额外建议？",
+      "expect_any": [
+        "老年",
+        "平衡",
+        "跌倒"
+      ],
+      "difficulty": "hard",
+      "theme": "older_pa",
+      "origin": "kb",
+      "source_document_id": "cn_national_fitness_guide_interpretation",
+      "source_chunk_id": "c_cn_national_fitness_guide_interpretation_3_37e6e56e59c1",
+      "relevance": [
+        {
+          "match": "老年",
+          "grade": 2
+        },
+        {
+          "match": "平衡",
+          "grade": 1
+        },
+        {
+          "match": "跌倒",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_salt_食品份量_中英对照_0102",
+      "query": "减盐有哪些可执行建议有什么建议？",
+      "expect_any": [
+        "食盐",
+        "食品份量",
+        "中英对照"
+      ],
+      "difficulty": "hard",
+      "theme": "salt",
+      "origin": "kb",
+      "source_document_id": "食品份量_中英对照",
+      "source_chunk_id": "食品份量_中英对照_138_50adb6d39127e0ab",
+      "relevance": [
+        {
+          "match": "食盐",
+          "grade": 2
+        },
+        {
+          "match": "食品份量",
+          "grade": 1
+        },
+        {
+          "match": "中英对照",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_who_healthy_diet_factshe_0103",
+      "query": "如何理解控糖相关建议有什么建议？",
+      "expect_any": [
+        "游离糖",
+        "中的所有单糖",
+        "和双糖"
+      ],
+      "difficulty": "hard",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "who_healthy_diet_factsheet_zh",
+      "source_chunk_id": "c_who_healthy_diet_factsheet_zh_4_1646cbd8b44a",
+      "relevance": [
+        {
+          "match": "游离糖",
+          "grade": 2
+        },
+        {
+          "match": "中的所有单糖",
+          "grade": 1
+        },
+        {
+          "match": "和双糖",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_strength_cn_national_fitness_guid_0104",
+      "query": "新手全身训练应覆盖哪些动作模式呢？",
+      "expect_any": [
+        "力量",
+        "渐进",
+        "5"
+      ],
+      "difficulty": "hard",
+      "theme": "strength",
+      "origin": "kb",
+      "source_document_id": "cn_national_fitness_guide_interpretation",
+      "source_chunk_id": "c_cn_national_fitness_guide_interpretation_1_51f5a2502df8",
+      "relevance": [
+        {
+          "match": "力量",
+          "grade": 2
+        },
+        {
+          "match": "渐进",
+          "grade": 1
+        },
+        {
+          "match": "5",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_healthy_diet_who_obesity_overweight_f_0105",
+      "query": "平衡膳食通常强调哪些食物类别（肥胖和超重）？",
+      "expect_any": [
+        "全谷",
+        "脂肪"
+      ],
+      "difficulty": "medium",
+      "theme": "healthy_diet",
+      "origin": "kb",
+      "source_document_id": "who_obesity_overweight_factsheet_zh",
+      "source_chunk_id": "c_who_obesity_overweight_factsheet_zh_4_adb60b76af7d",
+      "relevance": [
+        {
+          "match": "全谷",
+          "grade": 2
+        },
+        {
+          "match": "脂肪",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_cdc_pa_older_adults_en_0106",
+      "query": "关于150，活动量建议如何理解？",
+      "expect_any": [
+        "150",
+        "75"
+      ],
+      "difficulty": "easy",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "cdc_pa_older_adults_en",
+      "source_chunk_id": "c_cdc_pa_older_adults_en_1_81e97702d0b0",
+      "relevance": [
+        {
+          "match": "150",
+          "grade": 2
+        },
+        {
+          "match": "75",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_safety_strength_training_basics_0107",
+      "query": "训练时胸痛应该怎么办（力量训练与恢复基础要点（综合公开）？",
+      "expect_any": [
+        "诊断",
+        "锐痛",
+        "眩晕"
+      ],
+      "difficulty": "easy",
+      "theme": "safety",
+      "origin": "kb",
+      "source_document_id": "strength_training_basics",
+      "source_chunk_id": "c_strength_training_basics_1_7c7c6be093cf",
+      "relevance": [
+        {
+          "match": "诊断",
+          "grade": 2
+        },
+        {
+          "match": "锐痛",
+          "grade": 1
+        },
+        {
+          "match": "眩晕",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_foundation_foods_macros__0108",
+      "query": "帮我看看该主题 食物宏量数据可以用来估算热量吗呢？",
+      "expect_any": [
+        "source",
+        "foundation",
+        "USDA"
+      ],
+      "difficulty": "medium",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "foundation_foods_macros_zh",
+      "source_chunk_id": "foundation_foods_macros_zh_207_d59e4e3d1d210082",
+      "relevance": [
+        {
+          "match": "source",
+          "grade": 2
+        },
+        {
+          "match": "foundation",
+          "grade": 1
+        },
+        {
+          "match": "USDA",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_cn_diet_cn_dietary_guidelines_20_0109",
+      "query": "想了解一下中国居民居民饮食指导有哪些核心要点有什么建议？",
+      "expect_any": [
+        "膳食",
+        "准则"
+      ],
+      "difficulty": "medium",
+      "theme": "cn_diet",
+      "origin": "kb",
+      "source_document_id": "cn_dietary_guidelines_2022_eight_principles",
+      "source_chunk_id": "c_cn_dietary_guidelines_2022_eight_principles_4_b647bb08685f",
+      "relevance": [
+        {
+          "match": "膳食",
+          "grade": 2
+        },
+        {
+          "match": "准则",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_obesity_who_obesity_overweight_f_0110",
+      "query": "体重管理通常从哪些方面入手？",
+      "expect_any": [
+        "肥胖",
+        "超重",
+        "43"
+      ],
+      "difficulty": "medium",
+      "theme": "obesity",
+      "origin": "kb",
+      "source_document_id": "who_obesity_overweight_factsheet_zh",
+      "source_chunk_id": "c_who_obesity_overweight_factsheet_zh_0_905663224c28",
+      "relevance": [
+        {
+          "match": "肥胖",
+          "grade": 2
+        },
+        {
+          "match": "超重",
+          "grade": 1
+        },
+        {
+          "match": "43",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_weight_mgmt_who_healthy_diet_factshe_0111",
+      "query": "减重或体重管理常见原则有哪些（健康饮食）？",
+      "expect_any": [
+        "能量摄入",
+        "热量",
+        "400"
+      ],
+      "difficulty": "hard",
+      "theme": "weight_mgmt",
+      "origin": "kb",
+      "source_document_id": "who_healthy_diet_factsheet_zh",
+      "source_chunk_id": "c_who_healthy_diet_factsheet_zh_3_e2c23b96029f",
+      "relevance": [
+        {
+          "match": "能量摄入",
+          "grade": 2
+        },
+        {
+          "match": "热量",
+          "grade": 1
+        },
+        {
+          "match": "400",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_fat_loss_myth_cn_dietary_guidelines_20_0112",
+      "query": "想了解一下不吃谷薯类一定能更快控制体脂吗呢？",
+      "expect_any": [
+        "热量缺口",
+        "减脂",
+        "5"
+      ],
+      "difficulty": "hard",
+      "theme": "fat_loss_myth",
+      "origin": "kb",
+      "source_document_id": "cn_dietary_guidelines_2022_core",
+      "source_chunk_id": "c_cn_dietary_guidelines_2022_core_0_d6c0cde2dad5",
+      "relevance": [
+        {
+          "match": "热量缺口",
+          "grade": 2
+        },
+        {
+          "match": "减脂",
+          "grade": 1
+        },
+        {
+          "match": "5",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_older_pa_who_every_move_counts_zh_0113",
+      "query": "请问高龄人群人运动活动量有什么额外建议？",
+      "expect_any": [
+        "老年",
+        "平衡",
+        "跌倒"
+      ],
+      "difficulty": "medium",
+      "theme": "older_pa",
+      "origin": "kb",
+      "source_document_id": "who_every_move_counts_zh",
+      "source_chunk_id": "c_who_every_move_counts_zh_1_adb9a7325cdc",
+      "relevance": [
+        {
+          "match": "老年",
+          "grade": 2
+        },
+        {
+          "match": "平衡",
+          "grade": 1
+        },
+        {
+          "match": "跌倒",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_salt_who_healthy_diet_factshe_0114",
+      "query": "膳食里盐/钠摄入一般怎么控制（健康饮食）？",
+      "expect_any": [
+        "糖和钠含量低",
+        "的各种低限度",
+        "加工和未加工"
+      ],
+      "difficulty": "medium",
+      "theme": "salt",
+      "origin": "kb",
+      "source_document_id": "who_healthy_diet_factsheet_zh",
+      "source_chunk_id": "c_who_healthy_diet_factsheet_zh_1_9d2efa548ea4",
+      "relevance": [
+        {
+          "match": "糖和钠含量低",
+          "grade": 2
+        },
+        {
+          "match": "的各种低限度",
+          "grade": 1
+        },
+        {
+          "match": "加工和未加工",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_cn_dietary_guidelines_20_0115",
+      "query": "帮我看看如何理解控糖相关建议？",
+      "expect_any": [
+        "添加糖",
+        "300",
+        "120"
+      ],
+      "difficulty": "medium",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "cn_dietary_guidelines_2022_eight_principles",
+      "source_chunk_id": "c_cn_dietary_guidelines_2022_eight_principles_2_c98bf9a50456",
+      "relevance": [
+        {
+          "match": "添加糖",
+          "grade": 2
+        },
+        {
+          "match": "300",
+          "grade": 2
+        },
+        {
+          "match": "120",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_strength_strength_training_basics_0116",
+      "query": "抗阻训练新手按周计练几次比较合适（与超负荷相关）有什么建议？",
+      "expect_any": [
+        "超负荷",
+        "力量",
+        "渐进"
+      ],
+      "difficulty": "easy",
+      "theme": "strength",
+      "origin": "kb",
+      "source_document_id": "strength_training_basics",
+      "source_chunk_id": "c_strength_training_basics_0_850dc416115e",
+      "relevance": [
+        {
+          "match": "超负荷",
+          "grade": 2
+        },
+        {
+          "match": "力量",
+          "grade": 1
+        },
+        {
+          "match": "渐进",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_healthy_diet_who_healthy_diet_factshe_0117",
+      "query": "请问平衡膳食通常强调哪些食物类别？",
+      "expect_any": [
+        "膳食纤维",
+        "脂肪"
+      ],
+      "difficulty": "medium",
+      "theme": "healthy_diet",
+      "origin": "kb",
+      "source_document_id": "who_healthy_diet_factsheet_zh",
+      "source_chunk_id": "c_who_healthy_diet_factsheet_zh_1_9d2efa548ea4",
+      "relevance": [
+        {
+          "match": "膳食纤维",
+          "grade": 2
+        },
+        {
+          "match": "脂肪",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_children_pa_who_children_sit_less_pl_0118",
+      "query": "未成年人青少年每天应活动多久有什么建议？",
+      "expect_any": [
+        "儿童",
+        "屏幕",
+        "24"
+      ],
+      "difficulty": "medium",
+      "theme": "children_pa",
+      "origin": "kb",
+      "source_document_id": "who_children_sit_less_play_more_zh",
+      "source_chunk_id": "c_who_children_sit_less_play_more_zh_2_86487818eb24",
+      "relevance": [
+        {
+          "match": "儿童",
+          "grade": 2
+        },
+        {
+          "match": "屏幕",
+          "grade": 1
+        },
+        {
+          "match": "24",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_us_pa_top10_en_0119",
+      "query": "成年人每周中等强度身体活动建议量是多少？",
+      "expect_any": [
+        "150",
+        "300"
+      ],
+      "difficulty": "medium",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "us_pa_top10_en",
+      "source_chunk_id": "c_us_pa_top10_en_0_b005db9d7ad2",
+      "relevance": [
+        {
+          "match": "150",
+          "grade": 2
+        },
+        {
+          "match": "300",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_protein_cn_dietary_guidelines_20_0120",
+      "query": "想了解一下按体重计，优质宏量蛋白摄入推荐大概在什么范围？",
+      "expect_any": [
+        "鸡蛋",
+        "大豆",
+        "300"
+      ],
+      "difficulty": "hard",
+      "theme": "protein",
+      "origin": "kb",
+      "source_document_id": "cn_dietary_guidelines_2022_eight_principles",
+      "source_chunk_id": "c_cn_dietary_guidelines_2022_eight_principles_2_c98bf9a50456",
+      "relevance": [
+        {
+          "match": "鸡蛋",
+          "grade": 2
+        },
+        {
+          "match": "大豆",
+          "grade": 1
+        },
+        {
+          "match": "300",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_safety_who_hypertension_factshe_0121",
+      "query": "出现锐痛或眩晕还能否继续加重量？",
+      "expect_any": [
+        "诊断",
+        "胸痛",
+        "就医"
+      ],
+      "difficulty": "medium",
+      "theme": "safety",
+      "origin": "kb",
+      "source_document_id": "who_hypertension_factsheet_zh",
+      "source_chunk_id": "who_hypertension_factsheet_zh_4_0ea6dacdcde62257",
+      "relevance": [
+        {
+          "match": "诊断",
+          "grade": 2
+        },
+        {
+          "match": "胸痛",
+          "grade": 1
+        },
+        {
+          "match": "就医",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_fat_loss_myths_0122",
+      "query": "USDA 食物宏量数据可以用来估算热量吗？",
+      "expect_any": [
+        "宏量",
+        "蛋白",
+        "碳水"
+      ],
+      "difficulty": "easy",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "fat_loss_myths",
+      "source_chunk_id": "c_fat_loss_myths_0_707c2fcc9755",
+      "relevance": [
+        {
+          "match": "宏量",
+          "grade": 2
+        },
+        {
+          "match": "蛋白",
+          "grade": 1
+        },
+        {
+          "match": "碳水",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_cn_diet_cn_dietary_guidelines_20_0123",
+      "query": "膳食里对盐油糖酒通常怎么建议有什么建议？",
+      "expect_any": [
+        "食物多样",
+        "少盐少油",
+        "会烹会选"
+      ],
+      "difficulty": "hard",
+      "theme": "cn_diet",
+      "origin": "kb",
+      "source_document_id": "cn_dietary_guidelines_2022_core",
+      "source_chunk_id": "c_cn_dietary_guidelines_2022_core_0_d6c0cde2dad5",
+      "relevance": [
+        {
+          "match": "食物多样",
+          "grade": 2
+        },
+        {
+          "match": "少盐少油",
+          "grade": 1
+        },
+        {
+          "match": "会烹会选",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_obesity_who_sugars_dental_caries_0124",
+      "query": "体重管理通常从哪些方面入手呢？",
+      "expect_any": [
+        "肥胖",
+        "超重"
+      ],
+      "difficulty": "hard",
+      "theme": "obesity",
+      "origin": "kb",
+      "source_document_id": "who_sugars_dental_caries_zh",
+      "source_chunk_id": "who_sugars_dental_caries_zh_2_223ac419bbe425e7",
+      "relevance": [
+        {
+          "match": "肥胖",
+          "grade": 2
+        },
+        {
+          "match": "超重",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_weight_mgmt_who_healthy_diet_factshe_0125",
+      "query": "卡路里与体重管理如何理解呢？",
+      "expect_any": [
+        "能量摄入",
+        "热量",
+        "15"
+      ],
+      "difficulty": "medium",
+      "theme": "weight_mgmt",
+      "origin": "kb",
+      "source_document_id": "who_healthy_diet_factsheet_zh",
+      "source_chunk_id": "c_who_healthy_diet_factsheet_zh_0_9e8edc650316",
+      "relevance": [
+        {
+          "match": "能量摄入",
+          "grade": 2
+        },
+        {
+          "match": "热量",
+          "grade": 1
+        },
+        {
+          "match": "15",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_older_pa_who_physical_activity_fa_0126",
+      "query": "年长者人体力活动有什么额外建议呢？",
+      "expect_any": [
+        "老年",
+        "跌倒",
+        "20"
+      ],
+      "difficulty": "hard",
+      "theme": "older_pa",
+      "origin": "kb",
+      "source_document_id": "who_physical_activity_factsheet_zh",
+      "source_chunk_id": "who_physical_activity_factsheet_zh_3_b59af879ccf1418b",
+      "relevance": [
+        {
+          "match": "老年",
+          "grade": 2
+        },
+        {
+          "match": "跌倒",
+          "grade": 1
+        },
+        {
+          "match": "20",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_salt_who_salt_reduction_facts_0127",
+      "query": "减盐有哪些可执行建议？",
+      "expect_any": [
+        "食盐",
+        "5"
+      ],
+      "difficulty": "medium",
+      "theme": "salt",
+      "origin": "kb",
+      "source_document_id": "who_salt_reduction_factsheet_zh",
+      "source_chunk_id": "who_salt_reduction_factsheet_zh_4_7e6ae7320e0dc030",
+      "relevance": [
+        {
+          "match": "食盐",
+          "grade": 2
+        },
+        {
+          "match": "5",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_食品份量_中英对照_0128",
+      "query": "帮我看看添加糖和含糖饮料有什么建议？",
+      "expect_any": [
+        "sugar",
+        "食品份量",
+        "中英对照"
+      ],
+      "difficulty": "hard",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "食品份量_中英对照",
+      "source_chunk_id": "食品份量_中英对照_155_ef3d8e41f0cd0684",
+      "relevance": [
+        {
+          "match": "sugar",
+          "grade": 2
+        },
+        {
+          "match": "食品份量",
+          "grade": 1
+        },
+        {
+          "match": "中英对照",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_strength_cn_national_fitness_guid_0129",
+      "query": "抗阻训练新手每周练几次比较合适呢？",
+      "expect_any": [
+        "力量",
+        "渐进"
+      ],
+      "difficulty": "hard",
+      "theme": "strength",
+      "origin": "kb",
+      "source_document_id": "cn_national_fitness_guide_interpretation",
+      "source_chunk_id": "c_cn_national_fitness_guide_interpretation_0_4f46e6462ec5",
+      "relevance": [
+        {
+          "match": "力量",
+          "grade": 2
+        },
+        {
+          "match": "渐进",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_cn_dietary_guidelines_20_0130",
+      "query": "体力活动指南对久坐有什么提醒？",
+      "expect_any": [
+        "身体活动",
+        "中等强度",
+        "150"
+      ],
+      "difficulty": "medium",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "cn_dietary_guidelines_2022_eight_principles",
+      "source_chunk_id": "c_cn_dietary_guidelines_2022_eight_principles_1_a9f0ea15a538",
+      "relevance": [
+        {
+          "match": "身体活动",
+          "grade": 2
+        },
+        {
+          "match": "中等强度",
+          "grade": 1
+        },
+        {
+          "match": "150",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_protein_食品基础信息_中英对照_0131",
+      "query": "按体重计，宏量蛋白质推荐大概在什么范围？",
+      "expect_any": [
+        "1.6",
+        "2.2"
+      ],
+      "difficulty": "hard",
+      "theme": "protein",
+      "origin": "kb",
+      "source_document_id": "食品基础信息_中英对照",
+      "source_chunk_id": "食品基础信息_中英对照_237_a61f68d3e484ce20",
+      "relevance": [
+        {
+          "match": "1.6",
+          "grade": 2
+        },
+        {
+          "match": "2.2",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_safety_strength_training_basics_0132",
+      "query": "训练时胸痛应该怎么办（150–300 分钟）？",
+      "expect_any": [
+        "锐痛",
+        "眩晕",
+        "150"
+      ],
+      "difficulty": "hard",
+      "theme": "safety",
+      "origin": "kb",
+      "source_document_id": "strength_training_basics",
+      "source_chunk_id": "c_strength_training_basics_0_850dc416115e",
+      "relevance": [
+        {
+          "match": "锐痛",
+          "grade": 2
+        },
+        {
+          "match": "眩晕",
+          "grade": 1
+        },
+        {
+          "match": "150",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_strength_training_basics_0133",
+      "query": "USDA 食物宏量数据可以用来估算卡路里吗？",
+      "expect_any": [
+        "蛋白",
+        "碳水"
+      ],
+      "difficulty": "hard",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "strength_training_basics",
+      "source_chunk_id": "c_strength_training_basics_1_7c7c6be093cf",
+      "relevance": [
+        {
+          "match": "蛋白",
+          "grade": 2
+        },
+        {
+          "match": "碳水",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_cn_diet_cn_dietary_guidelines_20_0134",
+      "query": "中国居民膳食指南有哪些核心要点（与少盐少油相关）？",
+      "expect_any": [
+        "少盐少油",
+        "准则",
+        "控糖"
+      ],
+      "difficulty": "easy",
+      "theme": "cn_diet",
+      "origin": "kb",
+      "source_document_id": "cn_dietary_guidelines_2022_eight_principles",
+      "source_chunk_id": "c_cn_dietary_guidelines_2022_eight_principles_2_c98bf9a50456",
+      "relevance": [
+        {
+          "match": "少盐少油",
+          "grade": 2
+        },
+        {
+          "match": "准则",
+          "grade": 1
+        },
+        {
+          "match": "控糖",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_obesity_who_healthy_diet_factshe_0135",
+      "query": "体重管理通常从哪些方面入手（健康饮食）？",
+      "expect_any": [
+        "肥胖",
+        "超重"
+      ],
+      "difficulty": "hard",
+      "theme": "obesity",
+      "origin": "kb",
+      "source_document_id": "who_healthy_diet_factsheet_zh",
+      "source_chunk_id": "c_who_healthy_diet_factsheet_zh_3_4dd101d043bc",
+      "relevance": [
+        {
+          "match": "肥胖",
+          "grade": 2
+        },
+        {
+          "match": "超重",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_older_pa_who_healthy_at_home_phys_0136",
+      "query": "帮我看看年长者人体力活动有什么额外建议呢？",
+      "expect_any": [
+        "老年",
+        "平衡",
+        "300"
+      ],
+      "difficulty": "hard",
+      "theme": "older_pa",
+      "origin": "kb",
+      "source_document_id": "who_healthy_at_home_physical_activity_zh",
+      "source_chunk_id": "who_healthy_at_home_physical_activity_zh_3_4790ffefb7817043",
+      "relevance": [
+        {
+          "match": "老年",
+          "grade": 2
+        },
+        {
+          "match": "平衡",
+          "grade": 1
+        },
+        {
+          "match": "300",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_who_obesity_overweight_f_0137",
+      "query": "如何理解控糖相关建议（肥胖和超重）？",
+      "expect_any": [
+        "含糖饮料",
+        "和微量营养素",
+        "欠缺的食品环"
+      ],
+      "difficulty": "hard",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "who_obesity_overweight_factsheet_zh",
+      "source_chunk_id": "c_who_obesity_overweight_factsheet_zh_3_32e9965fd028",
+      "relevance": [
+        {
+          "match": "含糖饮料",
+          "grade": 2
+        },
+        {
+          "match": "和微量营养素",
+          "grade": 1
+        },
+        {
+          "match": "欠缺的食品环",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_strength_cn_national_fitness_guid_0138",
+      "query": "什么是渐进超负荷（《全民健身指南》解读_国家体育总）？",
+      "expect_any": [
+        "力量",
+        "抗阻",
+        "5"
+      ],
+      "difficulty": "medium",
+      "theme": "strength",
+      "origin": "kb",
+      "source_document_id": "cn_national_fitness_guide_interpretation",
+      "source_chunk_id": "c_cn_national_fitness_guide_interpretation_1_17019900be8e",
+      "relevance": [
+        {
+          "match": "力量",
+          "grade": 2
+        },
+        {
+          "match": "抗阻",
+          "grade": 1
+        },
+        {
+          "match": "5",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_healthy_diet_食品基础信息_中英对照_0139",
+      "query": "请问平衡膳食通常强调哪些食物类别（食品基础信息_中英对照）？",
+      "expect_any": [
+        "膳食纤维",
+        "脂肪",
+        "100"
+      ],
+      "difficulty": "medium",
+      "theme": "healthy_diet",
+      "origin": "kb",
+      "source_document_id": "食品基础信息_中英对照",
+      "source_chunk_id": "食品基础信息_中英对照_1_b96befc23a425380",
+      "relevance": [
+        {
+          "match": "膳食纤维",
+          "grade": 2
+        },
+        {
+          "match": "脂肪",
+          "grade": 1
+        },
+        {
+          "match": "100",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_who_children_sit_less_pl_0140",
+      "query": "每周增强肌肉力量的活动怎么安排？",
+      "expect_any": [
+        "身体活动",
+        "久坐",
+        "30"
+      ],
+      "difficulty": "medium",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "who_children_sit_less_play_more_zh",
+      "source_chunk_id": "c_who_children_sit_less_play_more_zh_3_fee3d34894f2",
+      "relevance": [
+        {
+          "match": "身体活动",
+          "grade": 2
+        },
+        {
+          "match": "久坐",
+          "grade": 1
+        },
+        {
+          "match": "30",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_protein_protein_fatloss_faq_0141",
+      "query": "优质蛋白可以从哪些食物获取？",
+      "expect_any": [
+        "g/kg",
+        "1.6",
+        "2.2"
+      ],
+      "difficulty": "medium",
+      "theme": "protein",
+      "origin": "kb",
+      "source_document_id": "protein_fatloss_faq",
+      "source_chunk_id": "protein_fatloss_faq_0_762a39b0037fd39f",
+      "relevance": [
+        {
+          "match": "g/kg",
+          "grade": 2
+        },
+        {
+          "match": "1.6",
+          "grade": 2
+        },
+        {
+          "match": "2.2",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0142",
+      "query": "如何从食物宏量条目里读 该主题 和优质蛋白呢？",
+      "expect_any": [
+        "面粉",
+        "foundation",
+        "kcal"
+      ],
+      "difficulty": "hard",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_42_b5510c71e0494aee",
+      "relevance": [
+        {
+          "match": "面粉",
+          "grade": 2
+        },
+        {
+          "match": "foundation",
+          "grade": 1
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_obesity_who_malnutrition_factshe_0143",
+      "query": "体重管理通常从哪些方面入手（营养不良）？",
+      "expect_any": [
+        "肥胖",
+        "超重"
+      ],
+      "difficulty": "medium",
+      "theme": "obesity",
+      "origin": "kb",
+      "source_document_id": "who_malnutrition_factsheet_zh",
+      "source_chunk_id": "who_malnutrition_factsheet_zh_2_30eef0eb6657f265",
+      "relevance": [
+        {
+          "match": "肥胖",
+          "grade": 2
+        },
+        {
+          "match": "超重",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_older_pa_cn_national_fitness_guid_0144",
+      "query": "关于老年，老年活动指南怎么说？",
+      "expect_any": [
+        "老年",
+        "平衡",
+        "5"
+      ],
+      "difficulty": "easy",
+      "theme": "older_pa",
+      "origin": "kb",
+      "source_document_id": "cn_national_fitness_guide_interpretation",
+      "source_chunk_id": "c_cn_national_fitness_guide_interpretation_0_08c8de886b1e",
+      "relevance": [
+        {
+          "match": "老年",
+          "grade": 2
+        },
+        {
+          "match": "平衡",
+          "grade": 1
+        },
+        {
+          "match": "5",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_salt_who_cvd_factsheet_zh_0145",
+      "query": "膳食里盐/钠摄入一般怎么控制（心血管疾病）？",
+      "expect_any": [
+        "减盐",
+        "心血管疾病的",
+        "风险因素"
+      ],
+      "difficulty": "medium",
+      "theme": "salt",
+      "origin": "kb",
+      "source_document_id": "who_cvd_factsheet_zh",
+      "source_chunk_id": "who_cvd_factsheet_zh_3_566fa3a2b59c40e0",
+      "relevance": [
+        {
+          "match": "减盐",
+          "grade": 2
+        },
+        {
+          "match": "心血管疾病的",
+          "grade": 1
+        },
+        {
+          "match": "风险因素",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_who_sugars_dental_caries_0146",
+      "query": "如何理解控糖相关建议（糖与龋齿）？",
+      "expect_any": [
+        "含糖饮料",
+        "游离糖",
+        "10"
+      ],
+      "difficulty": "medium",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "who_sugars_dental_caries_zh",
+      "source_chunk_id": "who_sugars_dental_caries_zh_1_5990e5dce11c847d",
+      "relevance": [
+        {
+          "match": "含糖饮料",
+          "grade": 2
+        },
+        {
+          "match": "游离糖",
+          "grade": 1
+        },
+        {
+          "match": "10",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_healthy_diet_cn_dietary_guidelines_20_0147",
+      "query": "平衡膳食通常强调哪些食物类别（全谷与蔬果）？",
+      "expect_any": [
+        "膳食纤维",
+        "蔬果",
+        "全谷"
+      ],
+      "difficulty": "medium",
+      "theme": "healthy_diet",
+      "origin": "kb",
+      "source_document_id": "cn_dietary_guidelines_2022_core",
+      "source_chunk_id": "c_cn_dietary_guidelines_2022_core_1_4a047fba609e",
+      "relevance": [
+        {
+          "match": "膳食纤维",
+          "grade": 2
+        },
+        {
+          "match": "蔬果",
+          "grade": 1
+        },
+        {
+          "match": "全谷",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_nhs_exercise_older_adult_0148",
+      "query": "想了解一下身体活动指南对久坐有什么提醒？",
+      "expect_any": [
+        "150",
+        "75"
+      ],
+      "difficulty": "medium",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "nhs_exercise_older_adults_en",
+      "source_chunk_id": "c_nhs_exercise_older_adults_en_2_52d646132098",
+      "relevance": [
+        {
+          "match": "150",
+          "grade": 2
+        },
+        {
+          "match": "75",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_protein_cn_dietary_guidelines_20_0149",
+      "query": "健身或控制体脂场景下，增肌相关宏量摄入一般怎么安排（不等于）？",
+      "expect_any": [
+        "蛋白",
+        "大豆",
+        "5"
+      ],
+      "difficulty": "hard",
+      "theme": "protein",
+      "origin": "kb",
+      "source_document_id": "cn_dietary_guidelines_2022_core",
+      "source_chunk_id": "c_cn_dietary_guidelines_2022_core_0_d6c0cde2dad5",
+      "relevance": [
+        {
+          "match": "蛋白",
+          "grade": 2
+        },
+        {
+          "match": "大豆",
+          "grade": 1
+        },
+        {
+          "match": "5",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_protein_basics_0150",
+      "query": "请问USDA 食物宏量数据可以用来估算卡路里吗呢？",
+      "expect_any": [
+        "蛋白",
+        "碳水",
+        "1.6"
+      ],
+      "difficulty": "hard",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "protein_basics",
+      "source_chunk_id": "c_protein_basics_0_68850ea36418",
+      "relevance": [
+        {
+          "match": "蛋白",
+          "grade": 2
+        },
+        {
+          "match": "碳水",
+          "grade": 1
+        },
+        {
+          "match": "1.6",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_cn_diet_cn_dietary_guidelines_20_0151",
+      "query": "为什么强调食物多样？",
+      "expect_any": [
+        "膳食",
+        "准则",
+        "25"
+      ],
+      "difficulty": "hard",
+      "theme": "cn_diet",
+      "origin": "kb",
+      "source_document_id": "cn_dietary_guidelines_2022_eight_principles",
+      "source_chunk_id": "c_cn_dietary_guidelines_2022_eight_principles_1_a9f0ea15a538",
+      "relevance": [
+        {
+          "match": "膳食",
+          "grade": 2
+        },
+        {
+          "match": "准则",
+          "grade": 1
+        },
+        {
+          "match": "25",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_obesity_who_5_tips_healthy_diet__0152",
+      "query": "体重管理通常从哪些方面入手（新年健康饮食5个小贴士）？",
+      "expect_any": [
+        "肥胖",
+        "超重"
+      ],
+      "difficulty": "hard",
+      "theme": "obesity",
+      "origin": "kb",
+      "source_document_id": "who_5_tips_healthy_diet_zh",
+      "source_chunk_id": "who_5_tips_healthy_diet_zh_5_e1f119af5dd4cf1f",
+      "relevance": [
+        {
+          "match": "肥胖",
+          "grade": 2
+        },
+        {
+          "match": "超重",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_older_pa_who_healthy_at_home_phys_0153",
+      "query": "年长者人运动活动量有什么额外建议有什么建议？",
+      "expect_any": [
+        "老年",
+        "平衡"
+      ],
+      "difficulty": "hard",
+      "theme": "older_pa",
+      "origin": "kb",
+      "source_document_id": "who_healthy_at_home_physical_activity_zh",
+      "source_chunk_id": "who_healthy_at_home_physical_activity_zh_0_9418d1c1c7cbb03d",
+      "relevance": [
+        {
+          "match": "老年",
+          "grade": 2
+        },
+        {
+          "match": "平衡",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_who_5_tips_healthy_diet__0154",
+      "query": "如何理解控糖相关建议（新年健康饮食5个小贴士）？",
+      "expect_any": [
+        "含糖饮料",
+        "添加糖"
+      ],
+      "difficulty": "medium",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "who_5_tips_healthy_diet_zh",
+      "source_chunk_id": "who_5_tips_healthy_diet_zh_5_e1f119af5dd4cf1f",
+      "relevance": [
+        {
+          "match": "含糖饮料",
+          "grade": 2
+        },
+        {
+          "match": "添加糖",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_children_pa_who_every_move_counts_zh_0155",
+      "query": "关于青少年，未成年人活动建议是什么？",
+      "expect_any": [
+        "青少年",
+        "儿童",
+        "60"
+      ],
+      "difficulty": "easy",
+      "theme": "children_pa",
+      "origin": "kb",
+      "source_document_id": "who_every_move_counts_zh",
+      "source_chunk_id": "c_who_every_move_counts_zh_0_8b1e8849481a",
+      "relevance": [
+        {
+          "match": "青少年",
+          "grade": 2
+        },
+        {
+          "match": "儿童",
+          "grade": 1
+        },
+        {
+          "match": "60",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_who_hypertension_factshe_0156",
+      "query": "帮我看看每周增强肌肉力量的活动怎么安排？",
+      "expect_any": [
+        "中等强度",
+        "150",
+        "有氧"
+      ],
+      "difficulty": "medium",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "who_hypertension_factsheet_zh",
+      "source_chunk_id": "who_hypertension_factsheet_zh_6_fe14f5c55e1a3036",
+      "relevance": [
+        {
+          "match": "中等强度",
+          "grade": 2
+        },
+        {
+          "match": "150",
+          "grade": 2
+        },
+        {
+          "match": "有氧",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_protein_食品基础信息_中英对照_0157",
+      "query": "按体重计，蛋白质推荐大概在什么范围？",
+      "expect_any": [
+        "1.6",
+        "2.2"
+      ],
+      "difficulty": "hard",
+      "theme": "protein",
+      "origin": "kb",
+      "source_document_id": "食品基础信息_中英对照",
+      "source_chunk_id": "食品基础信息_中英对照_302_c495a8e22c182c1d",
+      "relevance": [
+        {
+          "match": "1.6",
+          "grade": 2
+        },
+        {
+          "match": "2.2",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_foundation_foods_macros__0158",
+      "query": "想了解一下USDA 食物宏量数据可以用来估算能量吗呢？",
+      "expect_any": [
+        "foundation",
+        "kcal",
+        "100"
+      ],
+      "difficulty": "hard",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "foundation_foods_macros_zh",
+      "source_chunk_id": "foundation_foods_macros_zh_4_ed3975c305dd8007",
+      "relevance": [
+        {
+          "match": "foundation",
+          "grade": 2
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        },
+        {
+          "match": "100",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_cn_diet_cn_dietary_guidelines_20_0159",
+      "query": "想了解一下中国居民居民饮食指导有哪些核心要点？",
+      "expect_any": [
+        "会烹会选",
+        "膳食",
+        "准则"
+      ],
+      "difficulty": "hard",
+      "theme": "cn_diet",
+      "origin": "kb",
+      "source_document_id": "cn_dietary_guidelines_2022_eight_principles",
+      "source_chunk_id": "c_cn_dietary_guidelines_2022_eight_principles_3_c4ff4cdcdcd3",
+      "relevance": [
+        {
+          "match": "会烹会选",
+          "grade": 2
+        },
+        {
+          "match": "膳食",
+          "grade": 1
+        },
+        {
+          "match": "准则",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_obesity_who_hypertension_factshe_0160",
+      "query": "体重管理通常从哪些方面入手有什么建议（高血压）？",
+      "expect_any": [
+        "肥胖",
+        "超重",
+        "150"
+      ],
+      "difficulty": "hard",
+      "theme": "obesity",
+      "origin": "kb",
+      "source_document_id": "who_hypertension_factsheet_zh",
+      "source_chunk_id": "who_hypertension_factsheet_zh_6_fe14f5c55e1a3036",
+      "relevance": [
+        {
+          "match": "肥胖",
+          "grade": 2
+        },
+        {
+          "match": "超重",
+          "grade": 1
+        },
+        {
+          "match": "150",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_older_pa_cn_national_fitness_guid_0161",
+      "query": "高龄人群人运动活动量有什么额外建议（《全民健身指南》解读_国家体育总）？",
+      "expect_any": [
+        "老年",
+        "平衡",
+        "跌倒"
+      ],
+      "difficulty": "hard",
+      "theme": "older_pa",
+      "origin": "kb",
+      "source_document_id": "cn_national_fitness_guide_interpretation",
+      "source_chunk_id": "c_cn_national_fitness_guide_interpretation_0_11458ad54c86",
+      "relevance": [
+        {
+          "match": "老年",
+          "grade": 2
+        },
+        {
+          "match": "平衡",
+          "grade": 1
+        },
+        {
+          "match": "跌倒",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_salt_who_5_tips_healthy_diet__0162",
+      "query": "请问膳食里盐/钠摄入一般怎么控制？",
+      "expect_any": [
+        "减盐",
+        "少盐",
+        "5"
+      ],
+      "difficulty": "medium",
+      "theme": "salt",
+      "origin": "kb",
+      "source_document_id": "who_5_tips_healthy_diet_zh",
+      "source_chunk_id": "who_5_tips_healthy_diet_zh_3_9730da77850c2640",
+      "relevance": [
+        {
+          "match": "减盐",
+          "grade": 2
+        },
+        {
+          "match": "少盐",
+          "grade": 1
+        },
+        {
+          "match": "5",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_食品基础信息_中英对照_0163",
+      "query": "帮我看看如何理解控糖相关建议（食品基础信息_中英对照）？",
+      "expect_any": [
+        "sugar",
+        "食品基础信息",
+        "中英对照"
+      ],
+      "difficulty": "medium",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "食品基础信息_中英对照",
+      "source_chunk_id": "食品基础信息_中英对照_71_558fa2491363e67d",
+      "relevance": [
+        {
+          "match": "sugar",
+          "grade": 2
+        },
+        {
+          "match": "食品基础信息",
+          "grade": 1
+        },
+        {
+          "match": "中英对照",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_healthy_diet_who_salt_reduction_facts_0164",
+      "query": "平衡膳食通常强调哪些食物类别（减少钠摄入）？",
+      "expect_any": [
+        "全谷",
+        "脂肪"
+      ],
+      "difficulty": "medium",
+      "theme": "healthy_diet",
+      "origin": "kb",
+      "source_document_id": "who_salt_reduction_factsheet_zh",
+      "source_chunk_id": "who_salt_reduction_factsheet_zh_2_5ef9708755db5d86",
+      "relevance": [
+        {
+          "match": "全谷",
+          "grade": 2
+        },
+        {
+          "match": "脂肪",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_nhs_improve_strength_fle_0165",
+      "query": "关于150，活动量建议如何理解（How to improve y）？",
+      "expect_any": [
+        "150",
+        "75"
+      ],
+      "difficulty": "easy",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "nhs_improve_strength_flexibility_en",
+      "source_chunk_id": "c_nhs_improve_strength_flexibility_en_2_d68a959715f9",
+      "relevance": [
+        {
+          "match": "150",
+          "grade": 2
+        },
+        {
+          "match": "75",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_protein_食品基础信息_中英对照_0166",
+      "query": "优质蛋白可以从哪些食物获取（食品基础信息_中英对照）？",
+      "expect_any": [
+        "1.6",
+        "2.2"
+      ],
+      "difficulty": "easy",
+      "theme": "protein",
+      "origin": "kb",
+      "source_document_id": "食品基础信息_中英对照",
+      "source_chunk_id": "食品基础信息_中英对照_295_525349a2a2134265",
+      "relevance": [
+        {
+          "match": "1.6",
+          "grade": 2
+        },
+        {
+          "match": "2.2",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0167",
+      "query": "如何从食物宏量条目里读 该主题 和优质蛋白有什么建议？",
+      "expect_any": [
+        "猪肉",
+        "foundation",
+        "kcal"
+      ],
+      "difficulty": "hard",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_110_e8f030147e564e8f",
+      "relevance": [
+        {
+          "match": "猪肉",
+          "grade": 2
+        },
+        {
+          "match": "foundation",
+          "grade": 1
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_obesity_cn_national_fitness_guid_0168",
+      "query": "请问体重管理通常从哪些方面入手？",
+      "expect_any": [
+        "肥胖",
+        "超重"
+      ],
+      "difficulty": "medium",
+      "theme": "obesity",
+      "origin": "kb",
+      "source_document_id": "cn_national_fitness_guide_interpretation",
+      "source_chunk_id": "c_cn_national_fitness_guide_interpretation_2_4d7803013348",
+      "relevance": [
+        {
+          "match": "肥胖",
+          "grade": 2
+        },
+        {
+          "match": "超重",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_older_pa_cn_national_fitness_guid_0169",
+      "query": "高龄人群人体力活动有什么额外建议有什么建议？",
+      "expect_any": [
+        "平衡",
+        "跌倒",
+        "40"
+      ],
+      "difficulty": "hard",
+      "theme": "older_pa",
+      "origin": "kb",
+      "source_document_id": "cn_national_fitness_guide_interpretation",
+      "source_chunk_id": "c_cn_national_fitness_guide_interpretation_2_1eb6f7b27161",
+      "relevance": [
+        {
+          "match": "平衡",
+          "grade": 2
+        },
+        {
+          "match": "跌倒",
+          "grade": 1
+        },
+        {
+          "match": "40",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_fitness_guide_cn_scientific_fitness_gu_0170",
+      "query": "关于全民健身，健身指导怎么说？",
+      "expect_any": [
+        "全民健身",
+        "科学健身",
+        "健身指南"
+      ],
+      "difficulty": "easy",
+      "theme": "fitness_guide",
+      "origin": "kb",
+      "source_document_id": "cn_scientific_fitness_guidance_reply",
+      "source_chunk_id": "c_cn_scientific_fitness_guidance_reply_1_296ea69e3052",
+      "relevance": [
+        {
+          "match": "全民健身",
+          "grade": 2
+        },
+        {
+          "match": "科学健身",
+          "grade": 1
+        },
+        {
+          "match": "健身指南",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_salt_who_healthy_diet_factshe_0171",
+      "query": "膳食里盐/钠摄入一般怎么控制呢？",
+      "expect_any": [
+        "的推移而演变",
+        "受到许多社会",
+        "和经济因素的"
+      ],
+      "difficulty": "hard",
+      "theme": "salt",
+      "origin": "kb",
+      "source_document_id": "who_healthy_diet_factsheet_zh",
+      "source_chunk_id": "c_who_healthy_diet_factsheet_zh_0_5dd9e992f3c6",
+      "relevance": [
+        {
+          "match": "的推移而演变",
+          "grade": 2
+        },
+        {
+          "match": "受到许多社会",
+          "grade": 1
+        },
+        {
+          "match": "和经济因素的",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_who_healthy_diet_factshe_0172",
+      "query": "如何理解控糖相关建议（健康饮食）？",
+      "expect_any": [
+        "游离糖",
+        "糖和钠含量低",
+        "的各种低限度"
+      ],
+      "difficulty": "hard",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "who_healthy_diet_factsheet_zh",
+      "source_chunk_id": "c_who_healthy_diet_factsheet_zh_1_9d2efa548ea4",
+      "relevance": [
+        {
+          "match": "游离糖",
+          "grade": 2
+        },
+        {
+          "match": "糖和钠含量低",
+          "grade": 1
+        },
+        {
+          "match": "的各种低限度",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_healthy_diet_who_healthy_diet_factshe_0173",
+      "query": "蔬果和全谷在日常饮食中怎么安排？",
+      "expect_any": [
+        "多样化",
+        "脂肪"
+      ],
+      "difficulty": "hard",
+      "theme": "healthy_diet",
+      "origin": "kb",
+      "source_document_id": "who_healthy_diet_factsheet_zh",
+      "source_chunk_id": "c_who_healthy_diet_factsheet_zh_3_4dd101d043bc",
+      "relevance": [
+        {
+          "match": "多样化",
+          "grade": 2
+        },
+        {
+          "match": "脂肪",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_children_pa_who_physical_activity_fa_0174",
+      "query": "帮我看看未成年人青少年每天应活动多久？",
+      "expect_any": [
+        "青少年",
+        "儿童",
+        "屏幕"
+      ],
+      "difficulty": "easy",
+      "theme": "children_pa",
+      "origin": "kb",
+      "source_document_id": "who_physical_activity_factsheet_zh",
+      "source_chunk_id": "who_physical_activity_factsheet_zh_5_64efa7dea86d0205",
+      "relevance": [
+        {
+          "match": "青少年",
+          "grade": 2
+        },
+        {
+          "match": "儿童",
+          "grade": 1
+        },
+        {
+          "match": "屏幕",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_cn_national_fitness_guid_0175",
+      "query": "请问每周增强肌肉力量的活动怎么安排？",
+      "expect_any": [
+        "身体活动",
+        "有氧",
+        "5"
+      ],
+      "difficulty": "medium",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "cn_national_fitness_guide_interpretation",
+      "source_chunk_id": "c_cn_national_fitness_guide_interpretation_0_11458ad54c86",
+      "relevance": [
+        {
+          "match": "身体活动",
+          "grade": 2
+        },
+        {
+          "match": "有氧",
+          "grade": 1
+        },
+        {
+          "match": "5",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0176",
+      "query": "USDA 食物宏量数据可以用来估算能量吗有什么建议？",
+      "expect_any": [
+        "猪肉",
+        "foundation",
+        "kcal"
+      ],
+      "difficulty": "hard",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_112_621646f6d3bdc3b1",
+      "relevance": [
+        {
+          "match": "猪肉",
+          "grade": 2
+        },
+        {
+          "match": "foundation",
+          "grade": 1
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_obesity_who_cvd_factsheet_zh_0177",
+      "query": "体重管理通常从哪些方面入手（心血管疾病）？",
+      "expect_any": [
+        "肥胖",
+        "超重"
+      ],
+      "difficulty": "medium",
+      "theme": "obesity",
+      "origin": "kb",
+      "source_document_id": "who_cvd_factsheet_zh",
+      "source_chunk_id": "who_cvd_factsheet_zh_1_9230d08c6f060c15",
+      "relevance": [
+        {
+          "match": "肥胖",
+          "grade": 2
+        },
+        {
+          "match": "超重",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_older_pa_cn_national_fitness_guid_0178",
+      "query": "高龄人群人体力活动有什么额外建议呢？",
+      "expect_any": [
+        "老年",
+        "平衡"
+      ],
+      "difficulty": "medium",
+      "theme": "older_pa",
+      "origin": "kb",
+      "source_document_id": "cn_national_fitness_guide_interpretation",
+      "source_chunk_id": "c_cn_national_fitness_guide_interpretation_3_462d2fb50c88",
+      "relevance": [
+        {
+          "match": "老年",
+          "grade": 2
+        },
+        {
+          "match": "平衡",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_salt_who_salt_reduction_facts_0179",
+      "query": "关于钠和盐的换算，盐摄入上限怎么理解？",
+      "expect_any": [
+        "5",
+        "钠和盐的换算",
+        "将食品上列出"
+      ],
+      "difficulty": "easy",
+      "theme": "salt",
+      "origin": "kb",
+      "source_document_id": "who_salt_reduction_factsheet_zh",
+      "source_chunk_id": "who_salt_reduction_factsheet_zh_7_17fa49da4bce3ec0",
+      "relevance": [
+        {
+          "match": "5",
+          "grade": 2
+        },
+        {
+          "match": "钠和盐的换算",
+          "grade": 1
+        },
+        {
+          "match": "将食品上列出",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_cn_dietary_guidelines_20_0180",
+      "query": "如何理解控糖相关建议（《中国居民膳食指南（2022）》）？",
+      "expect_any": [
+        "含糖饮料",
+        "添加糖",
+        "50"
+      ],
+      "difficulty": "hard",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "cn_dietary_guidelines_2022_eight_principles",
+      "source_chunk_id": "c_cn_dietary_guidelines_2022_eight_principles_3_c4ff4cdcdcd3",
+      "relevance": [
+        {
+          "match": "含糖饮料",
+          "grade": 2
+        },
+        {
+          "match": "添加糖",
+          "grade": 1
+        },
+        {
+          "match": "50",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_who_healthy_at_home_phys_0181",
+      "query": "成年人七天内呼吸加快但仍能说话的强度运动活动量建议量是多少？",
+      "expect_any": [
+        "身体活动",
+        "300"
+      ],
+      "difficulty": "medium",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "who_healthy_at_home_physical_activity_zh",
+      "source_chunk_id": "who_healthy_at_home_physical_activity_zh_3_4790ffefb7817043",
+      "relevance": [
+        {
+          "match": "身体活动",
+          "grade": 2
+        },
+        {
+          "match": "300",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0182",
+      "query": "如何从食物宏量条目里读 该主题 和宏量蛋白？",
+      "expect_any": [
+        "番茄",
+        "foundation",
+        "kcal"
+      ],
+      "difficulty": "medium",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_14_6dbdf9dced4cd0d8",
+      "relevance": [
+        {
+          "match": "番茄",
+          "grade": 2
+        },
+        {
+          "match": "foundation",
+          "grade": 1
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_obesity_who_obesity_overweight_f_0183",
+      "query": "想了解一下体重管理通常从哪些方面入手？",
+      "expect_any": [
+        "肥胖",
+        "超重"
+      ],
+      "difficulty": "medium",
+      "theme": "obesity",
+      "origin": "kb",
+      "source_document_id": "who_obesity_overweight_factsheet_zh",
+      "source_chunk_id": "c_who_obesity_overweight_factsheet_zh_2_cc0973a51fe1",
+      "relevance": [
+        {
+          "match": "肥胖",
+          "grade": 2
+        },
+        {
+          "match": "超重",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_older_pa_cn_national_fitness_guid_0184",
+      "query": "请问老年人运动活动量有什么额外建议？",
+      "expect_any": [
+        "平衡",
+        "跌倒",
+        "5"
+      ],
+      "difficulty": "hard",
+      "theme": "older_pa",
+      "origin": "kb",
+      "source_document_id": "cn_national_fitness_guide_interpretation",
+      "source_chunk_id": "c_cn_national_fitness_guide_interpretation_3_09681b26c177",
+      "relevance": [
+        {
+          "match": "平衡",
+          "grade": 2
+        },
+        {
+          "match": "跌倒",
+          "grade": 1
+        },
+        {
+          "match": "5",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_salt_who_cvd_factsheet_zh_0185",
+      "query": "想了解一下膳食里盐/钠摄入一般怎么控制？",
+      "expect_any": [
+        "减盐",
+        "其他并发症的",
+        "风险增加"
+      ],
+      "difficulty": "hard",
+      "theme": "salt",
+      "origin": "kb",
+      "source_document_id": "who_cvd_factsheet_zh",
+      "source_chunk_id": "who_cvd_factsheet_zh_2_e379c0aa8be429e0",
+      "relevance": [
+        {
+          "match": "减盐",
+          "grade": 2
+        },
+        {
+          "match": "其他并发症的",
+          "grade": 1
+        },
+        {
+          "match": "风险增加",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_食品份量_中英对照_0186",
+      "query": "添加糖和含糖饮料有什么建议？",
+      "expect_any": [
+        "sugar",
+        "食品份量",
+        "中英对照"
+      ],
+      "difficulty": "hard",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "食品份量_中英对照",
+      "source_chunk_id": "食品份量_中英对照_156_1ee8a6161c544915",
+      "relevance": [
+        {
+          "match": "sugar",
+          "grade": 2
+        },
+        {
+          "match": "食品份量",
+          "grade": 1
+        },
+        {
+          "match": "中英对照",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_healthy_diet_cn_dietary_guidelines_20_0187",
+      "query": "平衡膳食通常强调哪些食物类别（《中国居民膳食指南（2022）》）？",
+      "expect_any": [
+        "平衡膳食",
+        "全谷",
+        "25"
+      ],
+      "difficulty": "easy",
+      "theme": "healthy_diet",
+      "origin": "kb",
+      "source_document_id": "cn_dietary_guidelines_2022_eight_principles",
+      "source_chunk_id": "c_cn_dietary_guidelines_2022_eight_principles_0_145c2900f500",
+      "relevance": [
+        {
+          "match": "平衡膳食",
+          "grade": 2
+        },
+        {
+          "match": "全谷",
+          "grade": 1
+        },
+        {
+          "match": "25",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_CDC_NCHS_water_intake_da_0188",
+      "query": "请问每周增强肌肉力量的活动怎么安排（CDC_NCHS_water_i）？",
+      "expect_any": [
+        "150",
+        "300"
+      ],
+      "difficulty": "medium",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "CDC_NCHS_water_intake_databrief_242",
+      "source_chunk_id": "c_CDC_NCHS_water_intake_databrief_242_3_a98bb82ebf84",
+      "relevance": [
+        {
+          "match": "150",
+          "grade": 2
+        },
+        {
+          "match": "300",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_obesity_who_malnutrition_factshe_0189",
+      "query": "体重管理通常从哪些方面入手有什么建议（营养不良）？",
+      "expect_any": [
+        "BMI",
+        "肥胖",
+        "超重"
+      ],
+      "difficulty": "hard",
+      "theme": "obesity",
+      "origin": "kb",
+      "source_document_id": "who_malnutrition_factsheet_zh",
+      "source_chunk_id": "who_malnutrition_factsheet_zh_8_a6362bcb9fa736ac",
+      "relevance": [
+        {
+          "match": "BMI",
+          "grade": 2
+        },
+        {
+          "match": "肥胖",
+          "grade": 1
+        },
+        {
+          "match": "超重",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_fitness_guide_cn_national_fitness_guid_0190",
+      "query": "关于全民健身，健身指导怎么说（国家体育总局办公厅关于推广应用《）？",
+      "expect_any": [
+        "全民健身",
+        "科学健身",
+        "健身指南"
+      ],
+      "difficulty": "easy",
+      "theme": "fitness_guide",
+      "origin": "kb",
+      "source_document_id": "cn_national_fitness_guide_promote_notice",
+      "source_chunk_id": "c_cn_national_fitness_guide_promote_notice_1_aa05e6f105a3",
+      "relevance": [
+        {
+          "match": "全民健身",
+          "grade": 2
+        },
+        {
+          "match": "科学健身",
+          "grade": 1
+        },
+        {
+          "match": "健身指南",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_salt_who_cvd_factsheet_zh_0191",
+      "query": "帮我看看膳食里盐/钠摄入一般怎么控制？",
+      "expect_any": [
+        "减盐",
+        "是一组心脏和",
+        "血管失调"
+      ],
+      "difficulty": "medium",
+      "theme": "salt",
+      "origin": "kb",
+      "source_document_id": "who_cvd_factsheet_zh",
+      "source_chunk_id": "who_cvd_factsheet_zh_1_9230d08c6f060c15",
+      "relevance": [
+        {
+          "match": "减盐",
+          "grade": 2
+        },
+        {
+          "match": "是一组心脏和",
+          "grade": 1
+        },
+        {
+          "match": "血管失调",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_who_healthy_diet_factshe_0192",
+      "query": "想了解一下添加糖和含糖饮料有什么建议？",
+      "expect_any": [
+        "游离糖",
+        "20"
+      ],
+      "difficulty": "medium",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "who_healthy_diet_factsheet_zh",
+      "source_chunk_id": "c_who_healthy_diet_factsheet_zh_2_57c0d23cb923",
+      "relevance": [
+        {
+          "match": "游离糖",
+          "grade": 2
+        },
+        {
+          "match": "20",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_healthy_diet_who_healthy_diet_factshe_0193",
+      "query": "请问平衡膳食通常强调哪些食物类别呢？",
+      "expect_any": [
+        "膳食纤维",
+        "全谷",
+        "脂肪"
+      ],
+      "difficulty": "hard",
+      "theme": "healthy_diet",
+      "origin": "kb",
+      "source_document_id": "who_healthy_diet_factsheet_zh",
+      "source_chunk_id": "c_who_healthy_diet_factsheet_zh_1_309b248a13bd",
+      "relevance": [
+        {
+          "match": "膳食纤维",
+          "grade": 2
+        },
+        {
+          "match": "全谷",
+          "grade": 1
+        },
+        {
+          "match": "脂肪",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_children_pa_who_obesity_overweight_f_0194",
+      "query": "请问未成年人青少年每天应活动多久？",
+      "expect_any": [
+        "儿童",
+        "60"
+      ],
+      "difficulty": "medium",
+      "theme": "children_pa",
+      "origin": "kb",
+      "source_document_id": "who_obesity_overweight_factsheet_zh",
+      "source_chunk_id": "c_who_obesity_overweight_factsheet_zh_2_cc0973a51fe1",
+      "relevance": [
+        {
+          "match": "儿童",
+          "grade": 2
+        },
+        {
+          "match": "60",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_who_every_move_counts_zh_0195",
+      "query": "帮我看看运动活动量指南对静坐少动有什么提醒呢？",
+      "expect_any": [
+        "身体活动",
+        "150",
+        "300"
+      ],
+      "difficulty": "medium",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "who_every_move_counts_zh",
+      "source_chunk_id": "c_who_every_move_counts_zh_0_8b1e8849481a",
+      "relevance": [
+        {
+          "match": "身体活动",
+          "grade": 2
+        },
+        {
+          "match": "150",
+          "grade": 2
+        },
+        {
+          "match": "300",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0196",
+      "query": "如何从食物宏量条目里读 该主题 和宏量蛋白（USDA 基础食品（Founda）？",
+      "expect_any": [
+        "foundation",
+        "kcal",
+        "USDA"
+      ],
+      "difficulty": "hard",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_82_b947ed1a381f8c7c",
+      "relevance": [
+        {
+          "match": "foundation",
+          "grade": 2
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        },
+        {
+          "match": "USDA",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_obesity_cn_national_fitness_guid_0197",
+      "query": "体重管理通常从哪些方面入手（《全民健身指南》解读_国家体育总）？",
+      "expect_any": [
+        "肥胖",
+        "减重",
+        "5"
+      ],
+      "difficulty": "hard",
+      "theme": "obesity",
+      "origin": "kb",
+      "source_document_id": "cn_national_fitness_guide_interpretation",
+      "source_chunk_id": "c_cn_national_fitness_guide_interpretation_3_09681b26c177",
+      "relevance": [
+        {
+          "match": "肥胖",
+          "grade": 2
+        },
+        {
+          "match": "减重",
+          "grade": 1
+        },
+        {
+          "match": "5",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_fitness_guide_cn_national_fitness_guid_0198",
+      "query": "全民健身或科学健身指南强调什么？",
+      "expect_any": [
+        "体质",
+        "健身",
+        "100"
+      ],
+      "difficulty": "easy",
+      "theme": "fitness_guide",
+      "origin": "kb",
+      "source_document_id": "cn_national_fitness_guide_interpretation",
+      "source_chunk_id": "c_cn_national_fitness_guide_interpretation_0_747d4febb400",
+      "relevance": [
+        {
+          "match": "体质",
+          "grade": 2
+        },
+        {
+          "match": "健身",
+          "grade": 1
+        },
+        {
+          "match": "100",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_salt_who_healthy_diet_factshe_0199",
+      "query": "膳食里盐/钠摄入一般怎么控制（与食盐相关）？",
+      "expect_any": [
+        "食盐",
+        "5"
+      ],
+      "difficulty": "easy",
+      "theme": "salt",
+      "origin": "kb",
+      "source_document_id": "who_healthy_diet_factsheet_zh",
+      "source_chunk_id": "c_who_healthy_diet_factsheet_zh_4_aff59e3d40a8",
+      "relevance": [
+        {
+          "match": "食盐",
+          "grade": 2
+        },
+        {
+          "match": "5",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_食品基础信息_中英对照_0200",
+      "query": "想了解一下如何理解控糖相关建议有什么建议？",
+      "expect_any": [
+        "sugar",
+        "添加糖"
+      ],
+      "difficulty": "hard",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "食品基础信息_中英对照",
+      "source_chunk_id": "食品基础信息_中英对照_246_858e7055fd7eb15b",
+      "relevance": [
+        {
+          "match": "sugar",
+          "grade": 2
+        },
+        {
+          "match": "添加糖",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_healthy_diet_who_obesity_overweight_f_0201",
+      "query": "平衡膳食通常强调哪些食物类别（与全谷相关）？",
+      "expect_any": [
+        "全谷",
+        "脂肪"
+      ],
+      "difficulty": "easy",
+      "theme": "healthy_diet",
+      "origin": "kb",
+      "source_document_id": "who_obesity_overweight_factsheet_zh",
+      "source_chunk_id": "c_who_obesity_overweight_factsheet_zh_0_644783a43634",
+      "relevance": [
+        {
+          "match": "全谷",
+          "grade": 2
+        },
+        {
+          "match": "脂肪",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_who_obesity_overweight_f_0202",
+      "query": "每周增强肌肉力量的活动怎么安排（与身体活动相关）？",
+      "expect_any": [
+        "身体活动",
+        "久坐"
+      ],
+      "difficulty": "easy",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "who_obesity_overweight_factsheet_zh",
+      "source_chunk_id": "c_who_obesity_overweight_factsheet_zh_3_32e9965fd028",
+      "relevance": [
+        {
+          "match": "身体活动",
+          "grade": 2
+        },
+        {
+          "match": "久坐",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0203",
+      "query": "想了解一下如何从食物宏量条目里读 该主题 和优质蛋白？",
+      "expect_any": [
+        "法兰克福香肠",
+        "foundation",
+        "kcal"
+      ],
+      "difficulty": "hard",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_116_00b0dc6c898b1c78",
+      "relevance": [
+        {
+          "match": "法兰克福香肠",
+          "grade": 2
+        },
+        {
+          "match": "foundation",
+          "grade": 1
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_obesity_who_malnutrition_factshe_0204",
+      "query": "体重管理通常从哪些方面入手呢（营养不良）？",
+      "expect_any": [
+        "肥胖",
+        "超重"
+      ],
+      "difficulty": "hard",
+      "theme": "obesity",
+      "origin": "kb",
+      "source_document_id": "who_malnutrition_factsheet_zh",
+      "source_chunk_id": "who_malnutrition_factsheet_zh_1_814294613860a7e5",
+      "relevance": [
+        {
+          "match": "肥胖",
+          "grade": 2
+        },
+        {
+          "match": "超重",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_fitness_guide_cn_fitness_science_tiwei_0205",
+      "query": "关于全民健身，健身指导怎么说（体育总局科教司——深化体卫融合不）？",
+      "expect_any": [
+        "全民健身",
+        "科学健身",
+        "健身指南"
+      ],
+      "difficulty": "easy",
+      "theme": "fitness_guide",
+      "origin": "kb",
+      "source_document_id": "cn_fitness_science_tiwei_fusion",
+      "source_chunk_id": "c_cn_fitness_science_tiwei_fusion_1_0f9be05d30f3",
+      "relevance": [
+        {
+          "match": "全民健身",
+          "grade": 2
+        },
+        {
+          "match": "科学健身",
+          "grade": 1
+        },
+        {
+          "match": "健身指南",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_salt_who_salt_reduction_facts_0206",
+      "query": "减盐有哪些可执行建议（减少钠摄入）？",
+      "expect_any": [
+        "11",
+        "5"
+      ],
+      "difficulty": "hard",
+      "theme": "salt",
+      "origin": "kb",
+      "source_document_id": "who_salt_reduction_factsheet_zh",
+      "source_chunk_id": "who_salt_reduction_factsheet_zh_1_5c838c05bb371436",
+      "relevance": [
+        {
+          "match": "11",
+          "grade": 2
+        },
+        {
+          "match": "5",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_who_healthy_diet_factshe_0207",
+      "query": "请问如何理解控糖相关建议？",
+      "expect_any": [
+        "游离糖",
+        "健康饮食",
+        "来源"
+      ],
+      "difficulty": "medium",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "who_healthy_diet_factsheet_zh",
+      "source_chunk_id": "c_who_healthy_diet_factsheet_zh_0_08e4027dc141",
+      "relevance": [
+        {
+          "match": "游离糖",
+          "grade": 2
+        },
+        {
+          "match": "健康饮食",
+          "grade": 1
+        },
+        {
+          "match": "来源",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_healthy_diet_who_healthy_diet_factshe_0208",
+      "query": "平衡膳食通常强调哪些食物类别（健康饮食）？",
+      "expect_any": [
+        "多样化",
+        "全谷",
+        "脂肪"
+      ],
+      "difficulty": "hard",
+      "theme": "healthy_diet",
+      "origin": "kb",
+      "source_document_id": "who_healthy_diet_factsheet_zh",
+      "source_chunk_id": "c_who_healthy_diet_factsheet_zh_2_57c0d23cb923",
+      "relevance": [
+        {
+          "match": "多样化",
+          "grade": 2
+        },
+        {
+          "match": "全谷",
+          "grade": 1
+        },
+        {
+          "match": "脂肪",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_strength_training_basics_0209",
+      "query": "想了解一下成年人七天内呼吸加快但仍能说话的强度运动活动量建议量是多少？",
+      "expect_any": [
+        "身体活动",
+        "中等强度",
+        "150"
+      ],
+      "difficulty": "medium",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "strength_training_basics",
+      "source_chunk_id": "c_strength_training_basics_0_850dc416115e",
+      "relevance": [
+        {
+          "match": "身体活动",
+          "grade": 2
+        },
+        {
+          "match": "中等强度",
+          "grade": 1
+        },
+        {
+          "match": "150",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0210",
+      "query": "该主题 食物宏量数据可以用来估算卡路里吗？",
+      "expect_any": [
+        "foundation",
+        "kcal",
+        "USDA"
+      ],
+      "difficulty": "hard",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_99_bb086ca316db089b",
+      "relevance": [
+        {
+          "match": "foundation",
+          "grade": 2
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        },
+        {
+          "match": "USDA",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_obesity_who_hypertension_factshe_0211",
+      "query": "请问体重管理通常从哪些方面入手呢？",
+      "expect_any": [
+        "肥胖",
+        "超重"
+      ],
+      "difficulty": "hard",
+      "theme": "obesity",
+      "origin": "kb",
+      "source_document_id": "who_hypertension_factsheet_zh",
+      "source_chunk_id": "who_hypertension_factsheet_zh_3_f82ad98dff3f1276",
+      "relevance": [
+        {
+          "match": "肥胖",
+          "grade": 2
+        },
+        {
+          "match": "超重",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_salt_who_healthy_diet_factshe_0212",
+      "query": "膳食里盐/钠摄入一般怎么控制有什么建议？",
+      "expect_any": [
+        "少盐",
+        "食盐",
+        "5"
+      ],
+      "difficulty": "hard",
+      "theme": "salt",
+      "origin": "kb",
+      "source_document_id": "who_healthy_diet_factsheet_zh",
+      "source_chunk_id": "c_who_healthy_diet_factsheet_zh_0_88ea832e6f31",
+      "relevance": [
+        {
+          "match": "少盐",
+          "grade": 2
+        },
+        {
+          "match": "食盐",
+          "grade": 1
+        },
+        {
+          "match": "5",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_食品份量_中英对照_0213",
+      "query": "如何理解控糖相关建议有什么建议（食品份量_中英对照）？",
+      "expect_any": [
+        "sugar",
+        "添加糖"
+      ],
+      "difficulty": "hard",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "食品份量_中英对照",
+      "source_chunk_id": "食品份量_中英对照_296_a2c33a347d4d910c",
+      "relevance": [
+        {
+          "match": "sugar",
+          "grade": 2
+        },
+        {
+          "match": "添加糖",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_WHO_PA_2020_0214",
+      "query": "每周增强肌肉力量的活动怎么安排（WHO_PA_2020）？",
+      "expect_any": [
+        "150",
+        "300",
+        "75"
+      ],
+      "difficulty": "easy",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "WHO_PA_2020",
+      "source_chunk_id": "c_WHO_PA_2020_0_113112ed0a45",
+      "relevance": [
+        {
+          "match": "150",
+          "grade": 2
+        },
+        {
+          "match": "300",
+          "grade": 2
+        },
+        {
+          "match": "75",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0215",
+      "query": "如何从食物宏量条目里读 该主题 和宏量蛋白呢？",
+      "expect_any": [
+        "燕麦 牛奶",
+        "foundation",
+        "kcal"
+      ],
+      "difficulty": "hard",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_130_f92e61775b7df52e",
+      "relevance": [
+        {
+          "match": "燕麦 牛奶",
+          "grade": 2
+        },
+        {
+          "match": "foundation",
+          "grade": 1
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_obesity_cn_national_fitness_guid_0216",
+      "query": "体重管理通常从哪些方面入手有什么建议（《全民健身指南》解读_国家体育总）？",
+      "expect_any": [
+        "肥胖",
+        "超重",
+        "33.9"
+      ],
+      "difficulty": "hard",
+      "theme": "obesity",
+      "origin": "kb",
+      "source_document_id": "cn_national_fitness_guide_interpretation",
+      "source_chunk_id": "c_cn_national_fitness_guide_interpretation_1_f24380eab145",
+      "relevance": [
+        {
+          "match": "肥胖",
+          "grade": 2
+        },
+        {
+          "match": "超重",
+          "grade": 1
+        },
+        {
+          "match": "33.9",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_salt_who_salt_reduction_facts_0217",
+      "query": "膳食里盐/钠摄入一般怎么控制（减少钠摄入）？",
+      "expect_any": [
+        "30",
+        "世卫组织的应",
+        "世卫组织关于"
+      ],
+      "difficulty": "medium",
+      "theme": "salt",
+      "origin": "kb",
+      "source_document_id": "who_salt_reduction_factsheet_zh",
+      "source_chunk_id": "who_salt_reduction_factsheet_zh_8_2d63fb247b3dd681",
+      "relevance": [
+        {
+          "match": "30",
+          "grade": 2
+        },
+        {
+          "match": "世卫组织的应",
+          "grade": 1
+        },
+        {
+          "match": "世卫组织关于",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_who_sugars_dental_caries_0218",
+      "query": "请问如何理解控糖相关建议（糖与龋齿）？",
+      "expect_any": [
+        "含糖饮料",
+        "游离糖"
+      ],
+      "difficulty": "medium",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "who_sugars_dental_caries_zh",
+      "source_chunk_id": "who_sugars_dental_caries_zh_8_01ae196194209af5",
+      "relevance": [
+        {
+          "match": "含糖饮料",
+          "grade": 2
+        },
+        {
+          "match": "游离糖",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_who_pa_2020_core_0219",
+      "query": "想了解一下每周增强肌肉力量的活动怎么安排？",
+      "expect_any": [
+        "身体活动",
+        "久坐"
+      ],
+      "difficulty": "medium",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "who_pa_2020_core",
+      "source_chunk_id": "who_pa_2020_core_0_f68948af280779ca",
+      "relevance": [
+        {
+          "match": "身体活动",
+          "grade": 2
+        },
+        {
+          "match": "久坐",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0220",
+      "query": "如何从食物宏量条目里读 kcal 和蛋白？",
+      "expect_any": [
+        "火腿",
+        "foundation",
+        "kcal"
+      ],
+      "difficulty": "easy",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_108_dbf0d599ccabb682",
+      "relevance": [
+        {
+          "match": "火腿",
+          "grade": 2
+        },
+        {
+          "match": "foundation",
+          "grade": 1
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_obesity_who_obesity_overweight_f_0221",
+      "query": "体重管理通常从哪些方面入手有什么建议（肥胖和超重）？",
+      "expect_any": [
+        "肥胖",
+        "超重",
+        "25"
+      ],
+      "difficulty": "hard",
+      "theme": "obesity",
+      "origin": "kb",
+      "source_document_id": "who_obesity_overweight_factsheet_zh",
+      "source_chunk_id": "c_who_obesity_overweight_factsheet_zh_3_3e535c9e212b",
+      "relevance": [
+        {
+          "match": "肥胖",
+          "grade": 2
+        },
+        {
+          "match": "超重",
+          "grade": 1
+        },
+        {
+          "match": "25",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_salt_who_healthy_diet_factshe_0222",
+      "query": "减盐有哪些可执行建议（健康饮食）？",
+      "expect_any": [
+        "鼓励改变食品",
+        "配方",
+        "减少饱和脂肪"
+      ],
+      "difficulty": "medium",
+      "theme": "salt",
+      "origin": "kb",
+      "source_document_id": "who_healthy_diet_factsheet_zh",
+      "source_chunk_id": "c_who_healthy_diet_factsheet_zh_2_26e65f6a873f",
+      "relevance": [
+        {
+          "match": "鼓励改变食品",
+          "grade": 2
+        },
+        {
+          "match": "配方",
+          "grade": 1
+        },
+        {
+          "match": "减少饱和脂肪",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_食品基础信息_中英对照_0223",
+      "query": "请问如何理解控糖相关建议（食品基础信息_中英对照）？",
+      "expect_any": [
+        "sugar",
+        "添加糖"
+      ],
+      "difficulty": "medium",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "食品基础信息_中英对照",
+      "source_chunk_id": "食品基础信息_中英对照_245_e84da5e581135d04",
+      "relevance": [
+        {
+          "match": "sugar",
+          "grade": 2
+        },
+        {
+          "match": "添加糖",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_who_diabetes_factsheet_z_0224",
+      "query": "关于运动活动量，活动量建议如何理解？",
+      "expect_any": [
+        "身体活动",
+        "150"
+      ],
+      "difficulty": "medium",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "who_diabetes_factsheet_zh",
+      "source_chunk_id": "c_who_diabetes_factsheet_zh_1_ef6a7e07dac1",
+      "relevance": [
+        {
+          "match": "身体活动",
+          "grade": 2
+        },
+        {
+          "match": "150",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0225",
+      "query": "帮我看看如何从食物宏量条目里读 该主题 和宏量蛋白？",
+      "expect_any": [
+        "无花果",
+        "foundation",
+        "kcal"
+      ],
+      "difficulty": "hard",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_23_89930c36e6c3d40f",
+      "relevance": [
+        {
+          "match": "无花果",
+          "grade": 2
+        },
+        {
+          "match": "foundation",
+          "grade": 1
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_salt_who_salt_reduction_facts_0226",
+      "query": "想了解一下膳食里盐/钠摄入一般怎么控制（减少钠摄入）？",
+      "expect_any": [
+        "食盐",
+        "如何减少钠摄",
+        "入量"
+      ],
+      "difficulty": "medium",
+      "theme": "salt",
+      "origin": "kb",
+      "source_document_id": "who_salt_reduction_factsheet_zh",
+      "source_chunk_id": "who_salt_reduction_factsheet_zh_6_166f5a3aff433f14",
+      "relevance": [
+        {
+          "match": "食盐",
+          "grade": 2
+        },
+        {
+          "match": "如何减少钠摄",
+          "grade": 1
+        },
+        {
+          "match": "入量",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_who_healthy_diet_factshe_0227",
+      "query": "想了解一下如何理解控糖相关建议？",
+      "expect_any": [
+        "游离糖",
+        "15",
+        "30"
+      ],
+      "difficulty": "medium",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "who_healthy_diet_factsheet_zh",
+      "source_chunk_id": "c_who_healthy_diet_factsheet_zh_0_9e8edc650316",
+      "relevance": [
+        {
+          "match": "游离糖",
+          "grade": 2
+        },
+        {
+          "match": "15",
+          "grade": 2
+        },
+        {
+          "match": "30",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_children_pa_who_malnutrition_factshe_0228",
+      "query": "青少年娱乐性屏幕时间有什么建议（营养不良）？",
+      "expect_any": [
+        "青少年",
+        "儿童",
+        "5"
+      ],
+      "difficulty": "easy",
+      "theme": "children_pa",
+      "origin": "kb",
+      "source_document_id": "who_malnutrition_factsheet_zh",
+      "source_chunk_id": "who_malnutrition_factsheet_zh_8_a6362bcb9fa736ac",
+      "relevance": [
+        {
+          "match": "青少年",
+          "grade": 2
+        },
+        {
+          "match": "儿童",
+          "grade": 1
+        },
+        {
+          "match": "5",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_cdc_pa_adults_en_0229",
+      "query": "关于150，活动量建议如何理解（Adult Activity: ）？",
+      "expect_any": [
+        "150",
+        "75"
+      ],
+      "difficulty": "easy",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "cdc_pa_adults_en",
+      "source_chunk_id": "c_cdc_pa_adults_en_2_6535ea49a5c0",
+      "relevance": [
+        {
+          "match": "150",
+          "grade": 2
+        },
+        {
+          "match": "75",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0230",
+      "query": "该主题 食物宏量数据可以用来估算能量吗？",
+      "expect_any": [
+        "foundation",
+        "kcal",
+        "USDA"
+      ],
+      "difficulty": "hard",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_79_d31532e07a7a49b8",
+      "relevance": [
+        {
+          "match": "foundation",
+          "grade": 2
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        },
+        {
+          "match": "USDA",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_obesity_who_malnutrition_factshe_0231",
+      "query": "想了解一下体重管理通常从哪些方面入手（营养不良）？",
+      "expect_any": [
+        "BMI",
+        "肥胖",
+        "超重"
+      ],
+      "difficulty": "medium",
+      "theme": "obesity",
+      "origin": "kb",
+      "source_document_id": "who_malnutrition_factsheet_zh",
+      "source_chunk_id": "who_malnutrition_factsheet_zh_6_ec68579133ad349c",
+      "relevance": [
+        {
+          "match": "BMI",
+          "grade": 2
+        },
+        {
+          "match": "肥胖",
+          "grade": 1
+        },
+        {
+          "match": "超重",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_salt_who_healthy_diet_factshe_0232",
+      "query": "膳食里盐/钠摄入一般怎么控制呢（健康饮食）？",
+      "expect_any": [
+        "激励措施",
+        "例如通过补贴",
+        "征税并减少食"
+      ],
+      "difficulty": "hard",
+      "theme": "salt",
+      "origin": "kb",
+      "source_document_id": "who_healthy_diet_factsheet_zh",
+      "source_chunk_id": "c_who_healthy_diet_factsheet_zh_1_447b1a8070e9",
+      "relevance": [
+        {
+          "match": "激励措施",
+          "grade": 2
+        },
+        {
+          "match": "例如通过补贴",
+          "grade": 1
+        },
+        {
+          "match": "征税并减少食",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_食品份量_中英对照_0233",
+      "query": "如何理解控糖相关建议（与食品份量相关）？",
+      "expect_any": [
+        "sugar",
+        "食品份量",
+        "中英对照"
+      ],
+      "difficulty": "easy",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "食品份量_中英对照",
+      "source_chunk_id": "食品份量_中英对照_154_a1c5f74b40c06cae",
+      "relevance": [
+        {
+          "match": "sugar",
+          "grade": 2
+        },
+        {
+          "match": "食品份量",
+          "grade": 1
+        },
+        {
+          "match": "中英对照",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_US_Physical_Activity_Gui_0234",
+      "query": "成年人七天内中等费力程度体力活动建议量是多少？",
+      "expect_any": [
+        "150",
+        "300"
+      ],
+      "difficulty": "hard",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "US_Physical_Activity_Guidelines_2nd",
+      "source_chunk_id": "c_US_Physical_Activity_Guidelines_2nd_4_dba83c2d396e",
+      "relevance": [
+        {
+          "match": "150",
+          "grade": 2
+        },
+        {
+          "match": "300",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0235",
+      "query": "USDA 食物宏量数据可以用来估算热量吗（油桃）？",
+      "expect_any": [
+        "油桃",
+        "foundation",
+        "kcal"
+      ],
+      "difficulty": "medium",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_21_20183db6c46e7d3f",
+      "relevance": [
+        {
+          "match": "油桃",
+          "grade": 2
+        },
+        {
+          "match": "foundation",
+          "grade": 1
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_obesity_who_hypertension_factshe_0236",
+      "query": "体重管理通常从哪些方面入手（高血压）？",
+      "expect_any": [
+        "肥胖",
+        "超重",
+        "140"
+      ],
+      "difficulty": "hard",
+      "theme": "obesity",
+      "origin": "kb",
+      "source_document_id": "who_hypertension_factsheet_zh",
+      "source_chunk_id": "who_hypertension_factsheet_zh_2_2ba8d4123190633d",
+      "relevance": [
+        {
+          "match": "肥胖",
+          "grade": 2
+        },
+        {
+          "match": "超重",
+          "grade": 1
+        },
+        {
+          "match": "140",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_salt_who_salt_reduction_facts_0237",
+      "query": "请问膳食里盐/钠摄入一般怎么控制（减少钠摄入）？",
+      "expect_any": [
+        "食盐",
+        "关于钠",
+        "钠是维持血浆"
+      ],
+      "difficulty": "hard",
+      "theme": "salt",
+      "origin": "kb",
+      "source_document_id": "who_salt_reduction_factsheet_zh",
+      "source_chunk_id": "who_salt_reduction_factsheet_zh_3_b10386c2a15e7bb3",
+      "relevance": [
+        {
+          "match": "食盐",
+          "grade": 2
+        },
+        {
+          "match": "关于钠",
+          "grade": 1
+        },
+        {
+          "match": "钠是维持血浆",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_who_sugars_dental_caries_0238",
+      "query": "帮我看看添加糖和含糖饮料有什么建议（糖与龋齿）？",
+      "expect_any": [
+        "游离糖",
+        "风险因素",
+        "糖摄入量与龋"
+      ],
+      "difficulty": "medium",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "who_sugars_dental_caries_zh",
+      "source_chunk_id": "who_sugars_dental_caries_zh_4_571d92a13dc8e02a",
+      "relevance": [
+        {
+          "match": "游离糖",
+          "grade": 2
+        },
+        {
+          "match": "风险因素",
+          "grade": 1
+        },
+        {
+          "match": "糖摄入量与龋",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_children_pa_who_children_sit_less_pl_0239",
+      "query": "未成年人青少年每天应活动多久？",
+      "expect_any": [
+        "儿童",
+        "屏幕",
+        "30"
+      ],
+      "difficulty": "medium",
+      "theme": "children_pa",
+      "origin": "kb",
+      "source_document_id": "who_children_sit_less_play_more_zh",
+      "source_chunk_id": "c_who_children_sit_less_play_more_zh_3_fee3d34894f2",
+      "relevance": [
+        {
+          "match": "儿童",
+          "grade": 2
+        },
+        {
+          "match": "屏幕",
+          "grade": 1
+        },
+        {
+          "match": "30",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_who_physical_activity_fa_0240",
+      "query": "按周计增强肌肉力量的活动怎么安排呢？",
+      "expect_any": [
+        "身体活动",
+        "中等强度",
+        "150"
+      ],
+      "difficulty": "hard",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "who_physical_activity_factsheet_zh",
+      "source_chunk_id": "who_physical_activity_factsheet_zh_6_222e8b32ddb14459",
+      "relevance": [
+        {
+          "match": "身体活动",
+          "grade": 2
+        },
+        {
+          "match": "中等强度",
+          "grade": 1
+        },
+        {
+          "match": "150",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0241",
+      "query": "想了解一下USDA 食物宏量数据可以用来估算能量吗？",
+      "expect_any": [
+        "豆类",
+        "foundation",
+        "kcal"
+      ],
+      "difficulty": "hard",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_50_526c8eeab2aa93ec",
+      "relevance": [
+        {
+          "match": "豆类",
+          "grade": 2
+        },
+        {
+          "match": "foundation",
+          "grade": 1
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_obesity_cn_national_fitness_guid_0242",
+      "query": "帮我看看体重管理通常从哪些方面入手有什么建议？",
+      "expect_any": [
+        "BMI",
+        "肥胖",
+        "40"
+      ],
+      "difficulty": "hard",
+      "theme": "obesity",
+      "origin": "kb",
+      "source_document_id": "cn_national_fitness_guide_interpretation",
+      "source_chunk_id": "c_cn_national_fitness_guide_interpretation_2_1eb6f7b27161",
+      "relevance": [
+        {
+          "match": "BMI",
+          "grade": 2
+        },
+        {
+          "match": "肥胖",
+          "grade": 1
+        },
+        {
+          "match": "40",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_fitness_guide_CN_higher_level_fitness__0243",
+      "query": "该主题或科学健身指南强调什么？",
+      "expect_any": [
+        "全民健身",
+        "38.5",
+        "45"
+      ],
+      "difficulty": "medium",
+      "theme": "fitness_guide",
+      "origin": "kb",
+      "source_document_id": "CN_higher_level_fitness_public_service_system_opinions",
+      "source_chunk_id": "c_CN_higher_level_fitness_public_service_system_opinions_3_1e39dcdd0e07",
+      "relevance": [
+        {
+          "match": "全民健身",
+          "grade": 2
+        },
+        {
+          "match": "38.5",
+          "grade": 2
+        },
+        {
+          "match": "45",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_salt_who_healthy_diet_factshe_0244",
+      "query": "请问膳食里盐/钠摄入一般怎么控制（健康饮食）？",
+      "expect_any": [
+        "含不健康脂肪",
+        "游离糖和钠的",
+        "食物"
+      ],
+      "difficulty": "hard",
+      "theme": "salt",
+      "origin": "kb",
+      "source_document_id": "who_healthy_diet_factsheet_zh",
+      "source_chunk_id": "c_who_healthy_diet_factsheet_zh_3_4dd101d043bc",
+      "relevance": [
+        {
+          "match": "含不健康脂肪",
+          "grade": 2
+        },
+        {
+          "match": "游离糖和钠的",
+          "grade": 1
+        },
+        {
+          "match": "食物",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_who_sugars_dental_caries_0245",
+      "query": "帮我看看如何理解控糖相关建议（糖与龋齿）？",
+      "expect_any": [
+        "含糖饮料",
+        "游离糖"
+      ],
+      "difficulty": "hard",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "who_sugars_dental_caries_zh",
+      "source_chunk_id": "who_sugars_dental_caries_zh_5_561066addad69507",
+      "relevance": [
+        {
+          "match": "含糖饮料",
+          "grade": 2
+        },
+        {
+          "match": "游离糖",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_nhs_exercise_older_adult_0246",
+      "query": "体力活动指南对长时间静坐有什么提醒？",
+      "expect_any": [
+        "150",
+        "75"
+      ],
+      "difficulty": "hard",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "nhs_exercise_older_adults_en",
+      "source_chunk_id": "c_nhs_exercise_older_adults_en_2_728c01bf44d3",
+      "relevance": [
+        {
+          "match": "150",
+          "grade": 2
+        },
+        {
+          "match": "75",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0247",
+      "query": "如何从食物宏量条目里读 该主题 和优质蛋白呢（杏仁 牛奶）？",
+      "expect_any": [
+        "杏仁 牛奶",
+        "foundation",
+        "kcal"
+      ],
+      "difficulty": "hard",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_129_045fcc88a5a7a482",
+      "relevance": [
+        {
+          "match": "杏仁 牛奶",
+          "grade": 2
+        },
+        {
+          "match": "foundation",
+          "grade": 1
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_obesity_who_obesity_overweight_f_0248",
+      "query": "体重管理通常从哪些方面入手（肥胖和超重）？",
+      "expect_any": [
+        "肥胖",
+        "超重",
+        "5"
+      ],
+      "difficulty": "hard",
+      "theme": "obesity",
+      "origin": "kb",
+      "source_document_id": "who_obesity_overweight_factsheet_zh",
+      "source_chunk_id": "c_who_obesity_overweight_factsheet_zh_0_48c2988f32a6",
+      "relevance": [
+        {
+          "match": "肥胖",
+          "grade": 2
+        },
+        {
+          "match": "超重",
+          "grade": 1
+        },
+        {
+          "match": "5",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_who_healthy_diet_factshe_0249",
+      "query": "添加糖和含糖饮料有什么建议（健康饮食）？",
+      "expect_any": [
+        "游离糖",
+        "激励措施",
+        "例如通过补贴"
+      ],
+      "difficulty": "medium",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "who_healthy_diet_factsheet_zh",
+      "source_chunk_id": "c_who_healthy_diet_factsheet_zh_1_447b1a8070e9",
+      "relevance": [
+        {
+          "match": "游离糖",
+          "grade": 2
+        },
+        {
+          "match": "激励措施",
+          "grade": 1
+        },
+        {
+          "match": "例如通过补贴",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_cn_national_fitness_guid_0250",
+      "query": "帮我看看每周增强肌肉力量的活动怎么安排（《全民健身指南》解读_国家体育总）？",
+      "expect_any": [
+        "中等强度",
+        "有氧"
+      ],
+      "difficulty": "medium",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "cn_national_fitness_guide_interpretation",
+      "source_chunk_id": "c_cn_national_fitness_guide_interpretation_2_76fbda38bd69",
+      "relevance": [
+        {
+          "match": "中等强度",
+          "grade": 2
+        },
+        {
+          "match": "有氧",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0251",
+      "query": "USDA 食物宏量数据可以用来估算热量吗（火鸡肉）？",
+      "expect_any": [
+        "火鸡肉",
+        "foundation",
+        "kcal"
+      ],
+      "difficulty": "medium",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_90_583575dc714dd099",
+      "relevance": [
+        {
+          "match": "火鸡肉",
+          "grade": 2
+        },
+        {
+          "match": "foundation",
+          "grade": 1
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_obesity_who_obesity_overweight_f_0252",
+      "query": "体重管理通常从哪些方面入手呢（肥胖和超重）？",
+      "expect_any": [
+        "肥胖",
+        "超重"
+      ],
+      "difficulty": "hard",
+      "theme": "obesity",
+      "origin": "kb",
+      "source_document_id": "who_obesity_overweight_factsheet_zh",
+      "source_chunk_id": "c_who_obesity_overweight_factsheet_zh_0_aad49fb534c3",
+      "relevance": [
+        {
+          "match": "肥胖",
+          "grade": 2
+        },
+        {
+          "match": "超重",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_食品份量_中英对照_0253",
+      "query": "如何理解控糖相关建议（食品份量_中英对照）？",
+      "expect_any": [
+        "sugar",
+        "添加糖"
+      ],
+      "difficulty": "hard",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "食品份量_中英对照",
+      "source_chunk_id": "食品份量_中英对照_295_52a7a8096b7dd0c5",
+      "relevance": [
+        {
+          "match": "sugar",
+          "grade": 2
+        },
+        {
+          "match": "添加糖",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_who_healthy_at_home_phys_0254",
+      "query": "帮我看看每周增强肌肉力量的活动怎么安排（身体活动）？",
+      "expect_any": [
+        "身体活动",
+        "久坐"
+      ],
+      "difficulty": "medium",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "who_healthy_at_home_physical_activity_zh",
+      "source_chunk_id": "who_healthy_at_home_physical_activity_zh_0_9418d1c1c7cbb03d",
+      "relevance": [
+        {
+          "match": "身体活动",
+          "grade": 2
+        },
+        {
+          "match": "久坐",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_obesity_who_obesity_overweight_f_0255",
+      "query": "想了解一下体重管理通常从哪些方面入手（肥胖和超重）？",
+      "expect_any": [
+        "肥胖",
+        "超重"
+      ],
+      "difficulty": "hard",
+      "theme": "obesity",
+      "origin": "kb",
+      "source_document_id": "who_obesity_overweight_factsheet_zh",
+      "source_chunk_id": "c_who_obesity_overweight_factsheet_zh_2_819c92db65cc",
+      "relevance": [
+        {
+          "match": "肥胖",
+          "grade": 2
+        },
+        {
+          "match": "超重",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_salt_who_healthy_diet_factshe_0256",
+      "query": "帮我看看减盐有哪些可执行建议？",
+      "expect_any": [
+        "20",
+        "入足够的关键",
+        "维生素和矿物"
+      ],
+      "difficulty": "medium",
+      "theme": "salt",
+      "origin": "kb",
+      "source_document_id": "who_healthy_diet_factsheet_zh",
+      "source_chunk_id": "c_who_healthy_diet_factsheet_zh_2_57c0d23cb923",
+      "relevance": [
+        {
+          "match": "20",
+          "grade": 2
+        },
+        {
+          "match": "入足够的关键",
+          "grade": 1
+        },
+        {
+          "match": "维生素和矿物",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_who_sugars_dental_caries_0257",
+      "query": "添加糖和含糖饮料有什么建议（糖与龋齿）？",
+      "expect_any": [
+        "游离糖",
+        "概述",
+        "龋齿是全球一"
+      ],
+      "difficulty": "medium",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "who_sugars_dental_caries_zh",
+      "source_chunk_id": "who_sugars_dental_caries_zh_2_223ac419bbe425e7",
+      "relevance": [
+        {
+          "match": "游离糖",
+          "grade": 2
+        },
+        {
+          "match": "概述",
+          "grade": 1
+        },
+        {
+          "match": "龋齿是全球一",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_WHO_PA_2020_0258",
+      "query": "成年人七天内中等费力程度运动活动量建议量是多少有什么建议？",
+      "expect_any": [
+        "150",
+        "300"
+      ],
+      "difficulty": "hard",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "WHO_PA_2020",
+      "source_chunk_id": "c_WHO_PA_2020_3_836b0a5f5498",
+      "relevance": [
+        {
+          "match": "150",
+          "grade": 2
+        },
+        {
+          "match": "300",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0259",
+      "query": "帮我看看如何从食物宏量条目里读 该主题 和优质蛋白？",
+      "expect_any": [
+        "豆类",
+        "foundation",
+        "kcal"
+      ],
+      "difficulty": "medium",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_53_e13b3a2e57c38b0e",
+      "relevance": [
+        {
+          "match": "豆类",
+          "grade": 2
+        },
+        {
+          "match": "foundation",
+          "grade": 1
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_salt_who_healthy_diet_factshe_0260",
+      "query": "帮我看看膳食里盐/钠摄入一般怎么控制（健康饮食）？",
+      "expect_any": [
+        "食盐",
+        "15"
+      ],
+      "difficulty": "medium",
+      "theme": "salt",
+      "origin": "kb",
+      "source_document_id": "who_healthy_diet_factsheet_zh",
+      "source_chunk_id": "c_who_healthy_diet_factsheet_zh_3_109750fd4df3",
+      "relevance": [
+        {
+          "match": "食盐",
+          "grade": 2
+        },
+        {
+          "match": "15",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_who_healthy_diet_factshe_0261",
+      "query": "如何理解控糖相关建议（与游离糖相关）？",
+      "expect_any": [
+        "游离糖",
+        "鼓励改变食品",
+        "配方"
+      ],
+      "difficulty": "easy",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "who_healthy_diet_factsheet_zh",
+      "source_chunk_id": "c_who_healthy_diet_factsheet_zh_2_26e65f6a873f",
+      "relevance": [
+        {
+          "match": "游离糖",
+          "grade": 2
+        },
+        {
+          "match": "鼓励改变食品",
+          "grade": 1
+        },
+        {
+          "match": "配方",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_who_pa_2020_core_0262",
+      "query": "请问每周增强肌肉力量的活动怎么安排（WHO 身体活动与久坐行为指南（）？",
+      "expect_any": [
+        "中等强度",
+        "150",
+        "300"
+      ],
+      "difficulty": "medium",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "who_pa_2020_core",
+      "source_chunk_id": "who_pa_2020_core_2_3893f9c3baa1f652",
+      "relevance": [
+        {
+          "match": "中等强度",
+          "grade": 2
+        },
+        {
+          "match": "150",
+          "grade": 2
+        },
+        {
+          "match": "300",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0263",
+      "query": "想了解一下想了解一下如何从食物宏量条目里读 该主题 和优质蛋白？",
+      "expect_any": [
+        "鸡肉",
+        "foundation",
+        "kcal"
+      ],
+      "difficulty": "medium",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_89_cbd7faf58d42e762",
+      "relevance": [
+        {
+          "match": "鸡肉",
+          "grade": 2
+        },
+        {
+          "match": "foundation",
+          "grade": 1
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_obesity_who_obesity_overweight_f_0264",
+      "query": "关于肥胖，资料怎么建议（肥胖和超重）？",
+      "expect_any": [
+        "BMI",
+        "肥胖",
+        "超重"
+      ],
+      "difficulty": "easy",
+      "theme": "obesity",
+      "origin": "kb",
+      "source_document_id": "who_obesity_overweight_factsheet_zh",
+      "source_chunk_id": "c_who_obesity_overweight_factsheet_zh_1_27f0bc31bc99",
+      "relevance": [
+        {
+          "match": "BMI",
+          "grade": 2
+        },
+        {
+          "match": "肥胖",
+          "grade": 1
+        },
+        {
+          "match": "超重",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_食品份量_中英对照_0265",
+      "query": "想了解一下如何理解控糖相关建议（食品份量_中英对照）？",
+      "expect_any": [
+        "sugar",
+        "添加糖"
+      ],
+      "difficulty": "hard",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "食品份量_中英对照",
+      "source_chunk_id": "食品份量_中英对照_294_8bfbea63a2608c32",
+      "relevance": [
+        {
+          "match": "sugar",
+          "grade": 2
+        },
+        {
+          "match": "添加糖",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_children_pa_who_children_sit_less_pl_0266",
+      "query": "帮我看看未成年人青少年每天应活动多久（为了健康成长，儿童需要少坐多玩：）？",
+      "expect_any": [
+        "儿童",
+        "60",
+        "屏幕"
+      ],
+      "difficulty": "hard",
+      "theme": "children_pa",
+      "origin": "kb",
+      "source_document_id": "who_children_sit_less_play_more_zh",
+      "source_chunk_id": "c_who_children_sit_less_play_more_zh_4_4b441262b72d",
+      "relevance": [
+        {
+          "match": "儿童",
+          "grade": 2
+        },
+        {
+          "match": "60",
+          "grade": 2
+        },
+        {
+          "match": "屏幕",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_US_Physical_Activity_Gui_0267",
+      "query": "运动活动量指南对久坐有什么提醒？",
+      "expect_any": [
+        "150",
+        "300"
+      ],
+      "difficulty": "hard",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "US_Physical_Activity_Guidelines_2nd",
+      "source_chunk_id": "c_US_Physical_Activity_Guidelines_2nd_3_adc4dee09591",
+      "relevance": [
+        {
+          "match": "150",
+          "grade": 2
+        },
+        {
+          "match": "300",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0268",
+      "query": "如何从食物宏量条目里读 该主题 和优质蛋白呢（橄榄）？",
+      "expect_any": [
+        "橄榄",
+        "foundation",
+        "kcal"
+      ],
+      "difficulty": "medium",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_22_5082df12f58f4094",
+      "relevance": [
+        {
+          "match": "橄榄",
+          "grade": 2
+        },
+        {
+          "match": "foundation",
+          "grade": 1
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_who_sugars_dental_caries_0269",
+      "query": "想了解一下添加糖和含糖饮料有什么建议有什么建议？",
+      "expect_any": [
+        "sugar",
+        "糖与龋齿",
+        "来源"
+      ],
+      "difficulty": "hard",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "who_sugars_dental_caries_zh",
+      "source_chunk_id": "who_sugars_dental_caries_zh_0_02df0227fb1b6ee8",
+      "relevance": [
+        {
+          "match": "sugar",
+          "grade": 2
+        },
+        {
+          "match": "糖与龋齿",
+          "grade": 1
+        },
+        {
+          "match": "来源",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_who_physical_activity_fa_0270",
+      "query": "按周计增强肌肉力量的活动怎么安排？",
+      "expect_any": [
+        "身体活动",
+        "久坐",
+        "5"
+      ],
+      "difficulty": "hard",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "who_physical_activity_factsheet_zh",
+      "source_chunk_id": "who_physical_activity_factsheet_zh_5_64efa7dea86d0205",
+      "relevance": [
+        {
+          "match": "身体活动",
+          "grade": 2
+        },
+        {
+          "match": "久坐",
+          "grade": 1
+        },
+        {
+          "match": "5",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0271",
+      "query": "请问如何从食物宏量条目里读 该主题 和优质蛋白？",
+      "expect_any": [
+        "foundation",
+        "kcal",
+        "USDA"
+      ],
+      "difficulty": "hard",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_81_cb0ff02d84566129",
+      "relevance": [
+        {
+          "match": "foundation",
+          "grade": 2
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        },
+        {
+          "match": "USDA",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_fitness_guide_CN_higher_level_fitness__0272",
+      "query": "该主题或科学健身指南强调什么（CN_higher_level_）？",
+      "expect_any": [
+        "全民健身",
+        "体育活动"
+      ],
+      "difficulty": "medium",
+      "theme": "fitness_guide",
+      "origin": "kb",
+      "source_document_id": "CN_higher_level_fitness_public_service_system_opinions",
+      "source_chunk_id": "c_CN_higher_level_fitness_public_service_system_opinions_1_64ae30d34a88",
+      "relevance": [
+        {
+          "match": "全民健身",
+          "grade": 2
+        },
+        {
+          "match": "体育活动",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_nhs_improve_strength_fle_0273",
+      "query": "体力活动指南对长时间静坐有什么提醒（How to improve y）？",
+      "expect_any": [
+        "150",
+        "75"
+      ],
+      "difficulty": "hard",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "nhs_improve_strength_flexibility_en",
+      "source_chunk_id": "c_nhs_improve_strength_flexibility_en_1_a4a3ad5010a4",
+      "relevance": [
+        {
+          "match": "150",
+          "grade": 2
+        },
+        {
+          "match": "75",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0274",
+      "query": "USDA 食物宏量数据可以用来估算卡路里吗（香肠）？",
+      "expect_any": [
+        "香肠",
+        "foundation",
+        "kcal"
+      ],
+      "difficulty": "hard",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_121_c1f0d5a92a5bdf5e",
+      "relevance": [
+        {
+          "match": "香肠",
+          "grade": 2
+        },
+        {
+          "match": "foundation",
+          "grade": 1
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_obesity_who_obesity_overweight_f_0275",
+      "query": "请问体重管理通常从哪些方面入手（肥胖和超重）？",
+      "expect_any": [
+        "肥胖",
+        "超重",
+        "5"
+      ],
+      "difficulty": "medium",
+      "theme": "obesity",
+      "origin": "kb",
+      "source_document_id": "who_obesity_overweight_factsheet_zh",
+      "source_chunk_id": "c_who_obesity_overweight_factsheet_zh_4_69e3212a6459",
+      "relevance": [
+        {
+          "match": "肥胖",
+          "grade": 2
+        },
+        {
+          "match": "超重",
+          "grade": 1
+        },
+        {
+          "match": "5",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_fitness_guide_cn_national_fitness_guid_0276",
+      "query": "全民健身或科学健身指南强调什么（与体育活动相关）？",
+      "expect_any": [
+        "体育活动",
+        "体质"
+      ],
+      "difficulty": "easy",
+      "theme": "fitness_guide",
+      "origin": "kb",
+      "source_document_id": "cn_national_fitness_guide_interpretation",
+      "source_chunk_id": "c_cn_national_fitness_guide_interpretation_2_c9ed636c3d77",
+      "relevance": [
+        {
+          "match": "体育活动",
+          "grade": 2
+        },
+        {
+          "match": "体质",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_who_healthy_diet_factshe_0277",
+      "query": "想了解一下如何理解控糖相关建议（健康饮食）？",
+      "expect_any": [
+        "游离糖",
+        "的推移而演变",
+        "受到许多社会"
+      ],
+      "difficulty": "hard",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "who_healthy_diet_factsheet_zh",
+      "source_chunk_id": "c_who_healthy_diet_factsheet_zh_0_5dd9e992f3c6",
+      "relevance": [
+        {
+          "match": "游离糖",
+          "grade": 2
+        },
+        {
+          "match": "的推移而演变",
+          "grade": 1
+        },
+        {
+          "match": "受到许多社会",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_cn_national_fitness_guid_0278",
+      "query": "请问成年人七天内呼吸加快但仍能说话的强度体力活动建议量是多少有什么建议？",
+      "expect_any": [
+        "中等强度",
+        "150",
+        "有氧"
+      ],
+      "difficulty": "hard",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "cn_national_fitness_guide_interpretation",
+      "source_chunk_id": "c_cn_national_fitness_guide_interpretation_1_31b13a0cf590",
+      "relevance": [
+        {
+          "match": "中等强度",
+          "grade": 2
+        },
+        {
+          "match": "150",
+          "grade": 2
+        },
+        {
+          "match": "有氧",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0279",
+      "query": "USDA 食物宏量数据可以用来估算能量吗？",
+      "expect_any": [
+        "瓜类",
+        "foundation",
+        "kcal"
+      ],
+      "difficulty": "hard",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_24_39fb764e26dd7a30",
+      "relevance": [
+        {
+          "match": "瓜类",
+          "grade": 2
+        },
+        {
+          "match": "foundation",
+          "grade": 1
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_who_sugars_dental_caries_0280",
+      "query": "想了解一下如何理解控糖相关建议（糖与龋齿）？",
+      "expect_any": [
+        "含糖饮料",
+        "5"
+      ],
+      "difficulty": "medium",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "who_sugars_dental_caries_zh",
+      "source_chunk_id": "who_sugars_dental_caries_zh_7_300481212f6bd7c8",
+      "relevance": [
+        {
+          "match": "含糖饮料",
+          "grade": 2
+        },
+        {
+          "match": "5",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_who_healthy_at_home_phys_0281",
+      "query": "按周计增强肌肉力量的活动怎么安排呢（身体活动）？",
+      "expect_any": [
+        "身体活动",
+        "中等强度",
+        "150"
+      ],
+      "difficulty": "hard",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "who_healthy_at_home_physical_activity_zh",
+      "source_chunk_id": "who_healthy_at_home_physical_activity_zh_2_0e54463c002aa805",
+      "relevance": [
+        {
+          "match": "身体活动",
+          "grade": 2
+        },
+        {
+          "match": "中等强度",
+          "grade": 1
+        },
+        {
+          "match": "150",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0282",
+      "query": "如何从食物宏量条目里读 该主题 和宏量蛋白有什么建议？",
+      "expect_any": [
+        "鸡蛋",
+        "foundation",
+        "kcal"
+      ],
+      "difficulty": "medium",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_30_c83a66e77083d4f6",
+      "relevance": [
+        {
+          "match": "鸡蛋",
+          "grade": 2
+        },
+        {
+          "match": "foundation",
+          "grade": 1
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_added_sugar_who_healthy_diet_factshe_0283",
+      "query": "请问如何理解控糖相关建议（健康饮食）？",
+      "expect_any": [
+        "添加糖",
+        "游离糖",
+        "75"
+      ],
+      "difficulty": "medium",
+      "theme": "added_sugar",
+      "origin": "kb",
+      "source_document_id": "who_healthy_diet_factsheet_zh",
+      "source_chunk_id": "c_who_healthy_diet_factsheet_zh_2_8ee5267bbbc0",
+      "relevance": [
+        {
+          "match": "添加糖",
+          "grade": 2
+        },
+        {
+          "match": "游离糖",
+          "grade": 1
+        },
+        {
+          "match": "75",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_who_every_move_counts_zh_0284",
+      "query": "帮我看看成年人按周计呼吸加快但仍能说话的强度体力活动建议量是多少？",
+      "expect_any": [
+        "身体活动",
+        "久坐"
+      ],
+      "difficulty": "medium",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "who_every_move_counts_zh",
+      "source_chunk_id": "c_who_every_move_counts_zh_2_f8903714d25e",
+      "relevance": [
+        {
+          "match": "身体活动",
+          "grade": 2
+        },
+        {
+          "match": "久坐",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0285",
+      "query": "USDA 食物宏量数据可以用来估算热量吗有什么建议？",
+      "expect_any": [
+        "芝麻酱",
+        "foundation",
+        "kcal"
+      ],
+      "difficulty": "hard",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_71_e5796215ed709197",
+      "relevance": [
+        {
+          "match": "芝麻酱",
+          "grade": 2
+        },
+        {
+          "match": "foundation",
+          "grade": 1
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_cdc_pa_adults_en_0286",
+      "query": "想了解一下七天内增强肌肉力量的活动怎么安排？",
+      "expect_any": [
+        "150",
+        "75"
+      ],
+      "difficulty": "hard",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "cdc_pa_adults_en",
+      "source_chunk_id": "c_cdc_pa_adults_en_0_00fffcf892fb",
+      "relevance": [
+        {
+          "match": "150",
+          "grade": 2
+        },
+        {
+          "match": "75",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_US_Physical_Activity_Gui_0287",
+      "query": "请问关于两小时半左右，活动量建议如何理解？",
+      "expect_any": [
+        "150",
+        "300"
+      ],
+      "difficulty": "medium",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "US_Physical_Activity_Guidelines_2nd",
+      "source_chunk_id": "c_US_Physical_Activity_Guidelines_2nd_0_5b890b18a1ce",
+      "relevance": [
+        {
+          "match": "150",
+          "grade": 2
+        },
+        {
+          "match": "300",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0288",
+      "query": "如何从食物宏量条目里读 该主题 和蛋白？",
+      "expect_any": [
+        "foundation",
+        "kcal",
+        "USDA"
+      ],
+      "difficulty": "medium",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_101_338d79fa0e795200",
+      "relevance": [
+        {
+          "match": "foundation",
+          "grade": 2
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        },
+        {
+          "match": "USDA",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_who_physical_activity_fa_0289",
+      "query": "关于身体活动，活动量建议如何理解？",
+      "expect_any": [
+        "身体活动",
+        "久坐",
+        "20"
+      ],
+      "difficulty": "easy",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "who_physical_activity_factsheet_zh",
+      "source_chunk_id": "who_physical_activity_factsheet_zh_3_b59af879ccf1418b",
+      "relevance": [
+        {
+          "match": "身体活动",
+          "grade": 2
+        },
+        {
+          "match": "久坐",
+          "grade": 1
+        },
+        {
+          "match": "20",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0290",
+      "query": "想了解一下如何从食物宏量条目里读 该主题 和宏量蛋白？",
+      "expect_any": [
+        "奶酪",
+        "foundation",
+        "kcal"
+      ],
+      "difficulty": "hard",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_31_e669cca45c1bdc54",
+      "relevance": [
+        {
+          "match": "奶酪",
+          "grade": 2
+        },
+        {
+          "match": "foundation",
+          "grade": 1
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_children_pa_who_obesity_overweight_f_0291",
+      "query": "青少年娱乐性屏幕时间有什么建议（肥胖和超重）？",
+      "expect_any": [
+        "青少年",
+        "儿童",
+        "5"
+      ],
+      "difficulty": "easy",
+      "theme": "children_pa",
+      "origin": "kb",
+      "source_document_id": "who_obesity_overweight_factsheet_zh",
+      "source_chunk_id": "c_who_obesity_overweight_factsheet_zh_0_48c2988f32a6",
+      "relevance": [
+        {
+          "match": "青少年",
+          "grade": 2
+        },
+        {
+          "match": "儿童",
+          "grade": 1
+        },
+        {
+          "match": "5",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_who_children_sit_less_pl_0292",
+      "query": "帮我看看每周增强肌肉力量的活动怎么安排（为了健康成长，儿童需要少坐多玩：）？",
+      "expect_any": [
+        "身体活动",
+        "久坐",
+        "24"
+      ],
+      "difficulty": "medium",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "who_children_sit_less_play_more_zh",
+      "source_chunk_id": "c_who_children_sit_less_play_more_zh_2_86487818eb24",
+      "relevance": [
+        {
+          "match": "身体活动",
+          "grade": 2
+        },
+        {
+          "match": "久坐",
+          "grade": 1
+        },
+        {
+          "match": "24",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0293",
+      "query": "如何从食物宏量条目里读 该主题 和优质蛋白？",
+      "expect_any": [
+        "面粉",
+        "foundation",
+        "kcal"
+      ],
+      "difficulty": "medium",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_39_329278d9a4a2adc1",
+      "relevance": [
+        {
+          "match": "面粉",
+          "grade": 2
+        },
+        {
+          "match": "foundation",
+          "grade": 1
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_US_Physical_Activity_Gui_0294",
+      "query": "成年人每周中等强度身体活动建议量是多少（US_Physical_Acti）？",
+      "expect_any": [
+        "150",
+        "75"
+      ],
+      "difficulty": "medium",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "US_Physical_Activity_Guidelines_2nd",
+      "source_chunk_id": "c_US_Physical_Activity_Guidelines_2nd_0_6d5bd56a0ae7",
+      "relevance": [
+        {
+          "match": "150",
+          "grade": 2
+        },
+        {
+          "match": "75",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0295",
+      "query": "如何从食物宏量条目里读 该主题 和宏量蛋白（鸡肉）？",
+      "expect_any": [
+        "鸡肉",
+        "foundation",
+        "kcal"
+      ],
+      "difficulty": "medium",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_94_6154df708f52adc9",
+      "relevance": [
+        {
+          "match": "鸡肉",
+          "grade": 2
+        },
+        {
+          "match": "foundation",
+          "grade": 1
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_WHO_PA_2020_0296",
+      "query": "成年人每周中等强度身体活动建议量是多少（WHO_PA_2020）？",
+      "expect_any": [
+        "150",
+        "300",
+        "75"
+      ],
+      "difficulty": "medium",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "WHO_PA_2020",
+      "source_chunk_id": "c_WHO_PA_2020_3_81170a460540",
+      "relevance": [
+        {
+          "match": "150",
+          "grade": 2
+        },
+        {
+          "match": "300",
+          "grade": 2
+        },
+        {
+          "match": "75",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_usda_food_usda_foundation_foods_ma_0297",
+      "query": "如何从食物宏量条目里读 该主题 和宏量蛋白呢（鸡肉）？",
+      "expect_any": [
+        "鸡肉",
+        "foundation",
+        "kcal"
+      ],
+      "difficulty": "medium",
+      "theme": "usda_food",
+      "origin": "kb",
+      "source_document_id": "usda_foundation_foods_macros_zh",
+      "source_chunk_id": "usda_foundation_foods_macros_zh_88_223e3b39d7865f62",
+      "relevance": [
+        {
+          "match": "鸡肉",
+          "grade": 2
+        },
+        {
+          "match": "foundation",
+          "grade": 1
+        },
+        {
+          "match": "kcal",
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_who_pa_2020_core_0298",
+      "query": "成年人七天内呼吸加快但仍能说话的强度体力活动建议量是多少？",
+      "expect_any": [
+        "久坐",
+        "有氧",
+        "5"
+      ],
+      "difficulty": "hard",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "who_pa_2020_core",
+      "source_chunk_id": "who_pa_2020_core_4_f54c066c22d3c296",
+      "relevance": [
+        {
+          "match": "久坐",
+          "grade": 2
+        },
+        {
+          "match": "有氧",
+          "grade": 1
+        },
+        {
+          "match": "5",
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "id": "kb_who_pa_cdc_pa_adults_en_0299",
+      "query": "身体活动指南对久坐有什么提醒？",
+      "expect_any": [
+        "150",
+        "75"
+      ],
+      "difficulty": "medium",
+      "theme": "who_pa",
+      "origin": "kb",
+      "source_document_id": "cdc_pa_adults_en",
+      "source_chunk_id": "c_cdc_pa_adults_en_2_28bbe16be6d8",
+      "relevance": [
+        {
+          "match": "150",
+          "grade": 2
+        },
+        {
+          "match": "75",
+          "grade": 2
+        }
+      ]
+    }
+  ]
+}

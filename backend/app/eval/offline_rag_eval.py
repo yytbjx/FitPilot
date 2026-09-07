@@ -19,7 +19,15 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from app.eval.rag_eval import _first_relevant_rank, _graded_relevance, ndcg_at_k
+from app.eval.progress import track_cases
+from app.eval.rag_eval import (
+    _anchor_hit_at_k,
+    _first_relevant_rank,
+    _graded_relevance,
+    _precision_at_k,
+    _term_recall_at_k,
+    ndcg_at_k,
+)
 from app.rag import DocumentChunk, RetrievedChunk
 from app.rag.bm25 import BM25Index, tokenize
 from app.rag.chunking import split_text
@@ -130,6 +138,12 @@ class OfflineRagEvalResult:
     mrr: float = 0.0
     hit_at_k: dict[str, float] = field(default_factory=dict)
     ndcg_at_k: dict[str, float] = field(default_factory=dict)
+    precision_at_k: dict[str, float] = field(default_factory=dict)
+    term_recall_at_k: dict[str, float] = field(default_factory=dict)
+    anchor_chunk_at_k: dict[str, float] = field(default_factory=dict)
+    anchor_doc_at_k: dict[str, float] = field(default_factory=dict)
+    anchor_chunk_cases: int = 0
+    anchor_doc_cases: int = 0
     no_answer_total: int = 0
     true_positive: int = 0
     false_positive: int = 0
@@ -152,8 +166,14 @@ class OfflineRagEvalResult:
         return self.true_positive / denom if denom else 0.0
 
     def summary_text(self) -> str:
+        extra = ""
+        if self.precision_at_k:
+            p5 = self.precision_at_k.get("precision@5")
+            tr5 = self.term_recall_at_k.get("term_recall@5")
+            if p5 is not None and tr5 is not None:
+                extra = f" precision@5={p5:.4f} term_recall@5={tr5:.4f}"
         return (
-            f"{self.label}: retrieval hit_rate={self.hit_rate:.2%} mrr={self.mrr:.4f} | "
+            f"{self.label}: retrieval hit_rate={self.hit_rate:.2%} mrr={self.mrr:.4f}{extra} | "
             f"no_answer recall={self.no_answer_recall:.2%} precision={self.no_answer_precision:.2%}"
         )
 
@@ -176,8 +196,14 @@ def run_offline_rag_eval(
     rr_sum = 0.0
     hit_at_k_count = {k: 0 for k in k_list}
     ndcg_sum = {k: 0.0 for k in k_list}
+    precision_sum = {k: 0.0 for k in k_list}
+    term_recall_sum = {k: 0.0 for k in k_list}
+    anchor_chunk_sum = {k: 0.0 for k in k_list}
+    anchor_doc_sum = {k: 0.0 for k in k_list}
+    anchor_chunk_n = 0
+    anchor_doc_n = 0
 
-    for case in raw.get("cases") or []:
+    for case in track_cases(list(raw.get("cases") or []), desc="retrieval_offline"):
         result.total += 1
         query = str(case.get("query") or "").strip()
         expect_no_answer = bool(case.get("expect_no_answer", False))
@@ -214,15 +240,38 @@ def run_offline_rag_eval(
         if rank is not None:
             result.retrieval_hits += 1
             rr_sum += 1.0 / rank
+        has_chunk_anchor = False
+        has_doc_anchor = False
         for k in k_list:
             if rank is not None and rank <= k:
                 hit_at_k_count[k] += 1
             ndcg_sum[k] += ndcg_at_k(list(chunks), graded, k)
+            precision_sum[k] += _precision_at_k(list(chunks), expect_any, k)
+            term_recall_sum[k] += _term_recall_at_k(list(chunks), expect_any, k)
+            anchors = _anchor_hit_at_k(list(chunks), case, k)
+            if anchors["chunk"] is not None:
+                has_chunk_anchor = True
+                anchor_chunk_sum[k] += float(anchors["chunk"])
+            if anchors["doc"] is not None:
+                has_doc_anchor = True
+                anchor_doc_sum[k] += float(anchors["doc"])
+        if has_chunk_anchor:
+            anchor_chunk_n += 1
+        if has_doc_anchor:
+            anchor_doc_n += 1
         record.update(
             {
                 "rank": rank,
                 "matched_terms": matched,
                 "hit": rank is not None,
+                "precision_at_k": {
+                    f"precision@{k}": round(_precision_at_k(list(chunks), expect_any, k), 4)
+                    for k in k_list
+                },
+                "term_recall_at_k": {
+                    f"term_recall@{k}": round(_term_recall_at_k(list(chunks), expect_any, k), 4)
+                    for k in k_list
+                },
             }
         )
         result.cases.append(record)
@@ -231,4 +280,18 @@ def run_offline_rag_eval(
     result.mrr = rr_sum / n
     result.hit_at_k = {f"hit@{k}": hit_at_k_count[k] / n for k in k_list}
     result.ndcg_at_k = {f"ndcg@{k}": round(ndcg_sum[k] / n, 4) for k in k_list}
+    result.precision_at_k = {f"precision@{k}": round(precision_sum[k] / n, 4) for k in k_list}
+    result.term_recall_at_k = {
+        f"term_recall@{k}": round(term_recall_sum[k] / n, 4) for k in k_list
+    }
+    result.anchor_chunk_cases = anchor_chunk_n
+    result.anchor_doc_cases = anchor_doc_n
+    if anchor_chunk_n:
+        result.anchor_chunk_at_k = {
+            f"anchor_chunk@{k}": round(anchor_chunk_sum[k] / anchor_chunk_n, 4) for k in k_list
+        }
+    if anchor_doc_n:
+        result.anchor_doc_at_k = {
+            f"anchor_doc@{k}": round(anchor_doc_sum[k] / anchor_doc_n, 4) for k in k_list
+        }
     return result

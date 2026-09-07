@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from app.eval.common import PassRateEvalResult
+from app.eval.progress import track_cases
 from app.rag.parsing import parse_file_rich, supported_suffixes
 
 
@@ -20,9 +21,10 @@ class ParsingEvalResult(PassRateEvalResult):
 def run_parsing_eval(suite_path: Path) -> ParsingEvalResult:
     raw = json.loads(suite_path.read_text(encoding="utf-8"))
     result = ParsingEvalResult(min_pass_rate=float(raw.get("min_pass_rate") or 0.9))
+    cases = list(raw.get("cases") or [])
     with tempfile.TemporaryDirectory() as tmp:
         tmp_dir = Path(tmp)
-        for case in raw.get("cases") or []:
+        for case in track_cases(cases, desc="parsing"):
             suffix = str(case.get("suffix") or ".txt")
             content = str(case.get("content") or "")
             min_chars = int(case.get("min_chars") or 1)

@@ -32,6 +32,30 @@ def rrf_fuse(
     return sorted(scores.items(), key=lambda x: x[1], reverse=True)
 
 
+def diversify_by_document(
+    chunks: list[RetrievedChunk],
+    *,
+    limit: int,
+    max_per_doc: int,
+) -> list[RetrievedChunk]:
+    """同一 document_id 最多保留 max_per_doc 条；max_per_doc<=0 时不限制。"""
+    if limit <= 0:
+        return []
+    if max_per_doc <= 0:
+        return chunks[:limit]
+    counts: dict[str, int] = defaultdict(int)
+    out: list[RetrievedChunk] = []
+    for c in chunks:
+        key = c.document_id or c.chunk_id or id(c)
+        if counts[key] >= max_per_doc:
+            continue
+        counts[key] += 1
+        out.append(c)
+        if len(out) >= limit:
+            break
+    return out
+
+
 async def dense_search(query: str, top_k: int) -> list[tuple[str, float, dict]]:
     settings = get_settings()
     emit_progress(
@@ -130,6 +154,7 @@ async def hybrid_retrieve(
     top_k = top_k or settings.rag_top_k
     rerank_k = rerank_top_k or settings.rag_rerank_top_k
     skip_rerank = settings.rag_skip_rerank if skip_rerank is None else skip_rerank
+    max_per_doc = int(getattr(settings, "rag_max_per_doc", 0) or 0)
     qinfo = await analyze_query_async(query)
     queries = qinfo["variants"] if qinfo.get("use_multi_query") else [qinfo["rewritten"]]
     step = add_step("hybrid_retrieve", "混合检索", detail=" | ".join(queries)[:120])
@@ -203,11 +228,13 @@ async def hybrid_retrieve(
             emit_progress(
                 stage="rag_rerank",
                 title="跳过 Reranker",
-                detail=f"skip_rerank=true；直接取 RRF 前 {rerank_k} 条",
+                detail=f"skip_rerank=true；直接取 RRF 前 {rerank_k} 条（max_per_doc={max_per_doc}）",
                 tool="rerank",
                 status="done",
             )
-            final = candidates[:rerank_k]
+            final = diversify_by_document(
+                candidates, limit=rerank_k, max_per_doc=max_per_doc
+            )
             for c in final:
                 c.citation = f"{c.title or c.document_id}#{c.section_path or 'body'}@{c.version_id}"
             finish_step(step, detail=f"hits={len(final)} skip_rerank=1")
@@ -218,20 +245,22 @@ async def hybrid_retrieve(
             title="Reranker 精排",
             detail=(
                 f"候选 {len(candidates)} → top {rerank_k}；"
+                f"max_per_doc={max_per_doc}；"
                 f"设备={settings.reranker_device}；模型={settings.reranker_model}"
             ),
             tool="rerank",
         )
-        # CrossEncoder.predict 为同步阻塞调用，放线程池执行
+        # 先对全部候选打分，再按文档去冗余截断，避免同文档占满 top-K
         ranked = await asyncio.to_thread(
-            partial(rerank, query, [c.text for c in candidates], top_k=rerank_k)
+            partial(rerank, query, [c.text for c in candidates], top_k=len(candidates) or 1)
         )
-        final = []
+        ordered: list[RetrievedChunk] = []
         for idx, score in ranked:
             c = candidates[idx]
             c.score = score
             c.citation = f"{c.title or c.document_id}#{c.section_path or 'body'}@{c.version_id}"
-            final.append(c)
+            ordered.append(c)
+        final = diversify_by_document(ordered, limit=rerank_k, max_per_doc=max_per_doc)
         emit_progress(
             stage="rag_rerank",
             title="精排完成",

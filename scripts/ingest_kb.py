@@ -43,13 +43,18 @@ async def main() -> None:
 
     get_settings.cache_clear()
     if args.reset:
+        from app.rag.bm25 import clear_bm25_cache
+
         svc = get_qdrant_service()
         svc.reset_collection(vector_size=embedding_dim())
         # 同步清空本地 BM25
         persist_bm25(BM25Index())
+        clear_bm25_cache()
         print("qdrant_collection_reset_and_bm25_cleared")
 
-    result = await ingest_directory(Path(args.path), version_id="v2")
+    result = await ingest_directory(
+        Path(args.path), version_id="v2", rebuild_bm25=bool(args.reset)
+    )
     print(result)
 
 

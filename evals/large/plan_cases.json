@@ -1,0 +1,1041 @@
+{
+  "min_pass_rate": 0.85,
+  "description": "plan：种子 + 正例动作网格 + 固定负例模式",
+  "cases": [
+    {
+      "id": "valid_beginner",
+      "expect_ok": true,
+      "profile": {
+        "weekly_sessions": 3,
+        "experience_level": "beginner",
+        "equipment": "哑铃,自重",
+        "injuries": ""
+      },
+      "workout": {
+        "weekly_sessions": 3,
+        "intensity_note": "热身 5 分钟，渐进增加负荷",
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "深蹲",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 2,
+            "exercises": [
+              {
+                "name": "俯卧撑",
+                "sets": 3,
+                "reps": 10
+              }
+            ]
+          },
+          {
+            "day": 3,
+            "exercises": [
+              {
+                "name": "划船",
+                "sets": 3,
+                "reps": 10
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "valid_intermediate",
+      "expect_ok": true,
+      "profile": {
+        "weekly_sessions": 4,
+        "experience_level": "intermediate",
+        "equipment": "杠铃,哑铃",
+        "injuries": ""
+      },
+      "workout": {
+        "weekly_sessions": 4,
+        "intensity_note": "渐进负荷，注意动作质量",
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "深蹲",
+                "sets": 4,
+                "reps": 6
+              },
+              {
+                "name": "硬拉",
+                "sets": 3,
+                "reps": 5
+              }
+            ]
+          },
+          {
+            "day": 2,
+            "exercises": [
+              {
+                "name": "卧推",
+                "sets": 4,
+                "reps": 6
+              }
+            ]
+          },
+          {
+            "day": 3,
+            "exercises": [
+              {
+                "name": "引体向上",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 4,
+            "exercises": [
+              {
+                "name": "肩推",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "invalid_too_many_sessions",
+      "expect_ok": false,
+      "profile": {
+        "weekly_sessions": 3,
+        "experience_level": "beginner"
+      },
+      "workout": {
+        "weekly_sessions": 8,
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "深蹲",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "invalid_days_mismatch",
+      "expect_ok": false,
+      "profile": {
+        "weekly_sessions": 3,
+        "experience_level": "beginner"
+      },
+      "workout": {
+        "weekly_sessions": 3,
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "深蹲",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "invalid_empty_day",
+      "expect_ok": false,
+      "profile": {
+        "weekly_sessions": 2,
+        "experience_level": "beginner"
+      },
+      "workout": {
+        "weekly_sessions": 2,
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "深蹲",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 2,
+            "exercises": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "invalid_injury_boost",
+      "expect_ok": false,
+      "profile": {
+        "weekly_sessions": 3,
+        "experience_level": "beginner",
+        "injuries": "右膝旧伤"
+      },
+      "workout": {
+        "weekly_sessions": 3,
+        "intensity_note": "增强强度冲刺",
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "深蹲",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 2,
+            "exercises": [
+              {
+                "name": "俯卧撑",
+                "sets": 3,
+                "reps": 10
+              }
+            ]
+          },
+          {
+            "day": 3,
+            "exercises": [
+              {
+                "name": "划船",
+                "sets": 3,
+                "reps": 10
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "invalid_sets_out_of_range",
+      "expect_ok": false,
+      "profile": {
+        "weekly_sessions": 1,
+        "experience_level": "beginner"
+      },
+      "workout": {
+        "weekly_sessions": 1,
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "深蹲",
+                "sets": 12,
+                "reps": 8
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "valid_with_injury_warning",
+      "expect_ok": true,
+      "profile": {
+        "weekly_sessions": 3,
+        "experience_level": "beginner",
+        "injuries": "左肩不适",
+        "equipment": "自重"
+      },
+      "workout": {
+        "weekly_sessions": 3,
+        "intensity_note": "热身充分，避免疼痛换进度",
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "靠墙静蹲",
+                "sets": 3,
+                "reps": 20
+              }
+            ]
+          },
+          {
+            "day": 2,
+            "exercises": [
+              {
+                "name": "跪姿俯卧撑",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 3,
+            "exercises": [
+              {
+                "name": "臀桥",
+                "sets": 3,
+                "reps": 12
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "plan_ok_beginner_3_深蹲",
+      "expect_ok": true,
+      "profile": {
+        "weekly_sessions": 3,
+        "experience_level": "beginner",
+        "equipment": "哑铃,自重",
+        "injuries": ""
+      },
+      "workout": {
+        "weekly_sessions": 3,
+        "intensity_note": "热身 5 分钟，渐进增加负荷",
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "深蹲",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 2,
+            "exercises": [
+              {
+                "name": "卧推",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 3,
+            "exercises": [
+              {
+                "name": "划船",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "plan_ok_beginner_3_硬拉",
+      "expect_ok": true,
+      "profile": {
+        "weekly_sessions": 3,
+        "experience_level": "beginner",
+        "equipment": "哑铃,自重",
+        "injuries": ""
+      },
+      "workout": {
+        "weekly_sessions": 3,
+        "intensity_note": "热身 5 分钟，渐进增加负荷",
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "硬拉",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 2,
+            "exercises": [
+              {
+                "name": "肩推",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 3,
+            "exercises": [
+              {
+                "name": "引体向上",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "plan_ok_beginner_3_弓步蹲",
+      "expect_ok": true,
+      "profile": {
+        "weekly_sessions": 3,
+        "experience_level": "beginner",
+        "equipment": "哑铃,自重",
+        "injuries": ""
+      },
+      "workout": {
+        "weekly_sessions": 3,
+        "intensity_note": "热身 5 分钟，渐进增加负荷",
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "弓步蹲",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 2,
+            "exercises": [
+              {
+                "name": "俯卧撑",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 3,
+            "exercises": [
+              {
+                "name": "臀桥",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "plan_ok_beginner_3_腿举",
+      "expect_ok": true,
+      "profile": {
+        "weekly_sessions": 3,
+        "experience_level": "beginner",
+        "equipment": "哑铃,自重",
+        "injuries": ""
+      },
+      "workout": {
+        "weekly_sessions": 3,
+        "intensity_note": "热身 5 分钟，渐进增加负荷",
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "腿举",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 2,
+            "exercises": [
+              {
+                "name": "哑铃弯举",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 3,
+            "exercises": [
+              {
+                "name": "平板支撑",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "plan_ok_intermediate_4_深蹲",
+      "expect_ok": true,
+      "profile": {
+        "weekly_sessions": 4,
+        "experience_level": "intermediate",
+        "equipment": "哑铃,自重",
+        "injuries": ""
+      },
+      "workout": {
+        "weekly_sessions": 4,
+        "intensity_note": "热身 5 分钟，渐进增加负荷",
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "深蹲",
+                "sets": 3,
+                "reps": 10
+              },
+              {
+                "name": "深蹲",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 2,
+            "exercises": [
+              {
+                "name": "卧推",
+                "sets": 3,
+                "reps": 10
+              },
+              {
+                "name": "引体向上",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 3,
+            "exercises": [
+              {
+                "name": "划船",
+                "sets": 3,
+                "reps": 10
+              },
+              {
+                "name": "卧推",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 4,
+            "exercises": [
+              {
+                "name": "深蹲",
+                "sets": 3,
+                "reps": 10
+              },
+              {
+                "name": "臀桥",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "plan_ok_intermediate_4_硬拉",
+      "expect_ok": true,
+      "profile": {
+        "weekly_sessions": 4,
+        "experience_level": "intermediate",
+        "equipment": "哑铃,自重",
+        "injuries": ""
+      },
+      "workout": {
+        "weekly_sessions": 4,
+        "intensity_note": "热身 5 分钟，渐进增加负荷",
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "硬拉",
+                "sets": 3,
+                "reps": 10
+              },
+              {
+                "name": "俯卧撑",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 2,
+            "exercises": [
+              {
+                "name": "肩推",
+                "sets": 3,
+                "reps": 10
+              },
+              {
+                "name": "靠墙静蹲",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 3,
+            "exercises": [
+              {
+                "name": "引体向上",
+                "sets": 3,
+                "reps": 10
+              },
+              {
+                "name": "俯卧撑",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 4,
+            "exercises": [
+              {
+                "name": "硬拉",
+                "sets": 3,
+                "reps": 10
+              },
+              {
+                "name": "哑铃弯举",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "plan_ok_intermediate_4_弓步蹲",
+      "expect_ok": true,
+      "profile": {
+        "weekly_sessions": 4,
+        "experience_level": "intermediate",
+        "equipment": "哑铃,自重",
+        "injuries": ""
+      },
+      "workout": {
+        "weekly_sessions": 4,
+        "intensity_note": "热身 5 分钟，渐进增加负荷",
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "弓步蹲",
+                "sets": 3,
+                "reps": 10
+              },
+              {
+                "name": "划船",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 2,
+            "exercises": [
+              {
+                "name": "俯卧撑",
+                "sets": 3,
+                "reps": 10
+              },
+              {
+                "name": "引体向上",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 3,
+            "exercises": [
+              {
+                "name": "臀桥",
+                "sets": 3,
+                "reps": 10
+              },
+              {
+                "name": "腿举",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 4,
+            "exercises": [
+              {
+                "name": "弓步蹲",
+                "sets": 3,
+                "reps": 10
+              },
+              {
+                "name": "肩推",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "plan_ok_intermediate_4_腿举",
+      "expect_ok": true,
+      "profile": {
+        "weekly_sessions": 4,
+        "experience_level": "intermediate",
+        "equipment": "哑铃,自重",
+        "injuries": ""
+      },
+      "workout": {
+        "weekly_sessions": 4,
+        "intensity_note": "热身 5 分钟，渐进增加负荷",
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "腿举",
+                "sets": 3,
+                "reps": 10
+              },
+              {
+                "name": "肩推",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 2,
+            "exercises": [
+              {
+                "name": "哑铃弯举",
+                "sets": 3,
+                "reps": 10
+              },
+              {
+                "name": "引体向上",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 3,
+            "exercises": [
+              {
+                "name": "平板支撑",
+                "sets": 3,
+                "reps": 10
+              },
+              {
+                "name": "肩推",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 4,
+            "exercises": [
+              {
+                "name": "腿举",
+                "sets": 3,
+                "reps": 10
+              },
+              {
+                "name": "深蹲",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "plan_bad_sessions_mismatch",
+      "expect_ok": false,
+      "profile": {
+        "weekly_sessions": 3,
+        "experience_level": "beginner"
+      },
+      "workout": {
+        "weekly_sessions": 8,
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "深蹲",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "plan_bad_too_few_days",
+      "expect_ok": false,
+      "profile": {
+        "weekly_sessions": 3,
+        "experience_level": "beginner"
+      },
+      "workout": {
+        "weekly_sessions": 3,
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "深蹲",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "plan_bad_empty_day",
+      "expect_ok": false,
+      "profile": {
+        "weekly_sessions": 2,
+        "experience_level": "beginner"
+      },
+      "workout": {
+        "weekly_sessions": 2,
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "深蹲",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 2,
+            "exercises": []
+          }
+        ]
+      }
+    },
+    {
+      "id": "plan_bad_injury_深蹲",
+      "expect_ok": false,
+      "profile": {
+        "weekly_sessions": 3,
+        "experience_level": "beginner",
+        "injuries": "左肩不适"
+      },
+      "workout": {
+        "weekly_sessions": 3,
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "深蹲",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 2,
+            "exercises": [
+              {
+                "name": "划船",
+                "sets": 3,
+                "reps": 10
+              }
+            ]
+          },
+          {
+            "day": 3,
+            "exercises": [
+              {
+                "name": "深蹲",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          }
+        ],
+        "intensity_note": "增强强度冲刺"
+      }
+    },
+    {
+      "id": "plan_bad_injury_硬拉",
+      "expect_ok": false,
+      "profile": {
+        "weekly_sessions": 3,
+        "experience_level": "beginner",
+        "injuries": "左肩不适"
+      },
+      "workout": {
+        "weekly_sessions": 3,
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "硬拉",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 2,
+            "exercises": [
+              {
+                "name": "划船",
+                "sets": 3,
+                "reps": 10
+              }
+            ]
+          },
+          {
+            "day": 3,
+            "exercises": [
+              {
+                "name": "深蹲",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          }
+        ],
+        "intensity_note": "增强强度冲刺"
+      }
+    },
+    {
+      "id": "plan_bad_injury_卧推",
+      "expect_ok": false,
+      "profile": {
+        "weekly_sessions": 3,
+        "experience_level": "beginner",
+        "injuries": "左肩不适"
+      },
+      "workout": {
+        "weekly_sessions": 3,
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "卧推",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 2,
+            "exercises": [
+              {
+                "name": "划船",
+                "sets": 3,
+                "reps": 10
+              }
+            ]
+          },
+          {
+            "day": 3,
+            "exercises": [
+              {
+                "name": "深蹲",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          }
+        ],
+        "intensity_note": "增强强度冲刺"
+      }
+    },
+    {
+      "id": "plan_bad_injury_肩推",
+      "expect_ok": false,
+      "profile": {
+        "weekly_sessions": 3,
+        "experience_level": "beginner",
+        "injuries": "左肩不适"
+      },
+      "workout": {
+        "weekly_sessions": 3,
+        "days": [
+          {
+            "day": 1,
+            "exercises": [
+              {
+                "name": "肩推",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          },
+          {
+            "day": 2,
+            "exercises": [
+              {
+                "name": "划船",
+                "sets": 3,
+                "reps": 10
+              }
+            ]
+          },
+          {
+            "day": 3,
+            "exercises": [
+              {
+                "name": "深蹲",
+                "sets": 3,
+                "reps": 8
+              }
+            ]
+          }
+        ],
+        "intensity_note": "增强强度冲刺"
+      }
+    }
+  ]
+}

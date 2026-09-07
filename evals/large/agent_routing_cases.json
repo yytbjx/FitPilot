@@ -1,0 +1,864 @@
+{
+  "description": "agent：fewshot 种子 + 意图模板×安全尾缀网格",
+  "cases": [
+    {
+      "id": "plan_create",
+      "message": "帮我生成一周训练计划",
+      "expect_intent": "plan_create",
+      "expect_complex": false
+    },
+    {
+      "id": "plan_create_2",
+      "message": "请安排训练计划，目标增肌",
+      "expect_intent": "plan_create",
+      "expect_complex": false
+    },
+    {
+      "id": "plan_adjust_complex",
+      "message": "根据我最近两周的训练记录调整饮食和训练",
+      "expect_intent": "plan_adjust",
+      "expect_complex": true
+    },
+    {
+      "id": "plan_adjust_simple",
+      "message": "帮我调整一下训练计划，强度低一点",
+      "expect_intent": "plan_adjust",
+      "expect_complex": true
+    },
+    {
+      "id": "knowledge",
+      "message": "深蹲时膝盖内扣怎么办？",
+      "expect_intent": "knowledge_query"
+    },
+    {
+      "id": "knowledge_protein",
+      "message": "减脂期蛋白质怎么安排？",
+      "expect_intent": "knowledge_query"
+    },
+    {
+      "id": "personal",
+      "message": "我的本周训练记录怎么样",
+      "expect_intent": "personal_data_query"
+    },
+    {
+      "id": "personal_profile",
+      "message": "看看我的档案和营养目标",
+      "expect_intent": "personal_data_query"
+    },
+    {
+      "id": "workout_log",
+      "message": "我练了卧推三组，帮我打卡训练",
+      "expect_intent": "workout_log_write"
+    },
+    {
+      "id": "diet_log",
+      "message": "我吃了鸡胸肉和米饭，帮我记录饮食",
+      "expect_intent": "diet_log_write"
+    },
+    {
+      "id": "risk",
+      "message": "我胸痛还能继续大重量训练吗",
+      "expect_intent": "risk_or_medical"
+    },
+    {
+      "id": "risk_faint",
+      "message": "训练时差点晕厥，要不要继续加重量",
+      "expect_intent": "risk_or_medical"
+    },
+    {
+      "id": "small_talk",
+      "message": "你好呀",
+      "expect_intent": "small_talk"
+    },
+    {
+      "id": "small_talk_thanks",
+      "message": "谢谢你的帮助",
+      "expect_intent": "small_talk"
+    },
+    {
+      "id": "unsupported_crypto",
+      "message": "帮我预测比特币明天涨跌",
+      "expect_intent": "unsupported"
+    },
+    {
+      "id": "unsupported_code",
+      "message": "帮我写一段 Python 爬虫代码",
+      "expect_intent": "unsupported"
+    },
+    {
+      "id": "agent_plan_create_1769761",
+      "message": "帮我生成一周训练计划，拜托",
+      "expect_intent": "plan_create",
+      "expect_complex": false
+    },
+    {
+      "id": "agent_plan_create_7127279",
+      "message": "帮我生成一周训练计划，谢谢先",
+      "expect_intent": "plan_create",
+      "expect_complex": false
+    },
+    {
+      "id": "agent_plan_create_8079960",
+      "message": "帮我生成一周训练计划，优先处理",
+      "expect_intent": "plan_create",
+      "expect_complex": false
+    },
+    {
+      "id": "agent_plan_create_5392691",
+      "message": "请安排训练计划，目标增肌，拜托",
+      "expect_intent": "plan_create",
+      "expect_complex": false
+    },
+    {
+      "id": "agent_plan_create_3216837",
+      "message": "请安排训练计划，目标增肌，谢谢先",
+      "expect_intent": "plan_create",
+      "expect_complex": false
+    },
+    {
+      "id": "agent_plan_create_8756873",
+      "message": "请安排训练计划，目标增肌，优先处理",
+      "expect_intent": "plan_create",
+      "expect_complex": false
+    },
+    {
+      "id": "agent_plan_create_3263205",
+      "message": "生成一份饮食计划给我",
+      "expect_intent": "plan_create",
+      "expect_complex": false
+    },
+    {
+      "id": "agent_plan_create_5823852",
+      "message": "生成一份饮食计划给我，拜托",
+      "expect_intent": "plan_create",
+      "expect_complex": false
+    },
+    {
+      "id": "agent_plan_create_7862233",
+      "message": "生成一份饮食计划给我，谢谢先",
+      "expect_intent": "plan_create",
+      "expect_complex": false
+    },
+    {
+      "id": "agent_plan_create_5645298",
+      "message": "生成一份饮食计划给我，优先处理",
+      "expect_intent": "plan_create",
+      "expect_complex": false
+    },
+    {
+      "id": "agent_plan_create_3749448",
+      "message": "帮我做个新手力量计划",
+      "expect_intent": "plan_create",
+      "expect_complex": false
+    },
+    {
+      "id": "agent_plan_create_2908883",
+      "message": "帮我做个新手力量计划，拜托",
+      "expect_intent": "plan_create",
+      "expect_complex": false
+    },
+    {
+      "id": "agent_plan_create_0397992",
+      "message": "帮我做个新手力量计划，谢谢先",
+      "expect_intent": "plan_create",
+      "expect_complex": false
+    },
+    {
+      "id": "agent_plan_create_7690846",
+      "message": "帮我做个新手力量计划，优先处理",
+      "expect_intent": "plan_create",
+      "expect_complex": false
+    },
+    {
+      "id": "agent_plan_create_8209375",
+      "message": "请生成计划：三分化训练",
+      "expect_intent": "plan_create",
+      "expect_complex": false
+    },
+    {
+      "id": "agent_plan_create_9792864",
+      "message": "请生成计划：三分化训练，拜托",
+      "expect_intent": "plan_create",
+      "expect_complex": false
+    },
+    {
+      "id": "agent_plan_create_8917120",
+      "message": "请生成计划：三分化训练，谢谢先",
+      "expect_intent": "plan_create",
+      "expect_complex": false
+    },
+    {
+      "id": "agent_plan_create_7045410",
+      "message": "请生成计划：三分化训练，优先处理",
+      "expect_intent": "plan_create",
+      "expect_complex": false
+    },
+    {
+      "id": "agent_plan_adjust_6918369",
+      "message": "帮我调整一下训练计划，强度低一点，拜托",
+      "expect_intent": "plan_adjust",
+      "expect_complex": true
+    },
+    {
+      "id": "agent_plan_adjust_1725112",
+      "message": "帮我调整一下训练计划，强度低一点，谢谢先",
+      "expect_intent": "plan_adjust",
+      "expect_complex": true
+    },
+    {
+      "id": "agent_plan_adjust_1228718",
+      "message": "帮我调整一下训练计划，强度低一点，优先处理",
+      "expect_intent": "plan_adjust",
+      "expect_complex": true
+    },
+    {
+      "id": "agent_plan_adjust_8148571",
+      "message": "根据我最近两周的训练记录调整饮食和训练，拜托",
+      "expect_intent": "plan_adjust",
+      "expect_complex": true
+    },
+    {
+      "id": "agent_plan_adjust_3413999",
+      "message": "根据我最近两周的训练记录调整饮食和训练，谢谢先",
+      "expect_intent": "plan_adjust",
+      "expect_complex": true
+    },
+    {
+      "id": "agent_plan_adjust_8959829",
+      "message": "根据我最近两周的训练记录调整饮食和训练，优先处理",
+      "expect_intent": "plan_adjust",
+      "expect_complex": true
+    },
+    {
+      "id": "agent_plan_adjust_4372884",
+      "message": "请调整我的饮食计划",
+      "expect_intent": "plan_adjust",
+      "expect_complex": true
+    },
+    {
+      "id": "agent_plan_adjust_3955357",
+      "message": "请调整我的饮食计划，拜托",
+      "expect_intent": "plan_adjust",
+      "expect_complex": true
+    },
+    {
+      "id": "agent_plan_adjust_6680517",
+      "message": "请调整我的饮食计划，谢谢先",
+      "expect_intent": "plan_adjust",
+      "expect_complex": true
+    },
+    {
+      "id": "agent_plan_adjust_0731937",
+      "message": "请调整我的饮食计划，优先处理",
+      "expect_intent": "plan_adjust",
+      "expect_complex": true
+    },
+    {
+      "id": "agent_plan_adjust_9838787",
+      "message": "训练计划调整成四分化",
+      "expect_intent": "plan_adjust",
+      "expect_complex": true
+    },
+    {
+      "id": "agent_plan_adjust_7005627",
+      "message": "训练计划调整成四分化，拜托",
+      "expect_intent": "plan_adjust",
+      "expect_complex": true
+    },
+    {
+      "id": "agent_plan_adjust_4038972",
+      "message": "训练计划调整成四分化，谢谢先",
+      "expect_intent": "plan_adjust",
+      "expect_complex": true
+    },
+    {
+      "id": "agent_plan_adjust_9841949",
+      "message": "训练计划调整成四分化，优先处理",
+      "expect_intent": "plan_adjust",
+      "expect_complex": true
+    },
+    {
+      "id": "agent_plan_adjust_6175053",
+      "message": "根据完成率调整训练计划",
+      "expect_intent": "plan_adjust",
+      "expect_complex": true
+    },
+    {
+      "id": "agent_plan_adjust_1465630",
+      "message": "根据完成率调整训练计划，拜托",
+      "expect_intent": "plan_adjust",
+      "expect_complex": true
+    },
+    {
+      "id": "agent_plan_adjust_0636872",
+      "message": "根据完成率调整训练计划，谢谢先",
+      "expect_intent": "plan_adjust",
+      "expect_complex": true
+    },
+    {
+      "id": "agent_plan_adjust_3241144",
+      "message": "根据完成率调整训练计划，优先处理",
+      "expect_intent": "plan_adjust",
+      "expect_complex": true
+    },
+    {
+      "id": "agent_plan_adjust_5642174",
+      "message": "帮我调整饮食，最近食欲一般",
+      "expect_intent": "plan_adjust",
+      "expect_complex": true
+    },
+    {
+      "id": "agent_plan_adjust_1372829",
+      "message": "帮我调整饮食，最近食欲一般，拜托",
+      "expect_intent": "plan_adjust",
+      "expect_complex": true
+    },
+    {
+      "id": "agent_plan_adjust_8794030",
+      "message": "帮我调整饮食，最近食欲一般，谢谢先",
+      "expect_intent": "plan_adjust",
+      "expect_complex": true
+    },
+    {
+      "id": "agent_plan_adjust_9294144",
+      "message": "帮我调整饮食，最近食欲一般，优先处理",
+      "expect_intent": "plan_adjust",
+      "expect_complex": true
+    },
+    {
+      "id": "agent_knowledge_query_7625625",
+      "message": "深蹲时膝盖内扣怎么办？，拜托",
+      "expect_intent": "knowledge_query"
+    },
+    {
+      "id": "agent_knowledge_query_5811852",
+      "message": "深蹲时膝盖内扣怎么办？，谢谢先",
+      "expect_intent": "knowledge_query"
+    },
+    {
+      "id": "agent_knowledge_query_2863480",
+      "message": "深蹲时膝盖内扣怎么办？，优先处理",
+      "expect_intent": "knowledge_query"
+    },
+    {
+      "id": "agent_knowledge_query_2905766",
+      "message": "减脂期蛋白质怎么安排？，拜托",
+      "expect_intent": "knowledge_query"
+    },
+    {
+      "id": "agent_knowledge_query_9099073",
+      "message": "减脂期蛋白质怎么安排？，谢谢先",
+      "expect_intent": "knowledge_query"
+    },
+    {
+      "id": "agent_knowledge_query_3132328",
+      "message": "减脂期蛋白质怎么安排？，优先处理",
+      "expect_intent": "knowledge_query"
+    },
+    {
+      "id": "agent_knowledge_query_7330095",
+      "message": "增肌热量怎么算？",
+      "expect_intent": "knowledge_query"
+    },
+    {
+      "id": "agent_knowledge_query_6301903",
+      "message": "增肌热量怎么算？，拜托",
+      "expect_intent": "knowledge_query"
+    },
+    {
+      "id": "agent_knowledge_query_3160448",
+      "message": "增肌热量怎么算？，谢谢先",
+      "expect_intent": "knowledge_query"
+    },
+    {
+      "id": "agent_knowledge_query_2658285",
+      "message": "增肌热量怎么算？，优先处理",
+      "expect_intent": "knowledge_query"
+    },
+    {
+      "id": "agent_knowledge_query_0413099",
+      "message": "硬拉动作原则是什么？",
+      "expect_intent": "knowledge_query"
+    },
+    {
+      "id": "agent_knowledge_query_8429316",
+      "message": "硬拉动作原则是什么？，拜托",
+      "expect_intent": "knowledge_query"
+    },
+    {
+      "id": "agent_knowledge_query_1360339",
+      "message": "硬拉动作原则是什么？，谢谢先",
+      "expect_intent": "knowledge_query"
+    },
+    {
+      "id": "agent_knowledge_query_7208685",
+      "message": "硬拉动作原则是什么？，优先处理",
+      "expect_intent": "knowledge_query"
+    },
+    {
+      "id": "agent_knowledge_query_0766187",
+      "message": "如何安排食谱里的蛋白？",
+      "expect_intent": "knowledge_query"
+    },
+    {
+      "id": "agent_knowledge_query_9862969",
+      "message": "如何安排食谱里的蛋白？，拜托",
+      "expect_intent": "knowledge_query"
+    },
+    {
+      "id": "agent_knowledge_query_2376223",
+      "message": "如何安排食谱里的蛋白？，谢谢先",
+      "expect_intent": "knowledge_query"
+    },
+    {
+      "id": "agent_knowledge_query_5300168",
+      "message": "如何安排食谱里的蛋白？，优先处理",
+      "expect_intent": "knowledge_query"
+    },
+    {
+      "id": "agent_knowledge_query_6887773",
+      "message": "什么是渐进超负荷知识？",
+      "expect_intent": "knowledge_query"
+    },
+    {
+      "id": "agent_knowledge_query_6765163",
+      "message": "什么是渐进超负荷知识？，拜托",
+      "expect_intent": "knowledge_query"
+    },
+    {
+      "id": "agent_knowledge_query_1819488",
+      "message": "什么是渐进超负荷知识？，谢谢先",
+      "expect_intent": "knowledge_query"
+    },
+    {
+      "id": "agent_knowledge_query_1015384",
+      "message": "什么是渐进超负荷知识？，优先处理",
+      "expect_intent": "knowledge_query"
+    },
+    {
+      "id": "agent_personal_data_query_8283005",
+      "message": "我的本周训练记录怎么样，拜托",
+      "expect_intent": "personal_data_query"
+    },
+    {
+      "id": "agent_personal_data_query_5451432",
+      "message": "我的本周训练记录怎么样，谢谢先",
+      "expect_intent": "personal_data_query"
+    },
+    {
+      "id": "agent_personal_data_query_1754979",
+      "message": "我的本周训练记录怎么样，优先处理",
+      "expect_intent": "personal_data_query"
+    },
+    {
+      "id": "agent_personal_data_query_9425378",
+      "message": "看看我的档案和营养目标，拜托",
+      "expect_intent": "personal_data_query"
+    },
+    {
+      "id": "agent_personal_data_query_3899129",
+      "message": "看看我的档案和营养目标，谢谢先",
+      "expect_intent": "personal_data_query"
+    },
+    {
+      "id": "agent_personal_data_query_6509336",
+      "message": "看看我的档案和营养目标，优先处理",
+      "expect_intent": "personal_data_query"
+    },
+    {
+      "id": "agent_personal_data_query_0464941",
+      "message": "我的体重变化如何",
+      "expect_intent": "personal_data_query"
+    },
+    {
+      "id": "agent_personal_data_query_3402319",
+      "message": "我的体重变化如何，拜托",
+      "expect_intent": "personal_data_query"
+    },
+    {
+      "id": "agent_personal_data_query_7460977",
+      "message": "我的体重变化如何，谢谢先",
+      "expect_intent": "personal_data_query"
+    },
+    {
+      "id": "agent_personal_data_query_8832437",
+      "message": "我的体重变化如何，优先处理",
+      "expect_intent": "personal_data_query"
+    },
+    {
+      "id": "agent_personal_data_query_1811733",
+      "message": "我的记录里最近训练如何",
+      "expect_intent": "personal_data_query"
+    },
+    {
+      "id": "agent_personal_data_query_4395965",
+      "message": "我的记录里最近训练如何，拜托",
+      "expect_intent": "personal_data_query"
+    },
+    {
+      "id": "agent_personal_data_query_9285002",
+      "message": "我的记录里最近训练如何，谢谢先",
+      "expect_intent": "personal_data_query"
+    },
+    {
+      "id": "agent_personal_data_query_0298473",
+      "message": "我的记录里最近训练如何，优先处理",
+      "expect_intent": "personal_data_query"
+    },
+    {
+      "id": "agent_personal_data_query_5786488",
+      "message": "查看我的档案",
+      "expect_intent": "personal_data_query"
+    },
+    {
+      "id": "agent_personal_data_query_0183240",
+      "message": "查看我的档案，拜托",
+      "expect_intent": "personal_data_query"
+    },
+    {
+      "id": "agent_personal_data_query_9359614",
+      "message": "查看我的档案，谢谢先",
+      "expect_intent": "personal_data_query"
+    },
+    {
+      "id": "agent_personal_data_query_1872393",
+      "message": "查看我的档案，优先处理",
+      "expect_intent": "personal_data_query"
+    },
+    {
+      "id": "agent_workout_log_write_2516017",
+      "message": "我练了卧推三组，帮我打卡训练，拜托",
+      "expect_intent": "workout_log_write"
+    },
+    {
+      "id": "agent_workout_log_write_8444665",
+      "message": "我练了卧推三组，帮我打卡训练，谢谢先",
+      "expect_intent": "workout_log_write"
+    },
+    {
+      "id": "agent_workout_log_write_1098109",
+      "message": "我练了卧推三组，帮我打卡训练，优先处理",
+      "expect_intent": "workout_log_write"
+    },
+    {
+      "id": "agent_workout_log_write_7277576",
+      "message": "记录训练：今天深蹲五组",
+      "expect_intent": "workout_log_write"
+    },
+    {
+      "id": "agent_workout_log_write_0234766",
+      "message": "记录训练：今天深蹲五组，拜托",
+      "expect_intent": "workout_log_write"
+    },
+    {
+      "id": "agent_workout_log_write_7601118",
+      "message": "记录训练：今天深蹲五组，谢谢先",
+      "expect_intent": "workout_log_write"
+    },
+    {
+      "id": "agent_workout_log_write_5211909",
+      "message": "记录训练：今天深蹲五组，优先处理",
+      "expect_intent": "workout_log_write"
+    },
+    {
+      "id": "agent_workout_log_write_7184125",
+      "message": "我练了引体向上，打卡训练",
+      "expect_intent": "workout_log_write"
+    },
+    {
+      "id": "agent_workout_log_write_5667923",
+      "message": "我练了引体向上，打卡训练，拜托",
+      "expect_intent": "workout_log_write"
+    },
+    {
+      "id": "agent_workout_log_write_5336336",
+      "message": "我练了引体向上，打卡训练，谢谢先",
+      "expect_intent": "workout_log_write"
+    },
+    {
+      "id": "agent_workout_log_write_4600319",
+      "message": "我练了引体向上，打卡训练，优先处理",
+      "expect_intent": "workout_log_write"
+    },
+    {
+      "id": "agent_workout_log_write_4411458",
+      "message": "帮我打卡训练，硬拉完成了",
+      "expect_intent": "workout_log_write"
+    },
+    {
+      "id": "agent_workout_log_write_7263171",
+      "message": "帮我打卡训练，硬拉完成了，拜托",
+      "expect_intent": "workout_log_write"
+    },
+    {
+      "id": "agent_workout_log_write_8031543",
+      "message": "帮我打卡训练，硬拉完成了，谢谢先",
+      "expect_intent": "workout_log_write"
+    },
+    {
+      "id": "agent_workout_log_write_8395416",
+      "message": "帮我打卡训练，硬拉完成了，优先处理",
+      "expect_intent": "workout_log_write"
+    },
+    {
+      "id": "agent_diet_log_write_6844059",
+      "message": "我吃了鸡胸肉和米饭，帮我记录饮食，拜托",
+      "expect_intent": "diet_log_write"
+    },
+    {
+      "id": "agent_diet_log_write_0056319",
+      "message": "我吃了鸡胸肉和米饭，帮我记录饮食，谢谢先",
+      "expect_intent": "diet_log_write"
+    },
+    {
+      "id": "agent_diet_log_write_0262690",
+      "message": "我吃了鸡胸肉和米饭，帮我记录饮食，优先处理",
+      "expect_intent": "diet_log_write"
+    },
+    {
+      "id": "agent_diet_log_write_6892190",
+      "message": "记录饮食：燕麦牛奶鸡蛋",
+      "expect_intent": "diet_log_write"
+    },
+    {
+      "id": "agent_diet_log_write_5461117",
+      "message": "记录饮食：燕麦牛奶鸡蛋，拜托",
+      "expect_intent": "diet_log_write"
+    },
+    {
+      "id": "agent_diet_log_write_6194896",
+      "message": "记录饮食：燕麦牛奶鸡蛋，谢谢先",
+      "expect_intent": "diet_log_write"
+    },
+    {
+      "id": "agent_diet_log_write_5951153",
+      "message": "记录饮食：燕麦牛奶鸡蛋，优先处理",
+      "expect_intent": "diet_log_write"
+    },
+    {
+      "id": "agent_diet_log_write_9996587",
+      "message": "我吃了沙拉，打卡饮食",
+      "expect_intent": "diet_log_write"
+    },
+    {
+      "id": "agent_diet_log_write_6022486",
+      "message": "我吃了沙拉，打卡饮食，拜托",
+      "expect_intent": "diet_log_write"
+    },
+    {
+      "id": "agent_diet_log_write_9964565",
+      "message": "我吃了沙拉，打卡饮食，谢谢先",
+      "expect_intent": "diet_log_write"
+    },
+    {
+      "id": "agent_diet_log_write_3764137",
+      "message": "我吃了沙拉，打卡饮食，优先处理",
+      "expect_intent": "diet_log_write"
+    },
+    {
+      "id": "agent_diet_log_write_5161520",
+      "message": "帮我记录饮食午餐",
+      "expect_intent": "diet_log_write"
+    },
+    {
+      "id": "agent_diet_log_write_7158697",
+      "message": "帮我记录饮食午餐，拜托",
+      "expect_intent": "diet_log_write"
+    },
+    {
+      "id": "agent_diet_log_write_2336299",
+      "message": "帮我记录饮食午餐，谢谢先",
+      "expect_intent": "diet_log_write"
+    },
+    {
+      "id": "agent_diet_log_write_5307679",
+      "message": "帮我记录饮食午餐，优先处理",
+      "expect_intent": "diet_log_write"
+    },
+    {
+      "id": "agent_risk_or_medical_2893543",
+      "message": "我胸痛还能继续大重量训练吗，拜托",
+      "expect_intent": "risk_or_medical"
+    },
+    {
+      "id": "agent_risk_or_medical_2020031",
+      "message": "我胸痛还能继续大重量训练吗，谢谢先",
+      "expect_intent": "risk_or_medical"
+    },
+    {
+      "id": "agent_risk_or_medical_8150392",
+      "message": "我胸痛还能继续大重量训练吗，优先处理",
+      "expect_intent": "risk_or_medical"
+    },
+    {
+      "id": "agent_risk_or_medical_1508636",
+      "message": "训练时差点晕厥，要不要继续加重量，拜托",
+      "expect_intent": "risk_or_medical"
+    },
+    {
+      "id": "agent_risk_or_medical_5699216",
+      "message": "训练时差点晕厥，要不要继续加重量，谢谢先",
+      "expect_intent": "risk_or_medical"
+    },
+    {
+      "id": "agent_risk_or_medical_0032024",
+      "message": "训练时差点晕厥，要不要继续加重量，优先处理",
+      "expect_intent": "risk_or_medical"
+    },
+    {
+      "id": "agent_risk_or_medical_1642600",
+      "message": "呼吸困难还要深蹲吗",
+      "expect_intent": "risk_or_medical"
+    },
+    {
+      "id": "agent_risk_or_medical_2656575",
+      "message": "呼吸困难还要深蹲吗，拜托",
+      "expect_intent": "risk_or_medical"
+    },
+    {
+      "id": "agent_risk_or_medical_7310220",
+      "message": "呼吸困难还要深蹲吗，谢谢先",
+      "expect_intent": "risk_or_medical"
+    },
+    {
+      "id": "agent_risk_or_medical_9940663",
+      "message": "呼吸困难还要深蹲吗，优先处理",
+      "expect_intent": "risk_or_medical"
+    },
+    {
+      "id": "agent_risk_or_medical_2589480",
+      "message": "急性损伤后能吃药止痛继续练吗",
+      "expect_intent": "risk_or_medical"
+    },
+    {
+      "id": "agent_risk_or_medical_2921766",
+      "message": "急性损伤后能吃药止痛继续练吗，拜托",
+      "expect_intent": "risk_or_medical"
+    },
+    {
+      "id": "agent_risk_or_medical_4138050",
+      "message": "急性损伤后能吃药止痛继续练吗，谢谢先",
+      "expect_intent": "risk_or_medical"
+    },
+    {
+      "id": "agent_risk_or_medical_9722895",
+      "message": "急性损伤后能吃药止痛继续练吗，优先处理",
+      "expect_intent": "risk_or_medical"
+    },
+    {
+      "id": "agent_risk_or_medical_3339273",
+      "message": "心脏病患者如何安排处方训练",
+      "expect_intent": "risk_or_medical"
+    },
+    {
+      "id": "agent_risk_or_medical_0742495",
+      "message": "心脏病患者如何安排处方训练，拜托",
+      "expect_intent": "risk_or_medical"
+    },
+    {
+      "id": "agent_risk_or_medical_3319550",
+      "message": "心脏病患者如何安排处方训练，谢谢先",
+      "expect_intent": "risk_or_medical"
+    },
+    {
+      "id": "agent_risk_or_medical_6075465",
+      "message": "心脏病患者如何安排处方训练，优先处理",
+      "expect_intent": "risk_or_medical"
+    },
+    {
+      "id": "agent_risk_or_medical_5111010",
+      "message": "怀疑骨折了还能硬拉吗",
+      "expect_intent": "risk_or_medical"
+    },
+    {
+      "id": "agent_risk_or_medical_5998171",
+      "message": "怀疑骨折了还能硬拉吗，拜托",
+      "expect_intent": "risk_or_medical"
+    },
+    {
+      "id": "agent_risk_or_medical_4668825",
+      "message": "怀疑骨折了还能硬拉吗，谢谢先",
+      "expect_intent": "risk_or_medical"
+    },
+    {
+      "id": "agent_risk_or_medical_0729694",
+      "message": "怀疑骨折了还能硬拉吗，优先处理",
+      "expect_intent": "risk_or_medical"
+    },
+    {
+      "id": "agent_small_talk_7166622",
+      "message": "您好",
+      "expect_intent": "small_talk"
+    },
+    {
+      "id": "agent_small_talk_9757417",
+      "message": "哈哈好的",
+      "expect_intent": "small_talk"
+    },
+    {
+      "id": "agent_small_talk_7551500",
+      "message": "谢谢",
+      "expect_intent": "small_talk"
+    },
+    {
+      "id": "agent_unsupported_4094689",
+      "message": "给我股票短线建议",
+      "expect_intent": "unsupported"
+    },
+    {
+      "id": "agent_unsupported_5075988",
+      "message": "算命看我今天宜不宜练腿",
+      "expect_intent": "unsupported"
+    },
+    {
+      "id": "agent_unsupported_5947652",
+      "message": "帮我写代码实现排序",
+      "expect_intent": "unsupported"
+    },
+    {
+      "id": "agent_unsupported_3980322",
+      "message": "加密货币网格策略怎么做",
+      "expect_intent": "unsupported"
+    },
+    {
+      "id": "agent_clarify_0908007",
+      "message": "帮我弄一下",
+      "expect_intent": "clarify"
+    },
+    {
+      "id": "agent_clarify_2794231",
+      "message": "继续",
+      "expect_intent": "clarify"
+    },
+    {
+      "id": "agent_clarify_2164494",
+      "message": "嗯",
+      "expect_intent": "clarify"
+    },
+    {
+      "id": "agent_clarify_1864404",
+      "message": "按上次那样",
+      "expect_intent": "clarify"
+    },
+    {
+      "id": "agent_clarify_7863580",
+      "message": "处理一下这个",
+      "expect_intent": "clarify"
+    },
+    {
+      "id": "agent_clarify_0870441",
+      "message": "那个",
+      "expect_intent": "clarify"
+    },
+    {
+      "id": "agent_clarify_1276080",
+      "message": "先这样",
+      "expect_intent": "clarify"
+    },
+    {
+      "id": "agent_clarify_1453890",
+      "message": "随便弄弄",
+      "expect_intent": "clarify"
+    }
+  ]
+}

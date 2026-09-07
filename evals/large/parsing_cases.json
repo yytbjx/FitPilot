@@ -1,0 +1,339 @@
+{
+  "min_pass_rate": 0.85,
+  "description": "parsing 大集：fewshot 种子 + 主题×格式网格（有多少造多少）",
+  "cases": [
+    {
+      "id": "plain_txt",
+      "suffix": ".txt",
+      "content": "蛋白质摄入指南\n\n每日每公斤体重 1.6-2.2g 蛋白质有助于增肌。",
+      "min_chars": 10
+    },
+    {
+      "id": "markdown",
+      "suffix": ".md",
+      "content": "# 减脂 FAQ\n\n## 热量缺口\n\n建议每日 300-500 kcal 缺口。",
+      "min_chars": 20,
+      "expect_title_contains": "减脂"
+    },
+    {
+      "id": "csv_macros",
+      "suffix": ".csv",
+      "content": "name,kcal,protein_g\n鸡胸肉,165,31\n燕麦,389,17\n",
+      "min_chars": 10
+    },
+    {
+      "id": "json_food",
+      "suffix": ".json",
+      "content": "{\"name\": \"鸡胸肉\", \"kcal_per_100g\": 165, \"protein_g_per_100g\": 31}",
+      "min_chars": 10
+    },
+    {
+      "id": "html_snippet",
+      "suffix": ".html",
+      "content": "<html><body><h1>训练热身</h1><p>每次训练前热身 5-10 分钟。</p></body></html>",
+      "min_chars": 10
+    },
+    {
+      "id": "jsonl_rows",
+      "suffix": ".jsonl",
+      "content": "{\"q\": \"蛋白\", \"a\": \"1.6-2.2g/kg\"}\n{\"q\": \"减脂\", \"a\": \"热量缺口\"}\n",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_txt_蛋白质",
+      "suffix": ".txt",
+      "content": "蛋白质要点\n\n每日每公斤体重 1.6-2.2g 蛋白质有助于增肌与减脂保肌。",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_md_蛋白质",
+      "suffix": ".md",
+      "content": "# 蛋白质指南\n\n## 要点\n\n每日每公斤体重 1.6-2.2g 蛋白质有助于增肌与减脂保肌。",
+      "min_chars": 20,
+      "expect_title_contains": "蛋白"
+    },
+    {
+      "id": "parse_csv_蛋白质",
+      "suffix": ".csv",
+      "content": "name,kcal,protein_g\n鸡胸肉,165,31\n",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_json_蛋白质",
+      "suffix": ".json",
+      "content": "{\"name\": \"鸡胸肉\", \"kcal_per_100g\": 165, \"protein_g_per_100g\": 31, \"topic\": \"蛋白质\"}",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_html_蛋白质",
+      "suffix": ".html",
+      "content": "<html><body><h1>蛋白质</h1><p>每日每公斤体重 1.6-2.2g 蛋白质有助于增肌与减脂保肌。</p></body></html>",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_jsonl_蛋白质",
+      "suffix": ".jsonl",
+      "content": "{\"q\": \"蛋白质\", \"a\": \"每日每公斤体重 1.6-2.2g 蛋白质有助于增肌与减脂保肌。\"}\n{\"q\": \"补充\", \"a\": \"渐进训练\"}\n",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_txt_减脂",
+      "suffix": ".txt",
+      "content": "减脂要点\n\n建议每日 300-500 kcal 热量缺口，优先保住蛋白质。",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_md_减脂",
+      "suffix": ".md",
+      "content": "# 减脂指南\n\n## 要点\n\n建议每日 300-500 kcal 热量缺口，优先保住蛋白质。",
+      "min_chars": 20,
+      "expect_title_contains": "减脂"
+    },
+    {
+      "id": "parse_csv_减脂",
+      "suffix": ".csv",
+      "content": "name,kcal,protein_g\n燕麦,389,17\n",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_json_减脂",
+      "suffix": ".json",
+      "content": "{\"name\": \"燕麦\", \"kcal_per_100g\": 389, \"protein_g_per_100g\": 17, \"topic\": \"减脂\"}",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_html_减脂",
+      "suffix": ".html",
+      "content": "<html><body><h1>减脂</h1><p>建议每日 300-500 kcal 热量缺口，优先保住蛋白质。</p></body></html>",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_jsonl_减脂",
+      "suffix": ".jsonl",
+      "content": "{\"q\": \"减脂\", \"a\": \"建议每日 300-500 kcal 热量缺口，优先保住蛋白质。\"}\n{\"q\": \"补充\", \"a\": \"渐进训练\"}\n",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_txt_力量训练",
+      "suffix": ".txt",
+      "content": "力量训练要点\n\n新手每周力量训练 2-3 次，遵循渐进超负荷。",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_md_力量训练",
+      "suffix": ".md",
+      "content": "# 力量训练指南\n\n## 要点\n\n新手每周力量训练 2-3 次，遵循渐进超负荷。",
+      "min_chars": 20,
+      "expect_title_contains": "力量"
+    },
+    {
+      "id": "parse_csv_力量训练",
+      "suffix": ".csv",
+      "content": "name,kcal,protein_g\n西兰花,34,2.8\n",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_json_力量训练",
+      "suffix": ".json",
+      "content": "{\"name\": \"西兰花\", \"kcal_per_100g\": 34, \"protein_g_per_100g\": 2.8, \"topic\": \"力量训练\"}",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_html_力量训练",
+      "suffix": ".html",
+      "content": "<html><body><h1>力量训练</h1><p>新手每周力量训练 2-3 次，遵循渐进超负荷。</p></body></html>",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_jsonl_力量训练",
+      "suffix": ".jsonl",
+      "content": "{\"q\": \"力量训练\", \"a\": \"新手每周力量训练 2-3 次，遵循渐进超负荷。\"}\n{\"q\": \"补充\", \"a\": \"渐进训练\"}\n",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_txt_补水",
+      "suffix": ".txt",
+      "content": "补水要点\n\n训练前后按口渴与尿色判断补水，出汗多可补电解质。",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_md_补水",
+      "suffix": ".md",
+      "content": "# 补水指南\n\n## 要点\n\n训练前后按口渴与尿色判断补水，出汗多可补电解质。",
+      "min_chars": 20,
+      "expect_title_contains": "补水"
+    },
+    {
+      "id": "parse_csv_补水",
+      "suffix": ".csv",
+      "content": "name,kcal,protein_g\n糙米,111,2.6\n",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_json_补水",
+      "suffix": ".json",
+      "content": "{\"name\": \"糙米\", \"kcal_per_100g\": 111, \"protein_g_per_100g\": 2.6, \"topic\": \"补水\"}",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_html_补水",
+      "suffix": ".html",
+      "content": "<html><body><h1>补水</h1><p>训练前后按口渴与尿色判断补水，出汗多可补电解质。</p></body></html>",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_jsonl_补水",
+      "suffix": ".jsonl",
+      "content": "{\"q\": \"补水\", \"a\": \"训练前后按口渴与尿色判断补水，出汗多可补电解质。\"}\n{\"q\": \"补充\", \"a\": \"渐进训练\"}\n",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_txt_膳食指南",
+      "suffix": ".txt",
+      "content": "膳食指南要点\n\n食物多样、控糖限酒，优质蛋白可来自鱼禽蛋奶豆。",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_md_膳食指南",
+      "suffix": ".md",
+      "content": "# 膳食指南指南\n\n## 要点\n\n食物多样、控糖限酒，优质蛋白可来自鱼禽蛋奶豆。",
+      "min_chars": 20,
+      "expect_title_contains": "膳食"
+    },
+    {
+      "id": "parse_csv_膳食指南",
+      "suffix": ".csv",
+      "content": "name,kcal,protein_g\n鸡蛋,155,13\n",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_json_膳食指南",
+      "suffix": ".json",
+      "content": "{\"name\": \"鸡蛋\", \"kcal_per_100g\": 155, \"protein_g_per_100g\": 13, \"topic\": \"膳食指南\"}",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_html_膳食指南",
+      "suffix": ".html",
+      "content": "<html><body><h1>膳食指南</h1><p>食物多样、控糖限酒，优质蛋白可来自鱼禽蛋奶豆。</p></body></html>",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_jsonl_膳食指南",
+      "suffix": ".jsonl",
+      "content": "{\"q\": \"膳食指南\", \"a\": \"食物多样、控糖限酒，优质蛋白可来自鱼禽蛋奶豆。\"}\n{\"q\": \"补充\", \"a\": \"渐进训练\"}\n",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_txt_安全边界",
+      "suffix": ".txt",
+      "content": "安全边界要点\n\nFitPilot 不提供疾病诊断与开药建议，胸痛应停止训练就医。",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_md_安全边界",
+      "suffix": ".md",
+      "content": "# 安全边界指南\n\n## 要点\n\nFitPilot 不提供疾病诊断与开药建议，胸痛应停止训练就医。",
+      "min_chars": 20,
+      "expect_title_contains": "安全"
+    },
+    {
+      "id": "parse_csv_安全边界",
+      "suffix": ".csv",
+      "content": "name,kcal,protein_g\n三文鱼,208,20\n",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_json_安全边界",
+      "suffix": ".json",
+      "content": "{\"name\": \"三文鱼\", \"kcal_per_100g\": 208, \"protein_g_per_100g\": 20, \"topic\": \"安全边界\"}",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_html_安全边界",
+      "suffix": ".html",
+      "content": "<html><body><h1>安全边界</h1><p>FitPilot 不提供疾病诊断与开药建议，胸痛应停止训练就医。</p></body></html>",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_jsonl_安全边界",
+      "suffix": ".jsonl",
+      "content": "{\"q\": \"安全边界\", \"a\": \"FitPilot 不提供疾病诊断与开药建议，胸痛应停止训练就医。\"}\n{\"q\": \"补充\", \"a\": \"渐进训练\"}\n",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_txt_有氧",
+      "suffix": ".txt",
+      "content": "有氧要点\n\n成年人每周宜积累 150-300 分钟中等强度有氧活动。",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_md_有氧",
+      "suffix": ".md",
+      "content": "# 有氧指南\n\n## 要点\n\n成年人每周宜积累 150-300 分钟中等强度有氧活动。",
+      "min_chars": 20,
+      "expect_title_contains": "有氧"
+    },
+    {
+      "id": "parse_csv_有氧",
+      "suffix": ".csv",
+      "content": "name,kcal,protein_g\n豆腐,76,8\n",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_json_有氧",
+      "suffix": ".json",
+      "content": "{\"name\": \"豆腐\", \"kcal_per_100g\": 76, \"protein_g_per_100g\": 8, \"topic\": \"有氧\"}",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_html_有氧",
+      "suffix": ".html",
+      "content": "<html><body><h1>有氧</h1><p>成年人每周宜积累 150-300 分钟中等强度有氧活动。</p></body></html>",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_jsonl_有氧",
+      "suffix": ".jsonl",
+      "content": "{\"q\": \"有氧\", \"a\": \"成年人每周宜积累 150-300 分钟中等强度有氧活动。\"}\n{\"q\": \"补充\", \"a\": \"渐进训练\"}\n",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_txt_恢复",
+      "suffix": ".txt",
+      "content": "恢复要点\n\n睡眠与休息对力量训练恢复十分重要。",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_md_恢复",
+      "suffix": ".md",
+      "content": "# 恢复指南\n\n## 要点\n\n睡眠与休息对力量训练恢复十分重要。",
+      "min_chars": 20,
+      "expect_title_contains": "恢复"
+    },
+    {
+      "id": "parse_csv_恢复",
+      "suffix": ".csv",
+      "content": "name,kcal,protein_g\n香蕉,89,1.1\n",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_json_恢复",
+      "suffix": ".json",
+      "content": "{\"name\": \"香蕉\", \"kcal_per_100g\": 89, \"protein_g_per_100g\": 1.1, \"topic\": \"恢复\"}",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_html_恢复",
+      "suffix": ".html",
+      "content": "<html><body><h1>恢复</h1><p>睡眠与休息对力量训练恢复十分重要。</p></body></html>",
+      "min_chars": 10
+    },
+    {
+      "id": "parse_jsonl_恢复",
+      "suffix": ".jsonl",
+      "content": "{\"q\": \"恢复\", \"a\": \"睡眠与休息对力量训练恢复十分重要。\"}\n{\"q\": \"补充\", \"a\": \"渐进训练\"}\n",
+      "min_chars": 10
+    }
+  ]
+}

@@ -1,0 +1,88 @@
+[
+  {
+    "id": "ctx_protein_long",
+    "kind": "context",
+    "query": "减脂期蛋白质怎么安排？",
+    "token_budget": 400,
+    "core_k": 4,
+    "relevant_turns": [2, 5, 8],
+    "min_reduction": 0.1,
+    "min_recall": 0.66,
+    "history": [
+      {"turn": 0, "role": "user", "content": "你好，我想随便聊聊天气和周末安排，这部分与健身无关，只是闲聊填充历史。", "score": 0.1},
+      {"turn": 1, "role": "assistant", "content": "你好，我是 FitPilot。闲聊可以，但训练饮食问题我会更专业。", "score": 0.1},
+      {"turn": 2, "role": "user", "content": "我的目标是减脂，体重 75kg，希望体脂下降，同时保留肌肉。", "score": 0.8},
+      {"turn": 3, "role": "assistant", "content": "已记录减脂目标，后续会结合训练与蛋白摄入给你建议。", "score": 0.4},
+      {"turn": 4, "role": "user", "content": "今天天气不错想聊天，顺便吐槽了一下通勤很久，这些信息对蛋白问题帮助不大。", "score": 0.05},
+      {"turn": 5, "role": "user", "content": "力量训练后需要补蛋白吗，有没有指南依据？", "score": 0.9},
+      {"turn": 6, "role": "assistant", "content": "训练后适量优质蛋白有助于恢复，但仍需看全日总量。", "score": 0.7},
+      {"turn": 7, "role": "user", "content": "顺便问问股票怎么看，今天大盘波动，这与健身知识无关。", "score": 0.0},
+      {"turn": 8, "role": "user", "content": "每日蛋白质克数如何按体重计算才比较合适？", "score": 0.95},
+      {"turn": 9, "role": "assistant", "content": "可按每公斤体重估算，并结合训练强度调整。", "score": 0.8},
+      {"turn": 10, "role": "user", "content": "最近一周练了三次，感觉恢复还行。", "score": 0.5},
+      {"turn": 11, "role": "assistant", "content": "训练频率尚可，注意睡眠与蛋白分配。", "score": 0.4}
+    ],
+    "evidence": "指南：健康成年人可按体重估算蛋白质需求。"
+  },
+  {
+    "id": "ctx_hydration",
+    "kind": "context",
+    "query": "训练后补水建议",
+    "token_budget": 350,
+    "core_k": 3,
+    "relevant_turns": [1, 4],
+    "min_reduction": 0.0,
+    "min_recall": 0.5,
+    "history": [
+      {"turn": 0, "role": "user", "content": "我喜欢跑步，也想了解一下补水和电解质，但先从基础说起。", "score": 0.4},
+      {"turn": 1, "role": "assistant", "content": "跑步后注意补水，尤其是出汗较多时要少量多次。", "score": 0.7},
+      {"turn": 2, "role": "user", "content": "午餐吃了沙拉，还看了一会儿与健身无关的综艺节目讨论。", "score": 0.2},
+      {"turn": 3, "role": "user", "content": "无关：推荐一部电影，再聊聊天气和周末聚餐安排，这些都不进补水答案。", "score": 0.0},
+      {"turn": 4, "role": "user", "content": "出汗很多要怎么喝水，有没有官方建议？", "score": 0.9},
+      {"turn": 5, "role": "assistant", "content": "少量多次补水，可结合口渴感与训练时长调整。", "score": 0.8},
+      {"turn": 6, "role": "user", "content": "今晚想看剧，顺便吐槽剧情，与补水无关的长闲聊内容。", "score": 0.0}
+    ]
+  },
+  {
+    "id": "kv_stable_prefix",
+    "kind": "kv_cache",
+    "query": "蛋白质怎么吃",
+    "token_budget": 100,
+    "min_lcp": 0.99
+  },
+  {
+    "id": "route_plan_simple",
+    "kind": "routing",
+    "text": "请生成一份训练计划",
+    "expect_intent": "plan_create",
+    "expect_mode": "workflow"
+  },
+  {
+    "id": "route_plan_complex",
+    "kind": "routing",
+    "text": "根据我最近两周的训练记录调整饮食和训练计划",
+    "expect_intent": "plan_adjust",
+    "expect_mode": "multi_agent"
+  },
+  {
+    "id": "route_knowledge",
+    "kind": "routing",
+    "text": "减脂期蛋白质怎么安排？",
+    "expect_intent": "knowledge_query",
+    "expect_mode": "workflow"
+  },
+  {
+    "id": "orch_complex_plan",
+    "kind": "orchestrator",
+    "text": "根据最近两周记录联合调整减脂训练与饮食计划",
+    "intent": "plan_adjust",
+    "expect_nodes": ["extract_profile", "fetch_logs", "plan_generate", "consensus_check", "human_approval"]
+  },
+  {
+    "id": "orch_knowledge",
+    "kind": "orchestrator",
+    "text": "蛋白质摄入原则是什么",
+    "intent": "knowledge_query",
+    "expect_nodes": ["knowledge_retrieve", "answer_synthesize"]
+  }
+]

@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from app.eval.common import PassRateEvalResult
+from app.eval.progress import track_cases
 from app.services.training_plan_validator import validate_training_plan
 
 
@@ -19,7 +20,7 @@ class PlanEvalResult(PassRateEvalResult):
 def run_plan_eval(suite_path: Path) -> PlanEvalResult:
     raw = json.loads(suite_path.read_text(encoding="utf-8"))
     result = PlanEvalResult(min_pass_rate=float(raw.get("min_pass_rate") or 0.9))
-    for case in raw.get("cases") or []:
+    for case in track_cases(list(raw.get("cases") or []), desc="plan"):
         profile = case.get("profile") or {}
         workout = case.get("workout") or {}
         expect_ok = bool(case.get("expect_ok", True))

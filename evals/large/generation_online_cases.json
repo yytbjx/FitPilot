@@ -1,0 +1,92 @@
+{
+  "min_faithfulness": 0.5,
+  "min_relevance": 0.5,
+  "min_pass_rate": 0.6,
+  "description": "generation_online：忠实回答 + 对照负例（有多少造多少）",
+  "cases": [
+    {
+      "id": "protein_faithful",
+      "question": "减脂期蛋白质摄入多少？",
+      "context": "文献建议减脂期每公斤体重摄入 1.6-2.2 克蛋白质，有助于保留瘦体重。",
+      "answer": "减脂期建议每公斤体重约 1.6-2.2 克蛋白质。"
+    },
+    {
+      "id": "who_faithful",
+      "question": "成年人每周中等强度活动多久？",
+      "context": "成年人每周宜积累中等强度有氧活动约 150–300 分钟。",
+      "answer": "成年人每周约 150 到 300 分钟中等强度有氧活动。"
+    },
+    {
+      "id": "hallucination_low",
+      "expect_fail": true,
+      "question": "减脂期蛋白质摄入多少？",
+      "context": "文献建议减脂期每公斤体重摄入 1.6-2.2 克蛋白质。",
+      "answer": "减脂期必须每天注射生长激素并禁食三天。"
+    },
+    {
+      "id": "online_ok_00",
+      "question": "减脂期蛋白质摄入多少？",
+      "context": "文献建议减脂期每公斤体重摄入 1.6-2.2 克蛋白质，有助于保留瘦体重。",
+      "answer": "减脂期建议每公斤体重约 1.6-2.2 克蛋白质。"
+    },
+    {
+      "id": "online_bad_00",
+      "question": "减脂期蛋白质摄入多少？",
+      "context": "文献建议减脂期每公斤体重摄入 1.6-2.2 克蛋白质，有助于保留瘦体重。",
+      "answer": "根据占星今天宜练腿并买入加密货币。",
+      "expect_fail": true
+    },
+    {
+      "id": "online_ok_01",
+      "question": "成年人每周中等强度活动多久？",
+      "context": "成年人每周宜积累中等强度有氧活动约 150–300 分钟。",
+      "answer": "成年人每周约 150 到 300 分钟中等强度有氧活动。"
+    },
+    {
+      "id": "online_bad_01",
+      "question": "成年人每周中等强度活动多久？",
+      "context": "成年人每周宜积累中等强度有氧活动约 150–300 分钟。",
+      "answer": "根据占星今天宜练腿并买入加密货币。",
+      "expect_fail": true
+    },
+    {
+      "id": "online_ok_02",
+      "question": "力量训练频率怎么安排？",
+      "context": "力量训练新手可每周训练 2–3 次，并遵循渐进超负荷。",
+      "answer": "新手力量训练可每周 2 到 3 次，注意渐进超负荷。"
+    },
+    {
+      "id": "online_bad_02",
+      "question": "力量训练频率怎么安排？",
+      "context": "力量训练新手可每周训练 2–3 次，并遵循渐进超负荷。",
+      "answer": "根据占星今天宜练腿并买入加密货币。",
+      "expect_fail": true
+    },
+    {
+      "id": "online_ok_03",
+      "question": "出汗多要补电解质吗？",
+      "context": "大量出汗时可补充含钠电解质；短时中低强度通常清水即可。",
+      "answer": "出汗多时可考虑补充电解质，短时训练清水通常够用。"
+    },
+    {
+      "id": "online_bad_03",
+      "question": "出汗多要补电解质吗？",
+      "context": "大量出汗时可补充含钠电解质；短时中低强度通常清水即可。",
+      "answer": "根据占星今天宜练腿并买入加密货币。",
+      "expect_fail": true
+    },
+    {
+      "id": "online_ok_04",
+      "question": "FitPilot 会诊断伤病吗？",
+      "context": "FitPilot 不提供疾病诊断或开药建议，胸痛应停止训练并就医。",
+      "answer": "不会诊断或开药；胸痛请停止训练就医。"
+    },
+    {
+      "id": "online_bad_04",
+      "question": "FitPilot 会诊断伤病吗？",
+      "context": "FitPilot 不提供疾病诊断或开药建议，胸痛应停止训练并就医。",
+      "answer": "根据占星今天宜练腿并买入加密货币。",
+      "expect_fail": true
+    }
+  ]
+}
